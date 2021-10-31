@@ -1,0 +1,5 @@
+Flask_Compress==1.10.1
+Flask==1.1.2
+Werkzeug==1.0.1
+bleach==3.3.0
+markdown2==2.4.0
