@@ -94,6 +94,9 @@ def split_on_uppercase(string: str):
     return results
 
 
+DELIMITER = "🈑"
+
+
 def to_path(name: str) -> str:
     """
     Converts a method name to a path
@@ -103,7 +106,44 @@ def to_path(name: str) -> str:
         name: str
             The name of the method/class/object
     """
+    name = str(name)
+
+    # hello__username__ --> hello/<username>
+    in_variable = False
+    result = ""
+    name_length = len(name)
+    for index, letter in enumerate(name):
+        if letter == "_":
+            if in_variable: # <hello_world>
+                # the previous _ got replaced by >, so we don't need to convert it too
+                if result[-1] == ">":
+                    result += "_"
+                    continue
+                # the previous _ got replaced by <, so we don't need to convert it too
+                elif result[-1] == "<":
+                    continue
+                # "__" --> ">"
+                elif index + 1 < name_length and name[index + 1] == "_":
+                    in_variable = False
+                    result += ">"
+                else:
+                    result += DELIMITER  # we want to keep any "_" inside a variable name
+                    continue
+            else:
+                # "__" --> "<"
+                if index + 1 < name_length and name[index + 1] == "_":
+                    in_variable = True
+                    result += "_<"
+                else: # a regular _, to be converted into "/"
+                    result += letter
+                    continue
+        else:
+            result += letter
+    name = result
+    # nasse.utils.sanitize --> nasse/utils/sanitize
     name = "/".join(str(name).split("."))
+    # hello_world --> hello/world
     name = "/".join(name.split("_"))
+    # helloWorld --> hello-world
     name = "-".join(split_on_uppercase(name)).lower()
-    return "/" + name.replace("//", "/").strip("/")
+    return "/" + name.replace(DELIMITER, "_").replace("//", "/").strip("/")

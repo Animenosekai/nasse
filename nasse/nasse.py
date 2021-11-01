@@ -3,6 +3,7 @@ Nasse v1.0.0 (Stable)
 
 © Anime no Sekai — 2021
 """
+import logging
 import threading
 from typing import Iterable, Union
 from urllib.parse import urlparse
@@ -88,6 +89,9 @@ class Nasse():
         if compress:
             import flask_compress
             flask_compress.Compress(self.flask)
+
+        logging.getLogger('werkzeug').disabled = True
+        self.flask.logger.disabled = True
 
     def __repr__(self) -> str:
         return "Nasse({name})".format(name=self.name)
