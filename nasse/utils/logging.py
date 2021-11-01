@@ -108,7 +108,7 @@ def clear_log():
     try:
         app_id = g.request.app.id
     except Exception:
-        app_id = "".join(l for l in str(name) if l.isalpha()).lower()
+        app_id = "".join(l for l in str(name) if l.isalpha() or l.isdecimal()).lower()
     with open(General.BASE_DIR / "{id}.nasse.log".format(id=app_id), "w", encoding="utf8") as out:
         out.write("-- {name} DEBUG LOG --\n\n".format(name=str(name).upper()))
 
@@ -127,7 +127,7 @@ def write_log(new_line: str):
         try:
             app_id = g.request.app.id
         except Exception:
-            app_id = "".join(l for l in str(name) if l.isalpha()).lower()
+            app_id = "".join(l for l in str(name) if l.isalpha() or l.isdecimal()).lower()
         with open(General.BASE_DIR / "{id}.nasse.log".format(id=app_id), "a", encoding="utf8") as out:
             out.write(str(new_line) + "\n")
 

@@ -34,10 +34,12 @@ def remove_spaces(string: str):
     return "".join(l for l in str(string) if l not in WHITESPACES)
 
 
-def alphabetic(string: str):
+def alphabetic(string: str, decimals: bool = True):
     """Removes all of the non alphabetical letters from the string"""
     if string is None:
         return ""
+    if decimals:
+        return "".join(l for l in str(string) if l.isalpha() or l.isdecimal())
     return "".join(l for l in str(string) if l.isalpha())
 
 
@@ -114,7 +116,7 @@ def to_path(name: str) -> str:
     name_length = len(name)
     for index, letter in enumerate(name):
         if letter == "_":
-            if in_variable: # <hello_world>
+            if in_variable:  # <hello_world>
                 # the previous _ got replaced by >, so we don't need to convert it too
                 if result[-1] == ">":
                     result += "_"
@@ -134,7 +136,7 @@ def to_path(name: str) -> str:
                 if index + 1 < name_length and name[index + 1] == "_":
                     in_variable = True
                     result += "_<"
-                else: # a regular _, to be converted into "/"
+                else:  # a regular _, to be converted into "/"
                     result += letter
                     continue
         else:
