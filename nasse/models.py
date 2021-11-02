@@ -30,7 +30,7 @@ def hello():
 
 
 class Return():
-    def __init__(self, name: str, example: Any = None, description: str = None, methods: Union[list[str], str] = "*", type: Any = None, children: list = None) -> None:
+    def __init__(self, name: str, example: Any = None, description: str = None, methods: Union[list[str], str] = "*", type: Any = None, children: list = None, nullable: bool = False) -> None:
         self.name = str(name)
         self.example = example
         self.description = str(description or "")
@@ -38,6 +38,7 @@ class Return():
         self.children = set(children or [])
         self.methods = _methods_validation(methods)
         self.all_methods = "*" in self.methods
+        self.nullable = bool(nullable)
 
     def __repr__(self) -> str:
         return "Return({name})".format(name=self.name)
@@ -117,7 +118,8 @@ class Error():
         self.name = str(name)
         self.description = str(description)
         self.code = int(code)
-        self.methods = methods
+        self.methods = _methods_validation(methods)
+        self.all_methods = "*" in self.methods
 
     def __copy__(self):
         return Error(

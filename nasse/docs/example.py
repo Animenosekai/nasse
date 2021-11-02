@@ -2,9 +2,7 @@ from nasse.models import Endpoint
 from nasse.utils.json import encoder
 from nasse.utils.boolean import to_bool
 
-
-def generate_example(endpoint: Endpoint, method: str):
-    def _get_type(data):
+def _get_type(data):
         """Retrieves the type of the given returning item"""
         key_type = data.type
         if key_type is None:
@@ -34,6 +32,8 @@ def generate_example(endpoint: Endpoint, method: str):
             return "object"
         return key_type
 
+
+def generate_example(endpoint: Endpoint, method: str):
     def get_value(data):
         key_type = _get_type(data)
         # if self.returning[key].get("nullable", False) and key_type != "object":
