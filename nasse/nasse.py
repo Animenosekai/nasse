@@ -5,16 +5,55 @@ Nasse v1.0.0 (Stable)
 """
 import logging
 import threading
+from multiprocessing import cpu_count
 from typing import Iterable, Union
 from urllib.parse import urlparse
 
+import gunicorn
+import gunicorn.app.base
 from flask import Flask, Response
 from flask import request as flask_request
 
 from nasse import models, receive, request
 from nasse.config import Enums, General, Mode
-from nasse.utils.logging import add_to_call_stack
+from nasse.utils.args import Args
+from nasse.utils.logging import LogLevels, add_to_call_stack, log
 from nasse.utils.sanitize import alphabetic, remove_spaces
+
+
+class GunicornServer(gunicorn.app.base.BaseApplication):
+    def __init__(self, app, options: dict = None):
+        self.options = {
+            'bind': '{host}:{port}'.format(host=General.HOST, port=Args.get(("-p", "--port"), 5000)),
+            'workers': 2 * cpu_count() + 1,
+            'capture_output': False,
+            'proc_name': app.id,
+            'preload_app': True,
+            'worker_class': General.WORKER_CLASS,
+            'threads': 2 * cpu_count() + 1,
+            'loglevel': 'error',
+            # would be painful to wait 30 seconds on each reload
+            'graceful_timeout': 5 if Mode.DEBUG else 20
+        }
+        self.options.update(options or {})
+        self.application = app.flask
+        formatting = {}
+        if "{version}" in General.SERVER_HEADER:
+            formatting["version"] = General.VERSION
+        if "{app}" in General.SERVER_HEADER:
+            formatting["app"] = app.id
+        gunicorn.SERVER_SOFTWARE = General.SERVER_HEADER.format(**formatting)
+        gunicorn.SERVER = General.SERVER_HEADER.format(**formatting)
+        super().__init__()
+
+    def load_config(self):
+        config = {key: value for key, value in self.options.items()
+                  if key in self.cfg.settings and value is not None}
+        for key, value in config.items():
+            self.cfg.set(key.lower(), value)
+
+    def load(self):
+        return self.application
 
 
 class Nasse():
@@ -141,7 +180,12 @@ class Nasse():
         Do not use `run()` in a production setting **for now**. It is not intended to
         meet security and performance requirements for a production server.
         """
-        self.flask.run(host=host, port=port, debug=debug, **kwargs)
+        log("Running the server ✨", level=LogLevels.INFO)
+        if Mode.DEBUG:
+            log("DEBUG MODE IS ENABLED", level=LogLevels.WARNING)
+        GunicornServer(self).run()
+
+        # self.flask.run(host=host, port=port, debug=debug, **kwargs)
 
     def before_request(self):
         """

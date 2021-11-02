@@ -14,3 +14,4 @@
 - after_request and before_request
 - after_request --> to teardown
 - Decide what to do for different login rules for different methods
+- Type Safe Parameters

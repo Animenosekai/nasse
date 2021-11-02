@@ -2,7 +2,7 @@ from nasse.models import Endpoint
 
 
 def create_curl_example(endpoint: Endpoint):
-    results = []
+    results = {}
     for method in endpoint.methods:
         params = {param.name: param.description or param.name for param in endpoint.params if param.required and (
             param.all_methods or method in param.methods)}
@@ -19,8 +19,6 @@ def create_curl_example(endpoint: Endpoint):
             headers_render = "\\\n    -H " + '\\\n    -H '.join([f'"' + header.replace(
                 "\"", "\\\"") + ': ' + description.replace("\"", "\\\"") + '"' for header, description in headers.items()]) + " "
             headers_render += "\\\n    "
-        results.append(
-            '''curl -X {method} {params}{headers}"{path}"'''.format(
-                method=method, params=params_render, headers=headers_render, path=endpoint.path)
-        )
+        results[method] = '''curl -X {method} {params}{headers}"{path}"'''.format(
+            method=method, params=params_render, headers=headers_render, path=endpoint.path)
     return results

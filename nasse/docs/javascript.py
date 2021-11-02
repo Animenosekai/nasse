@@ -4,7 +4,7 @@ from urllib.parse import quote
 
 
 def create_javascript_example(endpoint: Endpoint):
-    results = []
+    results = {}
     for method in endpoint.methods:
         params = [param for param in endpoint.params if param.required and (
             param.all_methods or method in param.methods)]
@@ -20,7 +20,7 @@ def create_javascript_example(endpoint: Endpoint):
         if len(headers) > 0:
             headers_render = ",\n    headers: {render}".format(render=json.dumps(
                 headers, ensure_ascii=False, indent=4).replace("\n", "\n    "))
-        results.append('''fetch({url}, {{
+        results[method] = '''fetch({url}, {{
     method: "{method}"{headers}{cookies}
 }})
 .then((response) => {{response.json()}})
@@ -31,5 +31,5 @@ if (response.success) {{
 }} else {{
     console.error("An error occured while requesting for {path}, error: " + response.error)
 }}
-}})'''.format(url=url, method=method, headers=headers_render, cookies=",\n    credentials: 'include'" if include_cookies else "", path=endpoint.path))
+}})'''.format(url=url, method=method, headers=headers_render, cookies=",\n    credentials: 'include'" if include_cookies else "", path=endpoint.path)
     return results

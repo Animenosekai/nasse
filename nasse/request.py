@@ -1,6 +1,5 @@
 from typing import Any
 
-from flask import Request as FlaskRequest
 from flask import request as flask_request
 from werkzeug.datastructures import MultiDict
 

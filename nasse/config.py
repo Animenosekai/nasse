@@ -17,6 +17,7 @@ class Enums:
 
 class General:
     NAME = "Nasse"
+    HOST = "127.0.0.1"
     VERSION = "1.0"
     SANITIZE_USER_SENT = True
     BASE_DIR = Path().resolve()
@@ -24,3 +25,5 @@ class General:
     # LOGGING_TIME_FORMAT = "%Y/%m/%d, %H:%M:%S"
     # it can either be a function or a format string
     CALL_TRACE_RECEIVER = None
+    WORKER_CLASS = "sync"
+    SERVER_HEADER = "Nasse/{version} ({app})"

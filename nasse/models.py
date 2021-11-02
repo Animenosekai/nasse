@@ -30,7 +30,7 @@ def hello():
 
 
 class Return():
-    def __init__(self, name: str, example: Any = None, description: str = None, methods: Union[list[str], str] = None, type: Any = None, children: list = None) -> None:
+    def __init__(self, name: str, example: Any = None, description: str = None, methods: Union[list[str], str] = "*", type: Any = None, children: list = None) -> None:
         self.name = str(name)
         self.example = example
         self.description = str(description or "")
@@ -54,7 +54,7 @@ class Return():
 
 
 class Login():
-    def __init__(self, required: bool = False, types: Union[Any, list[Any]] = [], methods: Union[list[str], str] = [], no_login: bool = True) -> None:
+    def __init__(self, required: bool = False, types: Union[Any, list[Any]] = [], methods: Union[list[str], str] = "*", no_login: bool = True) -> None:
         self.no_login = bool(no_login)
         self.required = bool(required)
         self.types = set()
