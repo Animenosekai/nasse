@@ -1,17 +1,19 @@
-- Using app.id in nasse.receive.retrieve_token // 
 - Using app.id as wrapper in nasse.utils.xml --> maybe not
+- Using app.id in nasse.receive.retrieve_token // 
 - Using app.id for the log file in nasse.utils.logging //
 - Using app.name for the logs in nasse.utils.logging //
 - Determine app.id from app.name //
 - Determine app.name from parent directory //
 - Determine endpoint path from handler location //
 - Fixing the @app.route decorator //
-- Rewrite Auto Docs (a lot cleaner)
+- Auto Refresh on Mode.DEBUG (auto docs refresh?) //
+- Custom app.run //
+- after_request and before_request //
+- error handler //
+- Rewrite Auto Docs (a lot cleaner) /
 - Rearrange imports to avoid polluting the namespace (if possible, using module name)
-- Auto Refresh on Mode.DEBUG (auto docs refresh?)
 - Test Environment/CLI
-- Custom app.run
-- after_request and before_request
-- after_request --> to teardown
 - Decide what to do for different login rules for different methods
 - Type Safe Parameters
+- Change the exceptions
+- Writing Tests

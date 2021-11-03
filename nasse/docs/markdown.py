@@ -122,10 +122,15 @@ def make_docs_for_method(endpoint: Endpoint, method: str):
 
 #### Response Format
 
+'''.format(curl=create_curl_example_for_method(endpoint, method=method), javascript=create_javascript_example_for_method(endpoint, method=method), python=create_python_example_for_method(endpoint, method=method))
+
+    if endpoint.json:
+        result += '''
+
 ```json
 {example}
 ```
-'''.format(curl=create_curl_example_for_method(endpoint, method=method), javascript=create_javascript_example_for_method(endpoint, method=method), python=create_python_example_for_method(endpoint, method=method), example=generate_example(endpoint, method=method))
+'''.format(example=generate_example(endpoint, method=method))
 
     returning = [element for element in endpoint.returning if (
         element.all_methods or method in element.methods)]

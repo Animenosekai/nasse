@@ -1,10 +1,10 @@
 """
 XML Conversion
 
-Source: dict2xml by delfick
-GitHub: https://github.com/delfick/python-dict2xml
-PyPI: https://pypi.org/project/dict2xml/
-Based on version 1.7.0
+Source: dict2xml by delfick \n
+GitHub: https://github.com/delfick/python-dict2xml \n
+PyPI: https://pypi.org/project/dict2xml/ \n
+Based on version 1.7.0 \n
 Licensed under the MIT License
 
 The MIT License (MIT)

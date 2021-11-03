@@ -4,21 +4,44 @@ Nasse v1.0.0 (Stable)
 © Anime no Sekai — 2021
 """
 import logging
+import os
+import sys
 import threading
 from multiprocessing import cpu_count
-from typing import Iterable, Union
+from pathlib import Path
+from typing import Callable, Iterable, Union
 from urllib.parse import urlparse
 
 import gunicorn
 import gunicorn.app.base
-from flask import Flask, Response
+from flask import Flask, Response, g
 from flask import request as flask_request
-
+from gunicorn.arbiter import Arbiter
 from nasse import models, receive, request
 from nasse.config import Enums, General, Mode
+from nasse.utils import xml, json
+from nasse.docs import markdown
+from nasse.docs.header import DOCS_HEADER, header_link
+from nasse.docs.postman import create_postman_data
+from nasse.response import exception_to_response
 from nasse.utils.args import Args
 from nasse.utils.logging import LogLevels, add_to_call_stack, log
 from nasse.utils.sanitize import alphabetic, remove_spaces
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
+
+
+class FileEventHandler(FileSystemEventHandler):
+    def __init__(self, callback: Callable) -> None:
+        super().__init__()
+        self.callback = callback
+
+    def on_modified(self, event):
+        src_path = str(event.src_path)
+        if not any([src_path.endswith(extension) for extension in (".py", ".html", ".js", ".css")]):
+            return
+        log("{path} modified".format(path=src_path))
+        self.callback()
 
 
 class GunicornServer(gunicorn.app.base.BaseApplication):
@@ -57,6 +80,9 @@ class GunicornServer(gunicorn.app.base.BaseApplication):
 
 
 class Nasse():
+    _observer = None
+    _arbiter = None
+
     def __init__(self, name: str = None, id: str = None, account_management: models.AccountManagement = None, cors: Union[str, bool, Iterable] = True, max_request_size: int = 1e+9, compress: bool = True, *args, **kwargs) -> None:
         """
         # A Nasse web server instance
@@ -120,10 +146,11 @@ class Nasse():
             max_request_size) if max_request_size is not None else None
 
         # events
-        self.flask.before_request_funcs.setdefault(
-            None, []).append(self.before_request)
-        self.flask.after_request_funcs.setdefault(
-            None, []).append(self.after_request)
+        self.flask.before_request(lambda: self.before_request())
+        # the lambda function, acting as a proxy between the real after_request function is here to let the user change the function as wanted
+        self.flask.after_request(lambda response: self.after_request(response))
+
+        self.flask.register_error_handler(Exception, self.handle_exception)
 
         if compress:
             import flask_compress
@@ -173,7 +200,7 @@ class Nasse():
             return new_endpoint
         return decorator
 
-    def run(self, host: str = None, port: Union[int, str] = None, debug: bool = None, **kwargs):
+    def run(self, host: str = None, port: Union[int, str] = None, **kwargs):
         """
         Runs the application on a local development server.
 
@@ -181,11 +208,56 @@ class Nasse():
         meet security and performance requirements for a production server.
         """
         log("Running the server ✨", level=LogLevels.INFO)
+        parameters = {
+            "bind": "{host}:{port}".format(host=host or General.HOST, port=port or Args.get(("-p", "--port"), 5000))
+        }
+        parameters.update(kwargs)
         if Mode.DEBUG:
             log("DEBUG MODE IS ENABLED", level=LogLevels.WARNING)
-        GunicornServer(self).run()
+            self._observer = Observer()
+            self._observer.schedule(FileEventHandler(
+                self.restart), ".", recursive=True)
+            self._observer.start()
+        self._arbiter = Arbiter(GunicornServer(self, options=parameters))
+        self._arbiter.run()
 
         # self.flask.run(host=host, port=port, debug=debug, **kwargs)
+
+    def restart(self):
+        """Restarts the current python process"""
+        log("Restarting...", level=LogLevels.INFO)
+        if self._observer:
+            log("Waiting for watchdog to terminate")
+            try:
+                self._observer.stop()
+                self._observer.join()
+            except Exception:
+                pass
+        if self._arbiter:
+            log("Waiting for workers to terminate")
+            self._arbiter.stop()
+        os.execv(sys.executable, ['python'] + sys.argv)
+
+    def handle_exception(self, e):
+        """
+        Handles exception for Flask
+        """
+        try:
+            try:
+                data, error, code = exception_to_response(e)
+            except Exception:
+                data, error, code = "An error occured on the server", "SERVER_ERROR", 500
+            result = {"success": False, "error": error,
+                      "data": {"message": data}}
+            try:
+                if remove_spaces(g.request.values.get("format", "json")).lower() in {"xml", "html"}:
+                    body = xml.encode(data=result, minify=True)
+                raise ValueError("Not XML")
+            except Exception:
+                body = json.minified_encoder.encode(result)
+            return Response(response=body, status=code)
+        except Exception:
+            return Response(response='{"success": false, "error": "SERVER_ERROR", "data": {"message": "An error occured on the server"}', status=500)
 
     def before_request(self):
         """
@@ -254,6 +326,74 @@ class Nasse():
             pass
 
         return response
+
+    def make_docs(self, base_dir: Union[Path, str] = None):
+        """
+        Creates the documentation for your API/Server
+
+        Parameters
+        ----------
+            base_dir: str | Path
+                The path where the docs will be outputted \n
+                This shouldn't be the path to the Endpoints.md file, but rather a directory where
+                the `postman` docs and the Endpoints.md file will be outputted
+        """
+        log("Creating the API Reference Documentation")
+        docs_path = Path(base_dir or Path() / "docs")
+        if not docs_path.is_dir():
+            docs_path.mkdir()
+
+        postman_path = docs_path / "postman"
+        if not postman_path.is_dir():
+            postman_path.mkdir()
+
+        # Initializing the resulting string by prepending the header
+        result = DOCS_HEADER.format(name=self.name, id=self.id)
+
+        result += "\n## Index\n"
+
+        # Sorting the sections alphabetically
+        sections = sorted(set(
+            [endpoint.section for endpoint in self.endpoints.values()]))
+
+        # Getting the endpoints for each section
+        sections_registry: dict[str, list[models.Endpoint]] = {}
+        for section in sections:
+            for endpoint in self.endpoints.values():
+                if endpoint.section == section:
+                    try:
+                        sections_registry[section].append(endpoint)
+                    except:
+                        sections_registry[section] = [endpoint]
+
+        headers_registry = []
+
+        for section in sections_registry:
+            current_link = header_link(section, headers_registry)
+            result += "- [{section}](#{link})\n".format(
+                section=section, link=current_link)
+            current_link = header_link(endpoint.name, headers_registry)
+
+            result += "\n".join(
+                ["  - [{endpoint}](#{link})".format(endpoint=endpoint.name, link=header_link(endpoint.name, headers_registry)) for endpoint in sections_registry[section]])
+            result += "\n"
+
+        # Dumping all of the docs and creating the Postman Data
+        for section in sections_registry:
+            postman_results = create_postman_data(
+                self, section, sections_registry[section])
+            with open(postman_path / "{section}.postman_collection.json".format(section=section), "w") as postman_output:
+                postman_output.write(json.minified_encoder.encode(postman_results))
+
+            result += f'''
+
+## {section}
+'''
+            result += "\n[Return to the Index](#index)\n".join(
+                [markdown.make_docs(endpoint) for endpoint in sections_registry[section]])
+
+        with open(docs_path / "Endpoints.md", "w", encoding="utf8") as out:
+            out.write(result)
 
 
 ############
