@@ -6,7 +6,7 @@ from nasse.docs.python import create_python_example_for_method
 from nasse.models import Endpoint
 
 
-def make_docs(endpoint: Endpoint):
+def make_docs(endpoint: Endpoint, postman: bool = False):
     result = '''
 ### {name}
 
@@ -23,7 +23,7 @@ def make_docs(endpoint: Endpoint):
     return result
 
 
-def make_docs_for_method(endpoint: Endpoint, method: str):
+def make_docs_for_method(endpoint: Endpoint, method: str, postman: bool = False):
     method = str(method)
 
     try:
@@ -32,8 +32,8 @@ def make_docs_for_method(endpoint: Endpoint, method: str):
         path = Path(endpoint.handler.__code__.co_filename)
 
 
-    # if not postman
-    result = '''
+    if not postman:
+        result = '''
 ```http
 {method} {path}
 ```
@@ -41,14 +41,13 @@ def make_docs_for_method(endpoint: Endpoint, method: str):
 > [{source_code_path}]({github_path})
 '''.format(method=method, path=endpoint.path, source_code_path=path, github_path=path)
 
-    """ if postman
+    else:
         result = '''
 > [{path}]({github_path})
 
 {description}
         
 '''
-    """
 
     result += '''
 
@@ -66,63 +65,63 @@ def make_docs_for_method(endpoint: Endpoint, method: str):
     else:
         result += "Login is **not** required"
 
-    # if not postman:  # POSTMAN DOESN'T NEED THESE INFORMATION
+    if not postman:  # POSTMAN DOESN'T NEED THESE INFORMATION
 
-    params = [param for param in endpoint.params if (
-        param.all_methods or method in param.methods)]
-    if len(params) > 0:
+        params = [param for param in endpoint.params if (
+            param.all_methods or method in param.methods)]
+        if len(params) > 0:
+            result += '''
+
+    #### Parameters
+
+    | Name         | Description                      | Required         |
+    | ------------ | -------------------------------- | ---------------- |
+    '''
+            result += "\n".join(
+                ["| `{param}` | {description}  | {required}            |".format(param=param.name, description=param.description, required=param.required) for param in params])
+
+        headers = [header for header in endpoint.headers if (
+            header.all_methods or method in header.methods)]
+        if len(headers) > 0:
+            result += '''
+
+    #### Headers
+
+    | Name         | Description                      | Required         |
+    | ------------ | -------------------------------- | ---------------- |
+    '''
+            result += "\n".join(
+                ["| `{header}` | {description}  | {required}            |".format(header=header.name, description=header.description, required=header.required) for header in headers])
+
         result += '''
 
-#### Parameters
+    #### Example
 
-| Name         | Description                      | Required         |
-| ------------ | -------------------------------- | ---------------- |
-'''
-        result += "\n".join(
-            ["| `{param}` | {description}  | {required}            |".format(param=param.name, description=param.description, required=param.required) for param in params])
+    <!-- tabs:start -->
 
-    headers = [header for header in endpoint.headers if (
-        header.all_methods or method in header.methods)]
-    if len(headers) > 0:
-        result += '''
+    #### **cURL**
 
-#### Headers
+    ```bash
+    {curl}
+    ```
 
-| Name         | Description                      | Required         |
-| ------------ | -------------------------------- | ---------------- |
-'''
-        result += "\n".join(
-            ["| `{header}` | {description}  | {required}            |".format(header=header.name, description=header.description, required=header.required) for header in headers])
+    #### **JavaScript**
 
-    result += '''
+    ```javascript
+    {javascript}
+    ```
 
-#### Example
+    #### **Python**
 
-<!-- tabs:start -->
+    ```python
+    {python}
+    ```
 
-#### **cURL**
+    <!-- tabs:end -->
 
-```bash
-{curl}
-```
+    #### Response Format
 
-#### **JavaScript**
-
-```javascript
-{javascript}
-```
-
-#### **Python**
-
-```python
-{python}
-```
-
-<!-- tabs:end -->
-
-#### Response Format
-
-'''.format(curl=create_curl_example_for_method(endpoint, method=method), javascript=create_javascript_example_for_method(endpoint, method=method), python=create_python_example_for_method(endpoint, method=method))
+    '''.format(curl=create_curl_example_for_method(endpoint, method=method), javascript=create_javascript_example_for_method(endpoint, method=method), python=create_python_example_for_method(endpoint, method=method))
 
     if endpoint.json:
         result += '''

@@ -1,6 +1,7 @@
 from uuid import uuid4
 from copy import deepcopy
 from nasse.docs.example import generate_example
+from nasse.docs.markdown import make_docs_for_method
 
 from nasse.models import Endpoint
 
@@ -64,7 +65,7 @@ def create_postman_docs(endpoint: Endpoint):
                         }
                         for param in endpoint.params if param.all_methods or method in param.methods]
                 },
-                "description": create_postman_description(endpoint=endpoint, method=method)
+                "description": make_docs_for_method(endpoint=Endpoint, method=method, postman=True)
             },
             "response": []
         }
@@ -85,7 +86,3 @@ def create_postman_docs(endpoint: Endpoint):
         results.append(result)
 
     return results
-
-
-def create_postman_description(endpoint: Endpoint, method: str):
-    pass
