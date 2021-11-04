@@ -93,7 +93,6 @@ class UserSent():
                 self.type = type.__class__
             else:
                 self.type = type
-            print(self.type)
 
     def __repr__(self) -> str:
         return "UserSent({name})".format(name=self.name)
