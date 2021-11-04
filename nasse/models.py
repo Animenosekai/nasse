@@ -77,7 +77,9 @@ class Login():
             methods=self.methods
         )
 
+
 _type = type
+
 
 class UserSent():
     def __init__(self, name: str, description: str = "", required: bool = True, methods: Union[list[str], str] = "*", type: Type = None) -> None:
@@ -163,7 +165,7 @@ def _methods_validation(value):
             methods = {sanitize_http_method(value)}
         return methods
     except Exception:
-        raise exceptions.NasseExceptionTBD(
+        raise exceptions.validate.MethodsConversionError(
             "Nasse cannot convert value of type {t} to a list of HTTP methods".format(t=value.__class__.__name__))
 
 
@@ -180,13 +182,13 @@ def _return_validation(value):
             try:
                 return Return(**value)
             except TypeError:
-                raise exceptions.NasseExceptionTBD(
+                raise exceptions.validate.ReturnConversionError(
                     "Either 'name' is missing or one argument doesn't have the right type while creating a Nasse.models.Return instance")
         raise ValueError  # will be catched
     except Exception as e:
         if isinstance(e, exceptions.NasseException):
             raise e
-        raise exceptions.NasseExceptionTBD(
+        raise exceptions.validate.ReturnConversionError(
             "Nasse cannot convert value of type {t} to Nasse.models.Return".format(t=value.__class__.__name__))
 
 
@@ -203,13 +205,13 @@ def _usersent_validation(value, cast: Union[Type[UserSent], Type[Header], Type[P
             try:
                 return cast(**value)
             except TypeError:
-                raise exceptions.NasseExceptionTBD(
+                raise exceptions.validate.UserSentConversionError(
                     "Either 'name' is missing or one argument doesn't have the right type while creating a Nasse.models.Return instance")
         raise ValueError  # will be catched
     except Exception as e:
         if isinstance(e, exceptions.NasseException):
             raise e
-        raise exceptions.NasseExceptionTBD(
+        raise exceptions.validate.ReturnConversionError(
             "Nasse cannot convert value of type {t} to Nasse.models.{cast}".format(t=value.__class__.__name__, cast=cast.__name__))
 
 
@@ -230,13 +232,13 @@ def _error_validation(value):
             try:
                 return Error(**value)
             except TypeError:
-                raise exceptions.NasseExceptionTBD(
+                raise exceptions.validate.ErrorConversionError(
                     "Either 'name' is missing or one argument doesn't have the right type while creating a Nasse.models.Return instance")
         raise ValueError  # will be catched
     except Exception as e:
         if isinstance(e, exceptions.NasseException):
             raise e
-        raise exceptions.NasseExceptionTBD(
+        raise exceptions.validate.ErrorConversionError(
             "Nasse cannot convert value of type {t} to Nasse.models.Error".format(t=value.__class__.__name__))
 
 
@@ -251,7 +253,7 @@ def _login_validation(value):
             return Login(**value)
         raise ValueError
     except Exception:
-        raise exceptions.NasseExceptionTBD(
+        raise exceptions.validate.LoginConversionError(
             "Nasse cannot convert value of type {t} to Nasse.models.Login".format(t=value.__class__.__name__))
 
 

@@ -10,11 +10,11 @@
 - Custom app.run //
 - after_request and before_request //
 - error handler //
-- Rewrite Auto Docs (a lot cleaner) /
+- Rewrite Auto Docs (a lot cleaner) //
 - Type Safe Parameters //
 - Error Catching from Receive //
+- Change the exceptions //
 - Rearrange imports to avoid polluting the namespace (if possible, using module name)
 - Test Environment/CLI
 - Decide what to do for different login rules for different methods
-- Change the exceptions
 - Writing Tests

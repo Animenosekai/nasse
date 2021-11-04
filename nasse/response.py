@@ -47,13 +47,13 @@ def _cookie_validation(value):
             try:
                 return ResponseCookie(**value)
             except TypeError:
-                raise exceptions.NasseExceptionTBD(
+                raise exceptions.validate.CookieConversionError(
                     "Either 'name' is missing or one argument doesn't have the right type while creating a Nasse.response.ResponseCookie instance")
         raise ValueError  # will be catched
     except Exception as e:
         if isinstance(e, exceptions.NasseException):
             raise e
-        raise exceptions.NasseExceptionTBD(
+        raise exceptions.validate.CookieConversionError(
             "Nasse cannot convert value of type {t} to Nasse.response.ResponseCookie".format(t=value.__class__.__name__))
 
 
@@ -194,7 +194,7 @@ class Response():
                     self.cookies.append(_cookie_validation(item))
             else:
                 self.cookies.append(_cookie_validation(cookies))
-                raise exceptions.NasseExceptionTBD(
+                raise exceptions.validate.CookieConversionError(
                     "Nasse cannot convert value of type {t} to Nasse.response.ResponseCookie".format(t=cookies.__class__.__name__))
 
     def __copy__(self):

@@ -42,7 +42,7 @@ def retrieve_token(context: Request = None) -> str:
             token = context.cookies.get(
                 "__{id}_token".format(id=context.nasse.id), None)
             if token is None:
-                raise exceptions.NasseExceptionTBD(
+                raise exceptions.authentication.MissingToken(
                     "An authentication token is missing from the request")
     return str(token)
 
@@ -82,7 +82,7 @@ class Receive():
                                         token)
                                     if len(self.endpoint.login.types) > 0:
                                         if self.app.account.retrieve_type(account) not in self.endpoint.login.types:
-                                            raise exceptions.NasseExceptionTBD(
+                                            raise exceptions.authentication.Forbidden(
                                                 "You can't access this endpoint with your account")
                                 else:
                                     log("Couldn't verify login details because 'account_management' is not set properly on {name}".format(
