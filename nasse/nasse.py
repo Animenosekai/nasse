@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 import gunicorn
 import gunicorn.app.base
-from flask import Flask, Response, g
+from flask import Flask, Response
 from flask import request as flask_request
 from gunicorn.arbiter import Arbiter
 from nasse import models, receive, request
@@ -249,15 +249,17 @@ class Nasse():
                 data, error, code = "An error occured on the server", "SERVER_ERROR", 500
             result = {"success": False, "error": error,
                       "data": {"message": data}}
+            content_type = "application/json"
             try:
-                if remove_spaces(g.request.values.get("format", "json")).lower() in {"xml", "html"}:
+                if remove_spaces(flask_request.values.get("format", "json")).lower() in {"xml", "html"}:
                     body = xml.encode(data=result, minify=True)
+                    content_type = "application/xml"
                 raise ValueError("Not XML")
             except Exception:
                 body = json.minified_encoder.encode(result)
-            return Response(response=body, status=code)
+            return Response(response=body, status=code, content_type=content_type)
         except Exception:
-            return Response(response='{"success": false, "error": "SERVER_ERROR", "data": {"message": "An error occured on the server"}', status=500)
+            return Response(response='{"success": false, "error": "SERVER_ERROR", "data": {"message": "An error occured on the server"}', status=500, content_type="application/json")
 
     def before_request(self):
         """
@@ -383,7 +385,8 @@ class Nasse():
             postman_results = create_postman_data(
                 self, section, sections_registry[section])
             with open(postman_path / "{section}.postman_collection.json".format(section=section), "w") as postman_output:
-                postman_output.write(json.minified_encoder.encode(postman_results))
+                postman_output.write(
+                    json.minified_encoder.encode(postman_results))
 
             result += f'''
 

@@ -77,14 +77,23 @@ class Login():
             methods=self.methods
         )
 
+_type = type
 
 class UserSent():
-    def __init__(self, name: str, description: str = "", required: bool = True, methods: Union[list[str], str] = "*") -> None:
+    def __init__(self, name: str, description: str = "", required: bool = True, methods: Union[list[str], str] = "*", type: Type = None) -> None:
         self.name = str(name)
         self.description = str(description)
         self.required = bool(required)
         self.methods = _methods_validation(methods)
         self.all_methods = "*" in self.methods
+        if type is None:
+            self.type = None
+        else:
+            if not isinstance(type, _type):
+                self.type = type.__class__
+            else:
+                self.type = type
+            print(self.type)
 
     def __repr__(self) -> str:
         return "UserSent({name})".format(name=self.name)
@@ -94,7 +103,8 @@ class UserSent():
             name=self.name,
             description=self.description,
             required=self.required,
-            methods=self.methods
+            methods=self.methods,
+            type=self.type
         )
 
 

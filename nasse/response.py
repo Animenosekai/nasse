@@ -19,8 +19,9 @@ def exception_to_response(value: Exception):
     else:
         # converts class names to error names: NasseException -> NASSE_EXCEPTION
         error = " ".join(split_on_uppercase(
-            value.__class__.__name__)).upper()
-        data = "An error occured on the server while processing your request"
+            value.__class__.__name__)).upper().strip().replace(" ", "_")
+        data = "An error occured on the server while processing your request ({error})".format(
+            error=value)
         code = 500
     return data, error, code
 

@@ -231,14 +231,16 @@ class Receive():
 
                         minify = to_bool(g.request.values.get("minify", False))
 
+                        content_type = "application/json"
                         if remove_spaces(g.request.values.get("format", "json")).lower() in {"xml", "html"}:
                             body = xml.encode(data=result, minify=minify)
+                            content_type = "application/xml"
                         else:
                             body = (json.minified_encoder if minify else json.encoder).encode(
                                 result)
 
                         final = FlaskResponse(body, status=code)
-                        final.headers["Content-Type"] = "application/json"
+                        final.headers["Content-Type"] = content_type
 
                     # final is now defined
                     for cookie in cookies:

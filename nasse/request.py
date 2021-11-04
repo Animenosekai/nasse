@@ -74,6 +74,10 @@ class Request(object):
                 if value.name not in current_values:
                     if value.required and (value.all_methods or self.method in value.methods):
                         raise exception(name=value.name)
+                else:
+                    if value.type is not None:
+                        current_values[value.name] = value.type(
+                            current_values[value.name])
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name in _overwritten:
