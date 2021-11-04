@@ -19,7 +19,7 @@ def make_docs(endpoint: Endpoint, postman: bool = False):
         for method in endpoint.methods:
             result += '''
 - #### Using {method}
-{docs}'''.format(method=method, docs=make_docs_for_method(endpoint=endpoint, method=method))
+{docs}'''.format(method=method, docs=make_docs_for_method(endpoint=endpoint, method=method, postman=postman))
     return result
 
 
@@ -27,10 +27,10 @@ def make_docs_for_method(endpoint: Endpoint, method: str, postman: bool = False)
     method = str(method)
 
     try:
-        path = Path(endpoint.handler.__code__.co_filename).resolve().relative_to(Path().resolve())
+        path = Path(endpoint.handler.__code__.co_filename).resolve(
+        ).relative_to(Path().resolve())
     except Exception:
         path = Path(endpoint.handler.__code__.co_filename)
-
 
     if not postman:
         result = '''
@@ -72,11 +72,11 @@ def make_docs_for_method(endpoint: Endpoint, method: str, postman: bool = False)
         if len(params) > 0:
             result += '''
 
-    #### Parameters
+#### Parameters
 
-    | Name         | Description                      | Required         |
-    | ------------ | -------------------------------- | ---------------- |
-    '''
+| Name         | Description                      | Required         |
+| ------------ | -------------------------------- | ---------------- |
+'''
             result += "\n".join(
                 ["| `{param}` | {description}  | {required}            |".format(param=param.name, description=param.description, required=param.required) for param in params])
 
@@ -85,41 +85,41 @@ def make_docs_for_method(endpoint: Endpoint, method: str, postman: bool = False)
         if len(headers) > 0:
             result += '''
 
-    #### Headers
+#### Headers
 
-    | Name         | Description                      | Required         |
-    | ------------ | -------------------------------- | ---------------- |
-    '''
+| Name         | Description                      | Required         |
+| ------------ | -------------------------------- | ---------------- |
+'''
             result += "\n".join(
                 ["| `{header}` | {description}  | {required}            |".format(header=header.name, description=header.description, required=header.required) for header in headers])
 
         result += '''
 
-    #### Example
+#### Example
 
-    <!-- tabs:start -->
+<!-- tabs:start -->
 
-    #### **cURL**
+#### **cURL**
 
-    ```bash
-    {curl}
-    ```
+```bash
+{curl}
+```
 
-    #### **JavaScript**
+#### **JavaScript**
 
-    ```javascript
-    {javascript}
-    ```
+```javascript
+{javascript}
+```
 
-    #### **Python**
+#### **Python**
 
-    ```python
-    {python}
-    ```
+```python
+{python}
+```
 
-    <!-- tabs:end -->
+<!-- tabs:end -->
 
-    #### Response Format
+#### Response Format
 
     '''.format(curl=create_curl_example_for_method(endpoint, method=method), javascript=create_javascript_example_for_method(endpoint, method=method), python=create_python_example_for_method(endpoint, method=method))
 

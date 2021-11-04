@@ -264,7 +264,7 @@ class Endpoint(object):
     description: str = ""
     section: str = "Other"
     returning: list[Return] = []
-    login: Login = None
+    login: Login = Login(no_login=True)
     headers: list[Header] = []
     params: list[Param] = []
     cookies: list[Cookie] = []
