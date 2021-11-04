@@ -14,7 +14,7 @@
 - Type Safe Parameters //
 - Error Catching from Receive //
 - Change the exceptions //
-- Rearrange imports to avoid polluting the namespace (if possible, using module name)
+- Rearrange imports to avoid polluting the namespace (if possible, using module name) //
 - Test Environment/CLI
 - Decide what to do for different login rules for different methods
 - Writing Tests
