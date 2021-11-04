@@ -1,4 +1,5 @@
 from base64 import b64encode
+from sys import getsizeof
 from typing import Any, Iterable
 
 from flask import Response as FlaskResponse
@@ -8,7 +9,7 @@ from flask import g
 from nasse import exceptions, models
 from nasse.config import Mode
 from nasse.utils.ip import get_ip
-from nasse.utils.logging import LogLevels, log, Record
+from nasse.utils.logging import LogLevels, log, Record, Colors
 from nasse.request import Request
 from nasse.response import Response, exception_to_response
 from nasse.timer import Timer
@@ -66,7 +67,8 @@ class Receive():
             with Timer() as global_timer:
                 try:
                     with Timer() as verification_timer:
-                        g.request = Request(app=self.app, endpoint=self.endpoint)
+                        g.request = Request(
+                            app=self.app, endpoint=self.endpoint)
                         log("→ Incoming {method} request to {route} from {client}".format(method=g.request.method, route=self.endpoint.path, client=g.request.client_ip),
                             level=LogLevels.INFO)
 
@@ -210,14 +212,22 @@ class Receive():
                                     "Element of type {type} is not supported by JSON and will be converted to `str`".format(type=data.__class__.__name__), level=LogLevels.WARNING)
                                 result["data"]["content"] = str(data)
                 except Exception as e:
-                    try: verification_timer
-                    except Exception: verification_timer = None
-                    try: authentication_timer
-                    except Exception: authentication_timer = None
-                    try: processing_timer
-                    except Exception: processing_timer = None
-                    try: formatting_timer
-                    except Exception: formatting_timer = None
+                    try:
+                        verification_timer
+                    except Exception:
+                        verification_timer = None
+                    try:
+                        authentication_timer
+                    except Exception:
+                        authentication_timer = None
+                    try:
+                        processing_timer
+                    except Exception:
+                        processing_timer = None
+                    try:
+                        formatting_timer
+                    except Exception:
+                        formatting_timer = None
                     data, error, code = exception_to_response(e)
                     result = {
                         "success": False,
@@ -226,12 +236,18 @@ class Receive():
                             "message": data
                         }
                     }
-                    try: g.request
-                    except Exception: g.request = flask_request
-                    try: cookies
-                    except Exception: cookies = []
-                    try: headers
-                    except Exception: headers = {}
+                    try:
+                        g.request
+                    except Exception:
+                        g.request = flask_request
+                    try:
+                        cookies
+                    except Exception:
+                        cookies = []
+                    try:
+                        headers
+                    except Exception:
+                        headers = {}
 
                 CALL_STACK, LOG_STACK = STACK.stop()
                 if Mode.DEBUG:
@@ -250,10 +266,10 @@ class Receive():
                         "logs": LOG_STACK,
                         "call_stack": ["pass the 'call_stack' parameter to get the call stack"]
                     }
-                    
+
                     if "call_stack" in g.request.values:
                         result["debug"]["call_stack"] = [frame.as_dict()
-                                                            for frame in CALL_STACK]
+                                                         for frame in CALL_STACK]
 
                 minify = to_bool(g.request.values.get("minify", False))
 
@@ -276,4 +292,31 @@ class Receive():
             for key, value in headers.items():
                 final.headers[str(key)] = str(value)
 
+            try:
+                if isinstance(g.request, Request):
+                    path = g.request.nasse_endpoint.path
+                    ip = g.request.client_ip
+                    method = g.request.method
+                else:
+                    path = g.request.path
+                    ip = get_ip()
+                    method = str(g.request.method).upper()
+                size = getsizeof(final.data)
+                print(size)
+                if size < 500000:
+                    color = Colors.green
+                elif size < 1000000:
+                    color = Colors.yellow
+                else:
+                    color = Colors.magenta
+                log("← Sending back {color}{size}{normal} bytes of data to {ip} following {method} {path}".format(
+                    color=color,
+                    size=size,
+                    normal=Colors.normal,
+                    ip=ip,
+                    method=method,
+                    path=path
+                ))
+            except Exception:
+                pass
             return final
