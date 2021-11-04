@@ -222,6 +222,9 @@ class Receive():
                     result = {
                         "success": False,
                         "error": error,
+                        "data": {
+                            "message": data
+                        }
                     }
                     try: g.request
                     except Exception: g.request = flask_request
