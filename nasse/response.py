@@ -4,6 +4,7 @@ from typing import Any, Iterable, Union
 from werkzeug.http import dump_cookie
 
 from nasse import exceptions
+from nasse.config import Mode
 from nasse.utils.annotations import Default, is_unpackable
 from nasse.utils.sanitize import remove_spaces, split_on_uppercase
 
@@ -18,10 +19,17 @@ def exception_to_response(value: Exception):
         code = int(value.STATUS_CODE)
     else:
         # converts class names to error names: NasseException -> NASSE_EXCEPTION
-        error = " ".join(split_on_uppercase(
-            value.__class__.__name__)).upper().strip().replace(" ", "_")
-        data = "An error occured on the server while processing your request ({error})".format(
-            error=value)
+        if isinstance(value, type):
+            error = " ".join(split_on_uppercase(
+                value.__name__)).upper().strip().replace(" ", "_")
+        else:
+            error = " ".join(split_on_uppercase(
+                value.__class__.__name__)).upper().strip().replace(" ", "_")
+        if Mode.DEBUG:
+            data = "An error occured on the server while processing your request ({error})".format(
+                error=value)
+        else:
+            data = "An error occured on the server while processing your request"
         code = 500
     return data, error, code
 
