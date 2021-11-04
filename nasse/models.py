@@ -89,7 +89,10 @@ class UserSent():
             self.type = None
         else:
             if not isinstance(type, _type):
-                self.type = type.__class__
+                if callable(type):
+                    self.type = type
+                else:
+                    self.type = type.__class__
             else:
                 self.type = type
 
