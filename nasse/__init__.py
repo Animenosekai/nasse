@@ -5,8 +5,10 @@ Catchphrase
 © Anime no Sekai — 2021
 """
 
+from . import exceptions
 from . import timer
 from . import logging
+from . import docs
 from flask import g, Request as FlaskRequest
 
 from .nasse import Nasse

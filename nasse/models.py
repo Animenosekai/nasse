@@ -1,19 +1,15 @@
 """
 File containing the different classes used in Nasse
 """
-from abc import ABCMeta, abstractmethod
-from pathlib import Path
+import abc
 import inspect
-from inspect import getmodule
-from typing import Any, Callable, Iterable, Type, Union
+import pathlib
+import typing
 
-from nasse import exceptions
-from nasse.logging import LogLevels, log
-from nasse.utils.annotations import Default, is_unpackable
-from nasse.utils.sanitize import sanitize_http_method, split_on_uppercase, to_path
+from nasse import exceptions, logging, utils
 
 
-class ABC(metaclass=ABCMeta):
+class ABC(metaclass=abc.ABCMeta):
     """Helper class that provides a standard way to create an ABC using
     inheritance.
 
@@ -30,7 +26,7 @@ def hello():
 
 
 class Return():
-    def __init__(self, name: str, example: Any = None, description: str = None, methods: Union[list[str], str] = "*", type: Any = None, children: list = None, nullable: bool = False) -> None:
+    def __init__(self, name: str, example: typing.Any = None, description: str = None, methods: typing.Union[list[str], str] = "*", type: typing.Any = None, children: list = None, nullable: bool = False) -> None:
         self.name = str(name)
         self.example = example
         self.description = str(description or "")
@@ -55,7 +51,7 @@ class Return():
 
 
 class Login():
-    def __init__(self, required: bool = False, types: Union[Any, list[Any]] = [], methods: Union[list[str], str] = "*", no_login: bool = True) -> None:
+    def __init__(self, required: bool = False, types: typing.Union[typing.Any, list[typing.Any]] = [], methods: typing.Union[list[str], str] = "*", no_login: bool = True) -> None:
         self.no_login = bool(no_login)
         self.required = bool(required)
         self.types = set()
@@ -82,7 +78,7 @@ _type = type
 
 
 class UserSent():
-    def __init__(self, name: str, description: str = "", required: bool = True, methods: Union[list[str], str] = "*", type: Type = None) -> None:
+    def __init__(self, name: str, description: str = "", required: bool = True, methods: typing.Union[list[str], str] = "*", type: typing.Type = None) -> None:
         self.name = str(name)
         self.description = str(description)
         self.required = bool(required)
@@ -125,7 +121,7 @@ class Cookie(UserSent):
 
 
 class Error():
-    def __init__(self, name: str, description: str = "", code: int = 500, methods: Union[list[str], str] = None) -> None:
+    def __init__(self, name: str, description: str = "", code: int = 500, methods: typing.Union[list[str], str] = None) -> None:
         self.name = str(name)
         self.description = str(description)
         self.code = int(code)
@@ -158,11 +154,11 @@ def _methods_validation(value):
     Internal function to validate a value that needs to be a list of HTTP methods
     """
     try:
-        if isinstance(value, Iterable) and not isinstance(value, str):
+        if isinstance(value, typing.Iterable) and not isinstance(value, str):
             methods = {
-                sanitize_http_method(method) for method in value}
+                utils.sanitize.sanitize_http_method(method) for method in value}
         else:
-            methods = {sanitize_http_method(value)}
+            methods = {utils.sanitize.sanitize_http_method(value)}
         return methods
     except Exception:
         raise exceptions.validate.MethodsConversionError(
@@ -178,7 +174,7 @@ def _return_validation(value):
             return value.__copy__()
         if isinstance(value, str):
             return Return(name=value)
-        if is_unpackable(value):
+        if utils.annotations.is_unpackable(value):
             try:
                 return Return(**value)
             except TypeError:
@@ -192,7 +188,7 @@ def _return_validation(value):
             "Nasse cannot convert value of type {t} to Nasse.models.Return".format(t=value.__class__.__name__))
 
 
-def _usersent_validation(value, cast: Union[Type[UserSent], Type[Header], Type[Param], Type[Cookie]] = UserSent):
+def _usersent_validation(value, cast: typing.Union[typing.Type[UserSent], typing.Type[Header], typing.Type[Param], typing.Type[Cookie]] = UserSent):
     """
     Internal function to validate a value that needs to be a `Return` instance
     """
@@ -201,7 +197,7 @@ def _usersent_validation(value, cast: Union[Type[UserSent], Type[Header], Type[P
             return value.__copy__()
         if isinstance(value, str):
             return cast(name=value)
-        if is_unpackable(value):
+        if utils.annotations.is_unpackable(value):
             try:
                 return cast(**value)
             except TypeError:
@@ -225,10 +221,10 @@ def _error_validation(value):
         if isinstance(value, str):
             return Error(name=value)
         if isinstance(value, Exception):
-            return Error(name="_".join(split_on_uppercase(value.__class__.__name__)).upper())
+            return Error(name="_".join(utils.sanitize.split_on_uppercase(value.__class__.__name__)).upper())
         if isinstance(value, type):
-            return Error(name="_".join(split_on_uppercase(value.__name__)).upper())
-        if is_unpackable(value):
+            return Error(name="_".join(utils.sanitize.split_on_uppercase(value.__name__)).upper())
+        if utils.annotations.is_unpackable(value):
             try:
                 return Error(**value)
             except TypeError:
@@ -249,7 +245,7 @@ def _login_validation(value):
     try:
         if isinstance(value, Login):
             return value.__copy__()
-        if is_unpackable(value):
+        if utils.annotations.is_unpackable(value):
             return Login(**value)
         raise ValueError
     except Exception:
@@ -258,7 +254,7 @@ def _login_validation(value):
 
 
 class Endpoint(object):
-    handler: Callable = hello
+    handler: typing.Callable = hello
     path: str = ""
     methods: list = ["GET"]
     json: bool = True
@@ -272,12 +268,12 @@ class Endpoint(object):
     cookies: list[Cookie] = []
     errors: list[Error] = []
 
-    def __init__(self, handler: Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: Union[Return, list[Return]] = Default([]), login: Login = Default(Login(no_login=True)), headers: Union[Header, list[Header]] = Default([]), params:  Union[Param, list[Param]] = Default([]), errors:  Union[Error, list[Error]] = Default([]), endpoint: dict = {}, **kwargs) -> None:
+    def __init__(self, handler: typing.Callable = utils.annotations.Default(hello), path: str = utils.annotations.Default(""), methods: list[str] = utils.annotations.Default("GET"), json: bool = utils.annotations.Default(True), name: str = utils.annotations.Default(""), description: str = utils.annotations.Default(""), section: str = utils.annotations.Default("Other"), returning: typing.Union[Return, list[Return]] = utils.annotations.Default([]), login: Login = utils.annotations.Default(Login(no_login=True)), headers: typing.Union[Header, list[Header]] = utils.annotations.Default([]), params:  typing.Union[Param, list[Param]] = utils.annotations.Default([]), errors:  typing.Union[Error, list[Error]] = utils.annotations.Default([]), endpoint: dict = {}, **kwargs) -> None:
         results = dict(endpoint)
         results.update(kwargs)
         for key, value in [("handler", handler), ("path", path), ("methods", methods), ("json", json), ("name", name), ("description", description), ("section", section), ("returning", returning), ("login", login), ("headers", headers), ("params", params), ("errors", errors)]:
             results[key] = value if not isinstance(
-                value, Default) else value.value
+                value, utils.annotations.Default) else value.value
 
         for key, value in results.items():
             # performs all of the verifications
@@ -285,22 +281,23 @@ class Endpoint(object):
 
         if not self.path:
             try:
-                self.path = to_path(inspect.getfile(self.handler).__name__) + \
-                    to_path(self.handler.__name__)
+                self.path = utils.sanitize.to_path(inspect.getfile(self.handler).__name__) + \
+                    utils.sanitize.to_path(self.handler.__name__)
             except Exception:
-                module = getmodule(self.handler)
+                module = inspect.getmodule(self.handler)
                 if module.__name__ == "__main__":
-                    name = Path(module.__file__).stem
+                    name = pathlib.Path(module.__file__).stem
                 else:
                     name = module.__name__
-                self.path = to_path(name) + to_path(self.handler.__name__)
+                self.path = utils.sanitize.to_path(
+                    name) + utils.sanitize.to_path(self.handler.__name__)
 
         if not self.path.startswith("/"):
             self.path = "/" + self.path
         if not self.name:
             self.name = _path_to_name(self.path)
         if not self.section:
-            self.section = getmodule(self.handler).__name__.title()
+            self.section = inspect.getmodule(self.handler).__name__.title()
 
     def __repr__(self) -> str:
         return "Endpoint(path='{path}')".format(path=self.path)
@@ -311,10 +308,10 @@ class Endpoint(object):
     def __getitem__(self, name):
         return getattr(self, name)
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: typing.Any) -> None:
         self.__setitem__(name=name, value=value)
 
-    def __setitem__(self, name: str, value: Any = None):
+    def __setitem__(self, name: str, value: typing.Any = None):
         if name == "handler":
             super().__setattr__("handler", value)
         elif name == "path":
@@ -331,12 +328,12 @@ class Endpoint(object):
             super().__setattr__("section", str(value))
         elif name == "returning":
             super().__setattr__("returning", [])
-            if is_unpackable(value):
+            if utils.annotations.is_unpackable(value):
                 for key, val in dict(value).items():
                     item = {"name": str(key)}
                     item.update(val)
                     self.returning.append(_return_validation(item))
-            elif isinstance(value, Iterable):
+            elif isinstance(value, typing.Iterable):
                 for item in value:
                     self.returning.append(_return_validation(item))
             else:
@@ -357,32 +354,32 @@ class Endpoint(object):
                 super().__setattr__("params", [])
                 storage = self.params
                 cast = Param
-            if is_unpackable(value):
+            if utils.annotations.is_unpackable(value):
                 for key, val in dict(value).items():
                     item = {"name": str(key)}
                     item.update(val)
                     storage.append(_usersent_validation(item, cast=cast))
-            elif isinstance(value, Iterable):
+            elif isinstance(value, typing.Iterable):
                 for item in value:
                     storage.append(_usersent_validation(item, cast=cast))
             else:
                 storage.append(_usersent_validation(value, cast))
         elif name in {"errors", "error"}:
             super().__setattr__("errors", [])
-            if is_unpackable(value):
+            if utils.annotations.is_unpackable(value):
                 for key, val in dict(value).items():
                     item = {"name": str(key)}
                     item.update(val)
                     self.errors.append(_error_validation(item))
-            elif isinstance(value, Iterable):
+            elif isinstance(value, typing.Iterable):
                 for item in value:
                     self.errors.append(_error_validation(item))
             else:
                 self.errors.append(_error_validation(value))
 
         else:
-            log("{name} is not a settable attribute for a Nasse.models.Endpoint instance".format(
-                name=name), LogLevels.WARNING)
+            logging.log("{name} is not a settable attribute for a Nasse.models.Endpoint instance".format(
+                name=name), logging.LogLevels.WARNING)
 
     def __delitem__(self, name):
         return delattr(self, name)
@@ -411,14 +408,14 @@ class AccountManagement(ABC):
     """
     An object to verify accounts used by Nasse to determine wether a request is correctly authenticated
     """
-    @abstractmethod
+    @abc.abstractmethod
     def retrieve_type(self, account):
         """
         An abstract method (that needs to be replaced) to retrieve the account type from a custom Account object
         """
         return None
 
-    @abstractmethod
+    @abc.abstractmethod
     def retrieve_account(self, token: str):
         """
         An abstract method (that needs to be replaced) to retrieve an Account object from a token sent by the client

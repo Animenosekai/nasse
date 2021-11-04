@@ -1,4 +1,5 @@
 import sys
+
 from nasse import exceptions
 
 

@@ -1,10 +1,10 @@
-from typing import Any
+import typing
 
 
 class Default():
     """A default value for a function call"""
 
-    def __init__(self, value: Any = None) -> None:
+    def __init__(self, value: typing.Any = None) -> None:
         """
         A class representing the default value for any parameter in a function call
 
@@ -19,7 +19,7 @@ class Default():
         return "Default({value})".format(value=self.value)
 
 
-def is_unpackable(obj: Any):
+def is_unpackable(obj: typing.Any):
     """
     Checks if the given object is unpackable or not (if you can use **obj or not)
     """

@@ -1,13 +1,9 @@
-from typing import Any
+import typing
 
-from flask import request as flask_request
-from werkzeug.datastructures import MultiDict
+import flask
+import werkzeug.datastructures
 
-from nasse import exceptions, models
-from nasse.config import General
-from nasse.exceptions.request import MissingCookie, MissingHeader, MissingParam
-from nasse.utils.ip import get_ip
-from nasse.utils.sanitize import sanitize_text
+from nasse import config, exceptions, models, utils
 
 _overwritten = {"nasse", "app", "nasse_endpoint",
                 "client_ip", "method", "headers", "values", "args", "form", "params", "cookies"}
@@ -40,36 +36,39 @@ class Request(object):
         self.app = self.nasse
         self.nasse_endpoint = endpoint
 
-        self.client_ip = get_ip()
+        self.client_ip = utils.ip.get_ip()
 
-        self.method = flask_request.method.upper()
+        self.method = flask.request.method.upper()
 
         # sanitize
-        if General.SANITIZE_USER_SENT:
-            self.values = MultiDict((key, sanitize_text(value))
-                                    for key, value in flask_request.values.items(multi=True))
+        if config.General.SANITIZE_USER_SENT:
+            self.values = werkzeug.datastructures.MultiDict((key, utils.sanitize.sanitize_text(value))
+                                                            for key, value in flask.request.values.items(multi=True))
             #values.append((key, value.replace("<", "&lt").replace(">", "&gt")))
         else:
-            self.values = MultiDict(flask_request.values.items(multi=True))
+            self.values = werkzeug.datastructures.MultiDict(
+                flask.request.values.items(multi=True))
         self.params = self.values
 
-        if General.SANITIZE_USER_SENT:
-            self.args = MultiDict((key, sanitize_text(value))
-                                  for key, value in flask_request.args.items(multi=True))
+        if config.General.SANITIZE_USER_SENT:
+            self.args = werkzeug.datastructures.MultiDict((key, utils.sanitize.sanitize_text(value))
+                                                          for key, value in flask.request.args.items(multi=True))
         else:
-            self.args = MultiDict(flask_request.args.items(multi=True))
+            self.args = werkzeug.datastructures.MultiDict(
+                flask.request.args.items(multi=True))
 
-        if General.SANITIZE_USER_SENT:
-            self.form = MultiDict((key, sanitize_text(value))
-                                  for key, value in flask_request.form.items(multi=True))
+        if config.General.SANITIZE_USER_SENT:
+            self.form = werkzeug.datastructures.MultiDict((key, utils.sanitize.sanitize_text(value))
+                                                          for key, value in flask.request.form.items(multi=True))
         else:
-            self.form = MultiDict(flask_request.form.items(multi=True))
+            self.form = werkzeug.datastructures.MultiDict(
+                flask.request.form.items(multi=True))
 
-        self.headers = MultiDict(flask_request.headers)
-        self.cookies = MultiDict(flask_request.cookies)
+        self.headers = werkzeug.datastructures.MultiDict(flask.request.headers)
+        self.cookies = werkzeug.datastructures.MultiDict(flask.request.cookies)
 
         # verify if missing
-        for attr, exception, current_values in [("params", MissingParam, self.values), ("headers", MissingHeader, self.headers), ("cookies", MissingCookie, self.cookies)]:
+        for attr, exception, current_values in [("params", exceptions.request.MissingParam, self.values), ("headers", exceptions.request.MissingHeader, self.headers), ("cookies", exceptions.request.MissingCookie, self.cookies)]:
             for value in self.nasse_endpoint[attr]:
                 if value.name not in current_values:
                     if value.required and (value.all_methods or self.method in value.methods):
@@ -79,12 +78,12 @@ class Request(object):
                         current_values[value.name] = value.type(
                             current_values[value.name])
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: typing.Any) -> None:
         if name in _overwritten:
             return super().__setattr__(name, value)
-        return flask_request.__setattr__(name, value)
+        return flask.request.__setattr__(name, value)
 
-    def __getattribute__(self, name: str) -> Any:
+    def __getattribute__(self, name: str) -> typing.Any:
         if name in _overwritten:
             return super().__getattribute__(name)
-        return flask_request._get_current_object().__getattribute__(name)
+        return flask.request._get_current_object().__getattribute__(name)

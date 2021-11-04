@@ -1,7 +1,7 @@
-from nasse.exceptions import NasseException
+from nasse import exceptions
 
 
-class AuthenticationError(NasseException):
+class AuthenticationError(exceptions.NasseException):
     MESSAGE = "An error occured while checking your authentication"
     EXCEPTION_NAME = "AUTH_ERROR"
     STATUS_CODE = 403

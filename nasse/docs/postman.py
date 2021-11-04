@@ -1,12 +1,10 @@
-from uuid import uuid4
 from copy import deepcopy
-from nasse.docs.example import generate_example
-from nasse.docs.markdown import make_docs_for_method
+from uuid import uuid4
 
-from nasse.models import Endpoint
+from nasse import docs, models
 
 
-def create_postman_data(app, section: str, endpoints: list[Endpoint]):
+def create_postman_data(app, section: str, endpoints: list[models.Endpoint]):
     postman_section = {
         "info": {
             "_postman_id": str(uuid4()),
@@ -36,7 +34,7 @@ def create_postman_data(app, section: str, endpoints: list[Endpoint]):
     return postman_section
 
 
-def create_postman_docs(endpoint: Endpoint):
+def create_postman_docs(endpoint: models.Endpoint):
     results = []
     for method in endpoint.methods:
         result = {
@@ -65,7 +63,7 @@ def create_postman_docs(endpoint: Endpoint):
                         }
                         for param in endpoint.params if param.all_methods or method in param.methods]
                 },
-                "description": make_docs_for_method(endpoint=Endpoint, method=method, postman=True)
+                "description": docs.markdown.make_docs_for_method(endpoint=endpoint, method=method, postman=True)
             },
             "response": []
         }
@@ -75,7 +73,7 @@ def create_postman_docs(endpoint: Endpoint):
         result["response"][0]["_postman_previewlanguage"] = "json"
         result["response"][0]["header"] = []
         result["response"][0]["cookie"] = []
-        result["response"][0]["body"] = generate_example(
+        result["response"][0]["body"] = docs.example.generate_example(
             endpoint=endpoint, method=method)
 
         if not endpoint.login.all_methods and method not in endpoint.login.methods:

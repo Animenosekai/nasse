@@ -36,14 +36,13 @@ Arranged for Nasse
 It supports bytes, file-like objects, null (None), booleans, and fallback for non-supported types.
 The API is also a little bit simpler.
 """
+import base64
 import collections
 import collections.abc
 import re
-from base64 import b64encode
-from typing import Iterable
+import typing
 
-from nasse.logging import log
-from nasse.utils.annotations import is_unpackable
+from nasse import logging, utils
 
 start_ranges = "|".join(
     "[{0}]".format(r)
@@ -163,16 +162,16 @@ class Node(object):
             return "bool"
         elif data is None:
             return "null"
-        elif is_unpackable(data):
+        elif utils.annotations.is_unpackable(data):
             return "mapping"
         elif isinstance(data, bytes):
             return "bytes"
         elif hasattr(data, "read") and hasattr(data, "tell") and hasattr(data, "seek"):
             return "file"
-        elif isinstance(data, Iterable):
+        elif isinstance(data, typing.Iterable):
             return "iterable"
         else:
-            log("Object of type {type} will be converted to str while encoding to XML".format(
+            logging.log("Object of type {type} will be converted to str while encoding to XML".format(
                 type=data.__class__.__name__))
             return "flat"
 
@@ -216,7 +215,7 @@ class Node(object):
             if self.tag:
                 val = "<{0}>{1}</{2}>".format(self.tag, val, self.tag)
         elif typ == "bytes":
-            val = b64encode(data).decode("utf-8")
+            val = base64.b64encode(data).decode("utf-8")
             if self.tag:
                 val = "<{0}>{1}</{2}>".format(self.tag, val, self.tag)
         elif typ == "file":
@@ -224,7 +223,7 @@ class Node(object):
             content = data.read()  # read it (place the cursor at the end)
             data.seek(position)  # go back to the original position
             if "b" in data.mode:  # if binary mode
-                val = b64encode(data).decode("utf-8")
+                val = base64.b64encode(data).decode("utf-8")
             else:
                 val = str(content)
 

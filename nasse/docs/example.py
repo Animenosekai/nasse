@@ -1,39 +1,38 @@
-from nasse.models import Endpoint
-from nasse.utils.json import encoder
-from nasse.utils.boolean import to_bool
+from nasse import models, utils
+
 
 def _get_type(data):
-        """Retrieves the type of the given returning item"""
-        key_type = data.type
-        if key_type is None:
-            example = data.example
-            if example is None:
-                return "string"
-            if isinstance(example, type):
-                return example.__name__
-            elif isinstance(example, list):
-                return "array"
-            elif isinstance(example, dict):
-                return "object"
-            else:
-                return example.__class__.__name__
-        key_type = str(key_type).lower()
-        if key_type in {"str", "string", "text"}:
+    """Retrieves the type of the given returning item"""
+    key_type = data.type
+    if key_type is None:
+        example = data.example
+        if example is None:
             return "string"
-        if key_type in {"int", "integer"}:
-            return "int"
-        elif key_type in {"float", "floating", "number"}:
-            return "float"
-        elif key_type in {"bool", "true", "false", "boolean"}:
-            return "bool"
-        elif key_type in {"array", "list", "arr", "set"}:
+        if isinstance(example, type):
+            return example.__name__
+        elif isinstance(example, list):
             return "array"
-        elif key_type in {"object", "obj", "dict", "dictionary"}:
+        elif isinstance(example, dict):
             return "object"
-        return key_type
+        else:
+            return example.__class__.__name__
+    key_type = str(key_type).lower()
+    if key_type in {"str", "string", "text"}:
+        return "string"
+    if key_type in {"int", "integer"}:
+        return "int"
+    elif key_type in {"float", "floating", "number"}:
+        return "float"
+    elif key_type in {"bool", "true", "false", "boolean"}:
+        return "bool"
+    elif key_type in {"array", "list", "arr", "set"}:
+        return "array"
+    elif key_type in {"object", "obj", "dict", "dictionary"}:
+        return "object"
+    return key_type
 
 
-def generate_example(endpoint: Endpoint, method: str):
+def generate_example(endpoint: models.Endpoint, method: str):
     def get_value(data):
         key_type = _get_type(data)
         # if self.returning[key].get("nullable", False) and key_type != "object":
@@ -47,7 +46,7 @@ def generate_example(endpoint: Endpoint, method: str):
         elif key_type == "array":
             return list(data.example or [])
         elif key_type == "bool":
-            return to_bool(data.example or True)
+            return utils.boolean.to_bool(data.example or True)
         elif key_type == "object":
             return {child[child.rfind(".") + 1:]: get_value(child) for child in data.children if (data.all_methods or method in data.methods)}
         return data.example or "no example"
@@ -62,4 +61,4 @@ def generate_example(endpoint: Endpoint, method: str):
     "error": null,
     "data": {response}
 }}
-'''.format(response=encoder.encode(_response_format).replace("\n", "\n    "))
+'''.format(response=utils.json.encoder.encode(_response_format).replace("\n", "\n    "))

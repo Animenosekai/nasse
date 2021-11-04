@@ -1,8 +1,8 @@
 """
 File containing the different exceptions which can be raised in Nasse
 """
+
 from nasse import logging
-from nasse.exceptions import request, validate, authentication, arguments
 
 
 class NasseException(Exception):

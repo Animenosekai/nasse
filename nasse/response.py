@@ -1,12 +1,9 @@
-from datetime import datetime, timedelta
-from typing import Any, Iterable, Union
+import datetime
+import typing
 
-from werkzeug.http import dump_cookie
+import werkzeug.http
 
-from nasse import exceptions
-from nasse.config import Mode
-from nasse.utils.annotations import Default, is_unpackable
-from nasse.utils.sanitize import remove_spaces, split_on_uppercase
+from nasse import config, exceptions, utils
 
 
 def exception_to_response(value: Exception):
@@ -20,12 +17,12 @@ def exception_to_response(value: Exception):
     else:
         # converts class names to error names: NasseException -> NASSE_EXCEPTION
         if isinstance(value, type):
-            error = " ".join(split_on_uppercase(
+            error = " ".join(utils.sanitize.split_on_uppercase(
                 value.__name__)).upper().strip().replace(" ", "_")
         else:
-            error = " ".join(split_on_uppercase(
+            error = " ".join(utils.sanitize.split_on_uppercase(
                 value.__class__.__name__)).upper().strip().replace(" ", "_")
-        if Mode.DEBUG:
+        if config.Mode.DEBUG:
             data = "An error occured on the server while processing your request ({error})".format(
                 error=value)
         else:
@@ -43,7 +40,7 @@ def _cookie_validation(value):
             return value.__copy__()
         if isinstance(value, str):
             return ResponseCookie(key=value)
-        if is_unpackable(value):
+        if utils.annotations.is_unpackable(value):
             try:
                 return ResponseCookie(**value)
             except TypeError:
@@ -61,11 +58,11 @@ class ResponseCookie():
     def __init__(self,
                  key,
                  value: str = "",
-                 max_age: Union[float, timedelta] = None,
-                 expires: Union[float, datetime] = datetime.now() +
-                 timedelta(days=30),
-                 path: Union[str, tuple, bytes] = "/",
-                 domain: Union[str, bytes] = None,
+                 max_age: typing.Union[float, datetime.timedelta] = None,
+                 expires: typing.Union[float, datetime.datetime] = datetime.datetime.now() +
+                 datetime.timedelta(days=30),
+                 path: typing.Union[str, tuple, bytes] = "/",
+                 domain: typing.Union[str, bytes] = None,
                  secure: bool = False,
                  httponly: bool = False,
                  samesite=None,
@@ -107,7 +104,7 @@ class ResponseCookie():
             str
                 the cookie value
         """
-        return dump_cookie(
+        return werkzeug.http.dump_cookie(
             key=self.key,
             value=self.value,
             max_age=self.max_age,
@@ -123,13 +120,13 @@ class ResponseCookie():
 
 
 class Response():
-    def __init__(self, data: Any = None, error: str = None, code: int = Default(200), headers: dict[str, str] = None, cookies: list[ResponseCookie] = [], **kwargs) -> None:
+    def __init__(self, data: typing.Any = None, error: str = None, code: int = utils.annotations.Default(200), headers: dict[str, str] = None, cookies: list[ResponseCookie] = [], **kwargs) -> None:
         """
         A Response object given to Nasse to format the response
 
         Parameters
         ----------
-            data: Any, default = None
+            data: typing.Any, default = None
                 The data returned to the client
                 if 'data' is None, nothing extra is returned to the client
             error: str, default = None
@@ -143,7 +140,7 @@ class Response():
         """
         args = {}
         for key, value in kwargs.items():
-            args[remove_spaces(key).lower()] = value
+            args[utils.sanitize.remove_spaces(key).lower()] = value
 
         self.data = data or args.get("response") or args.get(
             "return") or args.get("value")
@@ -155,10 +152,10 @@ class Response():
         else:
             temp_data, temp_code = None, None
 
-        data = data if not isinstance(data, Default) else args.get(
+        data = data if not isinstance(data, utils.annotations.Default) else args.get(
             "response") or args.get("return") or args.get("value") or temp_data or data.value
 
-        code = code if not isinstance(code, Default) else args.get(
+        code = code if not isinstance(code, utils.annotations.Default) else args.get(
             "status") or args.get("statuscode") or args.get("status_code") or temp_code or code.value
 
         self.error = str(error) if error is not None else None
@@ -166,13 +163,13 @@ class Response():
 
         self.headers = {}
         headers = headers or args.get("header")
-        if is_unpackable(headers):
+        if utils.annotations.is_unpackable(headers):
             # headers: {"HEADER-KEY": "Header Value"}
             for header_key, header_value in dict(headers).items():
                 self.headers[str(header_key)] = str(
                     header_value)
-        elif isinstance(headers, Iterable):
-            if isinstance(headers[0], Iterable) and len(headers[0]) == 2:
+        elif isinstance(headers, typing.Iterable):
+            if isinstance(headers[0], typing.Iterable) and len(headers[0]) == 2:
                 # headers: [("HEADER-KEY", "Header Value")]
                 for element in headers:
                     self.headers[str(element[0])] = str(
@@ -184,12 +181,12 @@ class Response():
         self.cookies = []
         cookies = cookies or args.get("cookie")
         if cookies is not None:
-            if is_unpackable(cookies):
+            if utils.annotations.is_unpackable(cookies):
                 for key, val in dict(cookies).items():
                     item = {"key": str(key)}
                     item.update(val)
                     self.cookies.append(_cookie_validation(item))
-            elif isinstance(cookies, Iterable):
+            elif isinstance(cookies, typing.Iterable):
                 for item in cookies:
                     self.cookies.append(_cookie_validation(item))
             else:

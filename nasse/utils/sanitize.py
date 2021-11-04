@@ -1,9 +1,6 @@
 import bleach
-from bleach import Cleaner
-from bleach.linkifier import LinkifyFilter
-from markdown2 import markdown
-from nasse.config import Enums
-from nasse.utils.logging import LogLevels, log
+import markdown2
+from nasse import config, logging
 
 # Source: en.wikipedia.org/wiki/Whitespace_character
 # Note: BRAILLE PATTERN BLANK, HANGUL FILLER, HANGUL CHOSEONG FILLER, HANGUL JUNGSEONG FILLER and HALFWIDTH HANGUL FILLER are also refered here as "whitespaces" while they aren't according to the Unicode standard.
@@ -46,20 +43,20 @@ def alphabetic(string: str, decimals: bool = True):
 def sanitize_http_method(method: str):
     """Sanitizes the given HTTP method to normalize it"""
     method = remove_spaces(method).upper()
-    if method not in Enums.Conventions.HTTP_METHODS and method != "*":
-        log(
+    if method not in config.Enums.Conventions.HTTP_METHODS and method != "*":
+        logging.log(
             message="The provided HTTP method {method} does not seem to be in the set of defined HTTP methods".format(
                 method=method),
-            level=LogLevels.WARNING)
+            level=logging.LogLevels.WARNING)
     return method
 
 
 def markdown_to_html(md: str, table_of_content=False):
     """Markdown to HTML with Sanitizing and Link Recognition"""
-    html = markdown(str(md), extras=EXTRAS +
-                    (["toc"] if table_of_content else []))
-    cleaner = Cleaner(tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS,
-                      protocols=ALLOWED_PROTO, filters=[LinkifyFilter])
+    html = markdown2.markdown(str(md), extras=EXTRAS +
+                              (["toc"] if table_of_content else []))
+    cleaner = bleach.Cleaner(tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS,
+                             protocols=ALLOWED_PROTO, filters=[bleach.linkifier.LinkifyFilter])
     return cleaner.clean(str(html))
 
 

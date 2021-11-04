@@ -1,12 +1,9 @@
 from pathlib import Path
-from nasse.docs.curl import create_curl_example_for_method
-from nasse.docs.example import _get_type, generate_example
-from nasse.docs.javascript import create_javascript_example_for_method
-from nasse.docs.python import create_python_example_for_method
-from nasse.models import Endpoint
+
+from nasse import docs, models
 
 
-def make_docs(endpoint: Endpoint, postman: bool = False):
+def make_docs(endpoint: models.Endpoint, postman: bool = False):
     result = '''
 ### {name}
 
@@ -23,7 +20,7 @@ def make_docs(endpoint: Endpoint, postman: bool = False):
     return result
 
 
-def make_docs_for_method(endpoint: Endpoint, method: str, postman: bool = False):
+def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool = False):
     method = str(method)
 
     try:
@@ -121,7 +118,7 @@ def make_docs_for_method(endpoint: Endpoint, method: str, postman: bool = False)
 
 #### Response Format
 
-    '''.format(curl=create_curl_example_for_method(endpoint, method=method), javascript=create_javascript_example_for_method(endpoint, method=method), python=create_python_example_for_method(endpoint, method=method))
+    '''.format(curl=docs.curl.create_curl_example_for_method(endpoint, method=method), javascript=docs.javascript.create_javascript_example_for_method(endpoint, method=method), python=docs.python.create_python_example_for_method(endpoint, method=method))
 
     if endpoint.json:
         result += '''
@@ -129,7 +126,7 @@ def make_docs_for_method(endpoint: Endpoint, method: str, postman: bool = False)
 ```json
 {example}
 ```
-'''.format(example=generate_example(endpoint, method=method))
+'''.format(example=docs.example.generate_example(endpoint, method=method))
 
     returning = [element for element in endpoint.returning if (
         element.all_methods or method in element.methods)]
@@ -142,7 +139,7 @@ def make_docs_for_method(endpoint: Endpoint, method: str, postman: bool = False)
 | ----------   | -------------------------------- | ------ | --------- |
 '''
         result += "\n".join(["| `{key}` | {description}  | {type}      | {nullable}      |".format(key=element.name,
-                            description=element.description, type=_get_type(element), nullable=element.nullable) for element in returning])
+                            description=element.description, type=docs.example._get_type(element), nullable=element.nullable) for element in returning])
 
     result += "\n"
     errors = [error for error in endpoint.errors if (

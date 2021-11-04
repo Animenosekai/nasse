@@ -1,10 +1,9 @@
+import datetime
 import inspect
 import linecache
-from datetime import datetime
-from flask import g
 
-from nasse.config import General, Mode
-
+import flask
+from nasse import config
 
 RECORDING = False
 LOG_STACK = []
@@ -93,23 +92,24 @@ def add_to_call_stack(frame, event, arg):
     Internal function to add a call to the call stack
     """
     if RECORDING and event == "call":
-        if Mode.FULL_DEBUG:
+        if config.Mode.FULL_DEBUG:
             CALL_STACK.append(StackFrame(frame))
-        elif frame.f_code.co_filename.startswith(str(General.BASE_DIR)):
+        elif frame.f_code.co_filename.startswith(str(config.General.BASE_DIR)):
             CALL_STACK.append(StackFrame(frame))
     return None
 
 
 def clear_log():
     try:
-        name = g.request.app.name
+        name = flask.g.request.app.name
     except Exception:
-        name = General.NAME
+        name = config.General.NAME
     try:
-        app_id = g.request.app.id
+        app_id = flask.g.request.app.id
     except Exception:
-        app_id = "".join(l for l in str(name) if l.isalpha() or l.isdecimal()).lower()
-    with open(General.BASE_DIR / "{id}.nasse.log".format(id=app_id), "w", encoding="utf8") as out:
+        app_id = "".join(l for l in str(name) if l.isalpha()
+                         or l.isdecimal()).lower()
+    with open(config.General.BASE_DIR / "{id}.nasse.log".format(id=app_id), "w", encoding="utf8") as out:
         out.write("-- {name} DEBUG LOG --\n\n".format(name=str(name).upper()))
 
 
@@ -119,16 +119,17 @@ def write_log(new_line: str):
     new_line = str(new_line)
     if RECORDING:
         LOG_STACK.append(new_line)
-    if Mode.DEBUG:
+    if config.Mode.DEBUG:
         try:
-            name = g.request.app.name
+            name = flask.g.request.app.name
         except Exception:
-            name = General.NAME
+            name = config.General.NAME
         try:
-            app_id = g.request.app.id
+            app_id = flask.g.request.app.id
         except Exception:
-            app_id = "".join(l for l in str(name) if l.isalpha() or l.isdecimal()).lower()
-        with open(General.BASE_DIR / "{id}.nasse.log".format(id=app_id), "a", encoding="utf8") as out:
+            app_id = "".join(l for l in str(
+                name) if l.isalpha() or l.isdecimal()).lower()
+        with open(config.General.BASE_DIR / "{id}.nasse.log".format(id=app_id), "a", encoding="utf8") as out:
             out.write(str(new_line) + "\n")
 
 
@@ -161,25 +162,25 @@ def caller_name(skip: int = 2):
 
 
 def log(message: str = "Log", level: LogLevel = LogLevels.DEBUG, step: str = None):
-    if Mode.PRODUCTION:
+    if config.Mode.PRODUCTION:
         return
-    now = datetime.now()
+    now = datetime.datetime.now()
     write_log("{time}｜[{level}] [{step}] {message}".format(time=now.timestamp(), level=level.level.upper(), step=(
-        step if step is not None else (caller_name() if Mode.DEBUG else 'app')), message=message))
+        step if step is not None else (caller_name() if config.Mode.DEBUG else 'app')), message=message))
 
-    if not level.debug or Mode.DEBUG:
+    if not level.debug or config.Mode.DEBUG:
         formatting = {}
         if level._draw_time:
-            formatting["time"] = General.LOGGING_TIME_FORMAT(now) if callable(
-                General.LOGGING_TIME_FORMAT) else now.strftime(str(General.LOGGING_TIME_FORMAT))
+            formatting["time"] = config.General.LOGGING_TIME_FORMAT(now) if callable(
+                config.General.LOGGING_TIME_FORMAT) else now.strftime(str(config.General.LOGGING_TIME_FORMAT))
         if level._draw_step:
             formatting["step"] = step if step is not None else (
-                caller_name() if Mode.DEBUG else 'Nasse App')
+                caller_name() if config.Mode.DEBUG else 'Nasse App')
         if level._draw_name:
             try:
-                name = g.request.app.name
+                name = flask.g.request.app.name
             except Exception:
-                name = General.NAME
+                name = config.General.NAME
             formatting["name"] = name
         if level._draw_message:
             formatting["message"] = message

@@ -1,4 +1,4 @@
-from flask import request
+import flask
 
 
 def get_ip():
@@ -6,15 +6,15 @@ def get_ip():
     Retrieves the client IP address from the current request
     """
     # if the server uses a proxy
-    if "HTTP_X_FORWARDED_FOR" in request.environ:
+    if "HTTP_X_FORWARDED_FOR" in flask.request.environ:
         x_forwarded_for = str(
-            request.environ['HTTP_X_FORWARDED_FOR']).split(',')[0]
+            flask.request.environ['HTTP_X_FORWARDED_FOR']).split(',')[0]
         try:
             if x_forwarded_for.replace('.', '').isdigit():
                 return x_forwarded_for
             else:
-                return request.remote_addr
+                return flask.request.remote_addr
         except Exception:
-            return request.remote_addr
+            return flask.request.remote_addr
     else:
-        return request.remote_addr
+        return flask.request.remote_addr

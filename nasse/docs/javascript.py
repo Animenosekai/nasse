@@ -1,9 +1,9 @@
-import json
-from nasse.models import Endpoint
-from urllib.parse import quote
+import urllib.parse
+
+from nasse import models, utils
 
 
-def create_javascript_example_for_method(endpoint: Endpoint, method: str):
+def create_javascript_example_for_method(endpoint: models.Endpoint, method: str):
     params = [param for param in endpoint.params if param.required and (
         param.all_methods or method in param.methods)]
     headers = {header.name: header.description or header.name for header in endpoint.headers if header.required and (
@@ -13,11 +13,11 @@ def create_javascript_example_for_method(endpoint: Endpoint, method: str):
     url = endpoint.path
     if len(params) > 0:
         url = """`{path}?{params}`""".format(path=endpoint.path, params="&".join(
-            ['{escaped}=${{encodeURIComponent("{name}")}}'.format(escaped=quote(param.name), name=param.name) for param in params]))
+            ['{escaped}=${{encodeURIComponent("{name}")}}'.format(escaped=urllib.parse.quote(param.name), name=param.name) for param in params]))
     headers_render = ""
     if len(headers) > 0:
-        headers_render = ",\n    headers: {render}".format(render=json.dumps(
-            headers, ensure_ascii=False, indent=4).replace("\n", "\n    "))
+        headers_render = ",\n    headers: {render}".format(
+            render=utils.json.encoder.encode(headers).replace("\n", "\n    "))
     return '''fetch({url}, {{
     method: "{method}"{headers}{cookies}
 }})
@@ -32,7 +32,7 @@ def create_javascript_example_for_method(endpoint: Endpoint, method: str):
 }})'''.format(url=url, method=method, headers=headers_render, cookies=",\n    credentials: 'include'" if include_cookies else "", path=endpoint.path)
 
 
-def create_javascript_example(endpoint: Endpoint):
+def create_javascript_example(endpoint: models.Endpoint):
     results = {}
     for method in endpoint.methods:
         results[method] = create_javascript_example_for_method(

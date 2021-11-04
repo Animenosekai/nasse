@@ -25,6 +25,7 @@ def header_link(header: str, registry: list[str]):
     else:
         return final_result
 
+
 DOCS_HEADER = '''
 # {name} API Reference
 

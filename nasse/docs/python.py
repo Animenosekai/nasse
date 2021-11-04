@@ -1,8 +1,9 @@
 import json
 
-from nasse.models import Endpoint
+from nasse import models
 
-def create_python_example_for_method(endpoint: Endpoint, method: str):
+
+def create_python_example_for_method(endpoint: models.Endpoint, method: str):
     params = {param.name: param.description or param.name for param in endpoint.params if param.required and (
         param.all_methods or method in param.methods)}
     headers = {header.name: header.description or header.name for header in endpoint.headers if header.required and (
@@ -24,8 +25,9 @@ print("Successfully requested for {path}")
 print(r.json()["data"])'''.format(method=method, path=endpoint.path, params=params_render, headers=headers_render)
 
 
-def create_python_example(endpoint: Endpoint):
+def create_python_example(endpoint: models.Endpoint):
     results = {}
     for method in endpoint.methods:
-        results[method] = create_python_example_for_method(endpoint=endpoint, method=method)
+        results[method] = create_python_example_for_method(
+            endpoint=endpoint, method=method)
     return results

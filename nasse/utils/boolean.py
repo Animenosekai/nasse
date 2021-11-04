@@ -1,9 +1,9 @@
-from typing import Any
+import typing
 
-from nasse.utils.sanitize import remove_spaces
+from nasse import utils
 
 
-def to_bool(value: Any, default: bool = False):
+def to_bool(value: typing.Any, default: bool = False):
     """
     Converts any value to a boolean
 
@@ -31,6 +31,6 @@ def to_bool(value: Any, default: bool = False):
         default: bool
             The default value
     """
-    if remove_spaces(value).lower() in ({"true", "1", "yes"} if not default else {"false", "0", "false"}):
+    if utils.sanitize.remove_spaces(value).lower() in ({"true", "1", "yes"} if not default else {"false", "0", "false"}):
         return not default
     return default

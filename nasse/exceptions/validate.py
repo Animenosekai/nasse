@@ -1,7 +1,7 @@
-from nasse.exceptions import NasseException
+from nasse import exceptions
 
 
-class ValidationError(NasseException):
+class ValidationError(exceptions.NasseException):
     MESSAGE = "Nasse couldn't validate an input"
     EXCEPTION_NAME = "VALIDATION_ERROR"
 
@@ -45,4 +45,3 @@ class LoginConversionError(ConversionError):
 class CookieConversionError(ConversionError):
     def __init__(self, message: str = None, *args: object) -> None:
         super().__init__(message=message, *args)
-
