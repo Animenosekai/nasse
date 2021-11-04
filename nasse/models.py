@@ -163,7 +163,7 @@ def _methods_validation(value):
         return methods
     except Exception:
         raise exceptions.validate.MethodsConversionError(
-            "Nasse cannot convert value of type {t} to a list of HTTP methods".format(t=value.__class__.__name__))
+            "Nasse cannot convert value of type <{t}> to a list of HTTP methods".format(t=value.__class__.__name__))
 
 
 def _return_validation(value):
@@ -186,7 +186,7 @@ def _return_validation(value):
         if isinstance(e, exceptions.NasseException):
             raise e
         raise exceptions.validate.ReturnConversionError(
-            "Nasse cannot convert value of type {t} to Nasse.models.Return".format(t=value.__class__.__name__))
+            "Nasse cannot convert value of type <{t}> to Nasse.models.Return".format(t=value.__class__.__name__))
 
 
 def _usersent_validation(value, cast: typing.Union[typing.Type[UserSent], typing.Type[Header], typing.Type[Param], typing.Type[Cookie]] = UserSent):
@@ -209,7 +209,7 @@ def _usersent_validation(value, cast: typing.Union[typing.Type[UserSent], typing
         if isinstance(e, exceptions.NasseException):
             raise e
         raise exceptions.validate.ReturnConversionError(
-            "Nasse cannot convert value of type {t} to Nasse.models.{cast}".format(t=value.__class__.__name__, cast=cast.__name__))
+            "Nasse cannot convert value of type <{t}> to Nasse.models.{cast}".format(t=value.__class__.__name__, cast=cast.__name__))
 
 
 def _error_validation(value):
@@ -236,7 +236,7 @@ def _error_validation(value):
         if isinstance(e, exceptions.NasseException):
             raise e
         raise exceptions.validate.ErrorConversionError(
-            "Nasse cannot convert value of type {t} to Nasse.models.Error".format(t=value.__class__.__name__))
+            "Nasse cannot convert value of type <{t}> to Nasse.models.Error".format(t=value.__class__.__name__))
 
 
 def _login_validation(value):
@@ -251,7 +251,7 @@ def _login_validation(value):
         raise ValueError
     except Exception:
         raise exceptions.validate.LoginConversionError(
-            "Nasse cannot convert value of type {t} to Nasse.models.Login".format(t=value.__class__.__name__))
+            "Nasse cannot convert value of type <{t}> to Nasse.models.Login".format(t=value.__class__.__name__))
 
 
 class Endpoint(object):

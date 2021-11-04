@@ -52,7 +52,7 @@ def _cookie_validation(value):
         if isinstance(e, exceptions.NasseException):
             raise e
         raise exceptions.validate.CookieConversionError(
-            "Nasse cannot convert value of type {t} to Nasse.response.ResponseCookie".format(t=value.__class__.__name__))
+            "Nasse cannot convert value of type <{t}> to Nasse.response.ResponseCookie".format(t=value.__class__.__name__))
 
 
 class ResponseCookie():
@@ -193,7 +193,7 @@ class Response():
             else:
                 self.cookies.append(_cookie_validation(cookies))
                 raise exceptions.validate.CookieConversionError(
-                    "Nasse cannot convert value of type {t} to Nasse.response.ResponseCookie".format(t=cookies.__class__.__name__))
+                    "Nasse cannot convert value of type <{t}> to Nasse.response.ResponseCookie".format(t=cookies.__class__.__name__))
 
     def __copy__(self):
         return Response(

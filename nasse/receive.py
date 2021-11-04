@@ -198,7 +198,7 @@ class Receive():
                             else:
                                 # data: typing.Any (but json does not support arbitrary content)
                                 utils.logging.log(
-                                    "Element of type {type} is not supported by JSON and will be converted to `str`".format(type=data.__class__.__name__), level=utils.logging.LogLevels.WARNING)
+                                    "Element of type <{type}> is not supported by JSON and will be converted to `str`".format(type=data.__class__.__name__), level=utils.logging.LogLevels.WARNING)
                                 result["data"]["content"] = str(data)
                 except Exception as e:
                     # from traceback import print_exc; print_exc()

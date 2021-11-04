@@ -171,7 +171,7 @@ class Node(object):
         elif isinstance(data, typing.Iterable):
             return "iterable"
         else:
-            logging.log("Object of type {type} will be converted to str while encoding to XML".format(
+            logging.log("Object of type <{type}> will be converted to str while encoding to XML".format(
                 type=data.__class__.__name__))
             return "flat"
 

@@ -36,7 +36,7 @@ class NasseJSONEncoder(json.JSONEncoder):
         elif isinstance(o, typing.Iterable):
             return self.encode_iterable(o)
         else:
-            logging.log("Object of type {type} will be converted to str while encoding to JSON".format(
+            logging.log("Object of type <{type}> will be converted to str while encoding to JSON".format(
                 type=o.__class__.__name__))
             return str(o)
 
