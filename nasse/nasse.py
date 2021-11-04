@@ -214,7 +214,7 @@ class Nasse():
                 self.restart), ".", recursive=True)
             self._observer.start()
         gunicorn_handler = GunicornServer(self, options=parameters)
-        utils.logging.log("🎏 Binding to {address}".format(address=gunicorn_handler.options["bind"]))
+        utils.logging.log("🎏 Binding to {color}{address}{normal}".format(address=gunicorn_handler.options["bind"], color=utils.logging.Colors.magenta, normal=utils.logging.Colors.normal))
         self._arbiter = gunicorn.arbiter.Arbiter(gunicorn_handler)
         self._arbiter.run()
 
