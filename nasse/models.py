@@ -7,6 +7,7 @@ import pathlib
 import typing
 
 from nasse import exceptions, logging, utils
+from nasse.utils.annotations import Default
 
 
 class ABC(metaclass=abc.ABCMeta):
@@ -268,12 +269,12 @@ class Endpoint(object):
     cookies: list[Cookie] = []
     errors: list[Error] = []
 
-    def __init__(self, handler: typing.Callable = utils.annotations.Default(hello), path: str = utils.annotations.Default(""), methods: list[str] = utils.annotations.Default("GET"), json: bool = utils.annotations.Default(True), name: str = utils.annotations.Default(""), description: str = utils.annotations.Default(""), section: str = utils.annotations.Default("Other"), returning: typing.Union[Return, list[Return]] = utils.annotations.Default([]), login: Login = utils.annotations.Default(Login(no_login=True)), headers: typing.Union[Header, list[Header]] = utils.annotations.Default([]), params:  typing.Union[Param, list[Param]] = utils.annotations.Default([]), errors:  typing.Union[Error, list[Error]] = utils.annotations.Default([]), endpoint: dict = {}, **kwargs) -> None:
+    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(no_login=True)), headers: typing.Union[Header, list[Header]] = Default([]), params:  typing.Union[Param, list[Param]] = Default([]), errors:  typing.Union[Error, list[Error]] = Default([]), endpoint: dict = {}, **kwargs) -> None:
         results = dict(endpoint)
         results.update(kwargs)
         for key, value in [("handler", handler), ("path", path), ("methods", methods), ("json", json), ("name", name), ("description", description), ("section", section), ("returning", returning), ("login", login), ("headers", headers), ("params", params), ("errors", errors)]:
             results[key] = value if not isinstance(
-                value, utils.annotations.Default) else value.value
+                value, Default) else value.value
 
         for key, value in results.items():
             # performs all of the verifications

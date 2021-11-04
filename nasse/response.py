@@ -4,6 +4,7 @@ import typing
 import werkzeug.http
 
 from nasse import config, exceptions, utils
+from nasse.utils.annotations import Default
 
 
 def exception_to_response(value: Exception):
@@ -120,7 +121,7 @@ class ResponseCookie():
 
 
 class Response():
-    def __init__(self, data: typing.Any = None, error: str = None, code: int = utils.annotations.Default(200), headers: dict[str, str] = None, cookies: list[ResponseCookie] = [], **kwargs) -> None:
+    def __init__(self, data: typing.Any = None, error: str = None, code: int = Default(200), headers: dict[str, str] = None, cookies: list[ResponseCookie] = [], **kwargs) -> None:
         """
         A Response object given to Nasse to format the response
 
@@ -152,10 +153,10 @@ class Response():
         else:
             temp_data, temp_code = None, None
 
-        data = data if not isinstance(data, utils.annotations.Default) else args.get(
+        data = data if not isinstance(data, Default) else args.get(
             "response") or args.get("return") or args.get("value") or temp_data or data.value
 
-        code = code if not isinstance(code, utils.annotations.Default) else args.get(
+        code = code if not isinstance(code, Default) else args.get(
             "status") or args.get("statuscode") or args.get("status_code") or temp_code or code.value
 
         self.error = str(error) if error is not None else None
