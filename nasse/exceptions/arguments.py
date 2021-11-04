@@ -1,6 +1,7 @@
-from nasse import exceptions
+from nasse.exceptions.base import NasseException
 
-class MissingArgument(exceptions.NasseException):
+
+class MissingArgument(NasseException):
     STATUS_CODE = 500
     MESSAGE = "An argument is missing"
     EXCEPTION_NAME = "MISSING_INTERNAL_ARGUMENT"

@@ -1,7 +1,7 @@
-from nasse import exceptions
+from nasse.exceptions.base import NasseException
 
 
-class ValidationError(exceptions.NasseException):
+class ValidationError(NasseException):
     MESSAGE = "Nasse couldn't validate an input"
     EXCEPTION_NAME = "VALIDATION_ERROR"
 

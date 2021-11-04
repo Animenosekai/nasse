@@ -1,6 +1,7 @@
-from nasse import exceptions
+from nasse.exceptions.base import NasseException
 
-class ClientError(exceptions.NasseException):
+
+class ClientError(NasseException):
     STATUS_CODE = 400
     MESSAGE = "Something is missing from the request"
     EXCEPTION_NAME = "CLIENT_ERROR"
@@ -43,7 +44,7 @@ class MissingCookie(MissingValue):
         super().__init__(name=name, missing_type=missing_type, *args)
 
 
-class MissingContext(exceptions.NasseException):
+class MissingContext(NasseException):
     MESSAGE = "You are not actively in a Nasse context"
     EXCEPTION_NAME = "MISSING_CONTEXT"
     STATUS_CODE = 500

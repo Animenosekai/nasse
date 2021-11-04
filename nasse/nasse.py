@@ -19,7 +19,8 @@ import gunicorn.arbiter
 import watchdog.events
 import watchdog.observers
 
-from nasse import config, docs, models, receive, request, response, utils
+from nasse import config, docs, models, receive, request, utils
+from nasse.response import exception_to_response
 
 
 class FileEventHandler(watchdog.events.FileSystemEventHandler):
@@ -237,9 +238,10 @@ class Nasse():
         """
         Handles exception for flask.Flask
         """
+        # from traceback import print_exc; print_exc()
         try:
             try:
-                data, error, code = response.exception_to_response(e)
+                data, error, code = exception_to_response(e)
             except Exception:
                 data, error, code = "An error occured on the server", "SERVER_ERROR", 500
             result = {"success": False, "error": error,

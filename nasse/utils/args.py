@@ -1,6 +1,6 @@
 import sys
 
-from nasse import exceptions
+# from nasse import exceptions
 
 
 class NoDefault:
@@ -22,23 +22,23 @@ class _Args:
                     continue
                 return sys.argv[index + 1]
             if isinstance(default, NoDefault):
-                raise exceptions.arguments.MissingArgument(
-                    f"{key} is a required command argument")
+                raise ValueError(
+                    "{key} is a required command argument".format(key=key))
             else:
                 return default
 
         key = str(key)
         if key not in sys.argv:
             if isinstance(default, NoDefault):
-                raise exceptions.arguments.MissingArgument(
-                    f"{key} is a required command argument")
+                raise ValueError(
+                    "{key} is a required command argument".format(key=key))
             else:
                 return default
         index = sys.argv.index(key)
         if len(sys.argv) <= index:
             if isinstance(default, NoDefault):
-                raise exceptions.arguments.MissingArgument(
-                    f"{key} is a required command argument")
+                raise ValueError(
+                    "{key} is a required command argument".format(key=key))
             else:
                 return default
         return sys.argv[index + 1]

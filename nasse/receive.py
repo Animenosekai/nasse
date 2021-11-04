@@ -5,7 +5,7 @@ import typing
 import flask
 
 from nasse import config, exceptions, models, request, timer, utils
-from nasse.response import Response
+from nasse.response import Response, exception_to_response
 
 RECEIVERS_COUNT = 0
 
@@ -58,7 +58,7 @@ class Receive():
                     with timer.Timer() as verification_timer:
                         flask.g.request = request.Request(
                             app=self.app, endpoint=self.endpoint)
-                        utils.logging.log("→ Incoming {method} request to {route} from {client}".format(method=flask.g.request.method, route=self.endpoint.path, client=flask.g.request.client_ip),
+                        utils.logging.log("→ Incoming {color}{method}{normal} request to {color}{route}{normal} from {client}".format(method=flask.g.request.method, color=utils.logging.Colors.blue, normal=utils.logging.Colors.normal, route=self.endpoint.path, client=flask.g.request.client_ip),
                                           level=utils.logging.LogLevels.INFO)
 
                     account = None
@@ -111,7 +111,7 @@ class Receive():
                         cookies = []
 
                         if isinstance(response, Response):
-                            # return response.Response(data=..., code=..., etc.)
+                            # return Response(data=..., code=..., etc.)
                             data = response.data
                             code = response.code
                             error = response.error
@@ -122,10 +122,9 @@ class Receive():
                             data = response
                         elif isinstance(response, Exception):
                             # return NasseException("Something went wrong")
-                            data, error, code = response.exception_to_response(
-                                response)
+                            data, error, code = exception_to_response(response)
                         elif utils.annotations.is_unpackable(response):
-                            response = response.Response(**response)
+                            response = Response(**response)
                             data = response.data
                             code = response.code
                             error = response.error
@@ -135,7 +134,7 @@ class Receive():
                             # return "Hello", 200 | return NasseException("..."), 400, {"extra": {"issue": "something is missing"}}
                             for value in response:
                                 if isinstance(value, Exception):
-                                    data, error, code = response.exception_to_response(
+                                    data, error, code = exception_to_response(
                                         value)
                                 elif isinstance(value, int):
                                     code = int(value)
@@ -202,6 +201,7 @@ class Receive():
                                     "Element of type {type} is not supported by JSON and will be converted to `str`".format(type=data.__class__.__name__), level=utils.logging.LogLevels.WARNING)
                                 result["data"]["content"] = str(data)
                 except Exception as e:
+                    # from traceback import print_exc; print_exc()
                     try:
                         verification_timer
                     except Exception:
@@ -218,7 +218,7 @@ class Receive():
                         formatting_timer
                     except Exception:
                         formatting_timer = None
-                    data, error, code = response.exception_to_response(e)
+                    data, error, code = exception_to_response(e)
                     result = {
                         "success": False,
                         "error": error,
@@ -293,7 +293,6 @@ class Receive():
                     ip = utils.ip.get_ip()
                     method = str(flask.g.request.method).upper()
                 size = sys.getsizeof(final.data)
-                print(size)
                 if size < 500000:
                     color = utils.logging.Colors.green
                 elif size < 1000000:

@@ -5,7 +5,6 @@ Catchphrase
 © Anime no Sekai — 2021
 """
 
-from . import exceptions
 from . import timer
 from . import logging
 from . import docs
