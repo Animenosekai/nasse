@@ -213,15 +213,16 @@ class Nasse():
             self._observer.schedule(FileEventHandler(
                 self.restart), ".", recursive=True)
             self._observer.start()
-        self._arbiter = gunicorn.arbiter.Arbiter(
-            GunicornServer(self, options=parameters))
+        gunicorn_handler = GunicornServer(self, options=parameters)
+        utils.logging.log("🎏 Binding to {address}".format(address=gunicorn_handler.options["bind"]))
+        self._arbiter = gunicorn.arbiter.Arbiter(gunicorn_handler)
         self._arbiter.run()
 
         # self.flask.run(host=host, port=port, debug=debug, **kwargs)
 
     def restart(self):
         """Restarts the current python process"""
-        utils.logging.log("Restarting...", level=utils.logging.LogLevels.INFO)
+        utils.logging.log("Restarting... 🎐", level=utils.logging.LogLevels.INFO)
         if self._observer:
             utils.logging.log("Waiting for watchdog to terminate")
             try:
@@ -232,7 +233,7 @@ class Nasse():
         if self._arbiter:
             utils.logging.log("Waiting for workers to terminate")
             self._arbiter.stop()
-        os.execv(sys.executable, ['python'] + sys.argv)
+        os.execv(sys.executable, [sys.executable] + sys.argv)
 
     def handle_exception(self, e):
         """
