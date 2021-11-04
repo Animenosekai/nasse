@@ -48,7 +48,9 @@ class GunicornServer(gunicorn.app.base.BaseApplication):
             'threads': 2 * multiprocessing.cpu_count() + 1,
             'loglevel': 'error',
             # would be painful to wait 30 seconds on each reload
-            'graceful_timeout': 5 if config.Mode.DEBUG else 20
+            'graceful_timeout': 5 if config.Mode.DEBUG else 20,
+            'on_exit': self.on_exit,
+            'on_starting': self.on_starting
         }
         self.options.update(options or {})
         self.application = app.flask
@@ -70,6 +72,13 @@ class GunicornServer(gunicorn.app.base.BaseApplication):
 
     def load(self):
         return self.application
+
+    def on_starting(self, server):
+        utils.logging.log("Running the server ✨",
+                          level=utils.logging.LogLevels.INFO)
+
+    def on_exit(self, server):
+        utils.logging.log("Exiting... 🏮", level=utils.logging.LogLevels.INFO)
 
 
 class Nasse():
@@ -200,8 +209,6 @@ class Nasse():
         Do not use `run()` in a production setting **for now**. It is not intended to
         meet security and performance requirements for a production server.
         """
-        utils.logging.log("Running the server ✨",
-                          level=utils.logging.LogLevels.INFO)
         parameters = {
             "bind": "{host}:{port}".format(host=host or config.General.HOST, port=port or utils.args.Args.get(("-p", "--port"), 5000))
         }
@@ -214,7 +221,8 @@ class Nasse():
                 self.restart), ".", recursive=True)
             self._observer.start()
         gunicorn_handler = GunicornServer(self, options=parameters)
-        utils.logging.log("🎏 Binding to {color}{address}{normal}".format(address=gunicorn_handler.options["bind"], color=utils.logging.Colors.magenta, normal=utils.logging.Colors.normal))
+        utils.logging.log("🎏 Binding to {color}{address}{normal}".format(
+            address=gunicorn_handler.options["bind"], color=utils.logging.Colors.magenta, normal=utils.logging.Colors.normal))
         self._arbiter = gunicorn.arbiter.Arbiter(gunicorn_handler)
         self._arbiter.run()
 
@@ -222,7 +230,8 @@ class Nasse():
 
     def restart(self):
         """Restarts the current python process"""
-        utils.logging.log("Restarting... 🎐", level=utils.logging.LogLevels.INFO)
+        utils.logging.log("Restarting... 🎐",
+                          level=utils.logging.LogLevels.INFO)
         if self._observer:
             utils.logging.log("Waiting for watchdog to terminate")
             try:

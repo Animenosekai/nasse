@@ -299,13 +299,14 @@ class Receive():
                     color = utils.logging.Colors.yellow
                 else:
                     color = utils.logging.Colors.magenta
-                utils.logging.log("← Sending back {color}{size}{normal} bytes of data to {ip} following {method} {path}".format(
+                utils.logging.log("← Sending back {color}{size}{normal} bytes of data to {ip} following {blue}{method} {path}{normal}".format(
                     color=color,
                     size=size,
                     normal=utils.logging.Colors.normal,
                     ip=ip,
                     method=method,
-                    path=path
+                    path=path,
+                    blue=utils.logging.Colors.blue
                 ))
             except Exception:
                 pass
