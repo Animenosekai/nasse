@@ -34,7 +34,7 @@ class LogLevel():
         self._draw_message = "{message}" in self.template
 
     def __repr__(self) -> str:
-        return f"<LogLevel: {self.level}>"
+        return "<LogLevel: {level}>".format(level=self.level)
 
 
 class LogLevels:
@@ -63,7 +63,7 @@ class StackFrame():
         self._calling_line = None
 
     def __repr__(self) -> str:
-        return f"<NasseStackFrame '{self.name}' {self.filename} on {self.lineno}>"
+        return "<NasseStackFrame '{name}' {filename} on {line_number}>".format(name=self.name, filename=self.filename, line_number=self.lineno)
 
     @property
     def line(self):
@@ -83,7 +83,7 @@ class StackFrame():
             "name": self.name,
             "filename": self.filename,
             "lineNumber": self.lineno,
-            "calledBy": f"<{self.back_frame.f_code.co_name}>, in {self.back_frame.f_code.co_filename} at line {self.back_frame.f_code.co_firstlineno}"
+            "calledBy": "<{name}>, in {filename} at line {line_number}".format(name=self.back_frame.f_code.co_name, filename=self.back_frame.f_code.co_filename, line_number=self.back_frame.f_code.co_firstlineno)
         }
 
 

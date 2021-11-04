@@ -14,7 +14,7 @@ def create_curl_example_for_method(endpoint: models.Endpoint, method: str):
         if len(headers) <= 0:
             params_render += "\\\n    "
     if len(headers) > 0:
-        headers_render = "\\\n    -H " + '\\\n    -H '.join([f'"' + header.replace(
+        headers_render = "\\\n    -H " + '\\\n    -H '.join(['"' + header.replace(
             "\"", "\\\"") + ': ' + description.replace("\"", "\\\"") + '"' for header, description in headers.items()]) + " "
         headers_render += "\\\n    "
     return '''curl -X {method} {params}{headers}"{path}"'''.format(

@@ -258,19 +258,19 @@ def _login_validation(value):
 
 
 class Endpoint(object):
-    handler: typing.Callable = hello
-    path: str = ""
-    methods: list = ["GET"]
-    json: bool = True
-    name: str = ""
-    description: str = ""
-    section: str = "Other"
-    returning: list[Return] = []
-    login: Login = Login(no_login=True)
-    headers: list[Header] = []
-    params: list[Param] = []
-    cookies: list[Cookie] = []
-    errors: list[Error] = []
+    handler = hello
+    path = ""
+    methods = ["GET"]
+    json = True
+    name = ""
+    description = ""
+    section = "Other"
+    returning = []
+    login = Login(no_login=True)
+    headers = []
+    params = []
+    cookies = []
+    errors = []
 
     def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(no_login=True)), headers: typing.Union[Header, list[Header]] = Default([]), params:  typing.Union[Param, list[Param]] = Default([]), errors:  typing.Union[Error, list[Error]] = Default([]), endpoint: dict = {}, **kwargs) -> None:
         results = dict(endpoint)

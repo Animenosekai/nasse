@@ -132,7 +132,7 @@ class Nasse():
                     scheme=scheme, netloc=parsed.netloc) if rule != "*" else "*"
                 self.cors.append(rule)
 
-        self.endpoints: dict[str, models.Endpoint] = {}
+        self.endpoints = {}
 
         # security
         self.flask.config["MAX_CONTENT_LENGTH"] = int(
@@ -356,7 +356,7 @@ class Nasse():
             [endpoint.section for endpoint in self.endpoints.values()]))
 
         # Getting the endpoints for each section
-        sections_registry: dict[str, list[models.Endpoint]] = {}
+        sections_registry = {}
         for section in sections:
             for endpoint in self.endpoints.values():
                 if endpoint.section == section:
@@ -386,10 +386,10 @@ class Nasse():
                 postman_output.write(
                     utils.json.minified_encoder.encode(postman_results))
 
-            result += f'''
+            result += '''
 
 ## {section}
-'''
+'''.format(section=section)
             result += "\n[Return to the Index](#index)\n".join(
                 [docs.markdown.make_docs(endpoint) for endpoint in sections_registry[section]])
 
