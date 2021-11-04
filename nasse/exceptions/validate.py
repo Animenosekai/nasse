@@ -46,7 +46,3 @@ class CookieConversionError(ConversionError):
     def __init__(self, message: str = None, *args: object) -> None:
         super().__init__(message=message, *args)
 
-
-class CookieConversionError(ConversionError):
-    def __init__(self, message: str = None, *args: object) -> None:
-        super().__init__(message=message, *args)
