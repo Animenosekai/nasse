@@ -21,6 +21,8 @@ class Colors:
     yellow = '\033[93m'
     magenta = '\033[95m'
 
+    _colors = {normal, grey, red, green, blue, cyan, white, yellow, magenta}
+
 
 class LogLevel():
     def __init__(self, level: str, template: str, debug: bool = False) -> None:
@@ -117,6 +119,8 @@ def write_log(new_line: str):
     """Writing out the log, wether it's to the log stack or the log file"""
     #new_line = str(new_line).replace("\n", " ")
     new_line = str(new_line)
+    for color in Colors._colors:
+        new_line = new_line.replace(color, "")
     if RECORDING:
         LOG_STACK.append(new_line)
     if config.Mode.DEBUG:
