@@ -202,6 +202,8 @@ class Receive():
                             elif isinstance(data, typing.Iterable):
                                 # data: ["an", "array", "of", "element"] | ("an", "array", ...) | etc.
                                 result["data"]["array"] = list(data)
+                            elif data is None:
+                                result["data"]["content"] = None
                             else:
                                 # data: typing.Any (but json does not support arbitrary content)
                                 utils.logging.log(
