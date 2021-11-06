@@ -271,8 +271,9 @@ class Endpoint(object):
     params = []
     cookies = []
     errors = []
+    base_dir = None
 
-    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(no_login=True)), headers: typing.Union[Header, list[Header]] = Default([]), params:  typing.Union[Param, list[Param]] = Default([]), errors:  typing.Union[Error, list[Error]] = Default([]), endpoint: dict = {}, **kwargs) -> None:
+    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(no_login=True)), headers: typing.Union[Header, list[Header]] = Default([]), cookies: typing.Union[Cookie, list[Cookie]] = Default([]), params:  typing.Union[Param, list[Param]] = Default([]), errors:  typing.Union[Error, list[Error]] = Default([]), base_dir: str = None, endpoint: dict = {}, **kwargs) -> None:
         results = dict(endpoint)
         results.update(kwargs)
         for key, value in [("handler", handler), ("path", path), ("methods", methods), ("json", json), ("name", name), ("description", description), ("section", section), ("returning", returning), ("login", login), ("headers", headers), ("params", params), ("errors", errors)]:
@@ -283,18 +284,24 @@ class Endpoint(object):
             # performs all of the verifications
             self.__setitem__(name=key, value=value)
 
+        super().__setattr__("base_dir", pathlib.Path(base_dir).resolve() if base_dir is not None else None)
+
         if not self.path:
-            try:
-                self.path = utils.sanitize.to_path(inspect.getfile(self.handler).__name__) + \
+            if self.base_dir is not None:
+                self.path = utils.sanitize.to_path(self.base_dir.relative_to(pathlib.Path().resolve())) + \
                     utils.sanitize.to_path(self.handler.__name__)
-            except Exception:
-                module = inspect.getmodule(self.handler)
-                if module.__name__ == "__main__":
-                    name = pathlib.Path(module.__file__).stem
-                else:
-                    name = module.__name__
-                self.path = utils.sanitize.to_path(
-                    name) + utils.sanitize.to_path(self.handler.__name__)
+            else:
+                try:
+                    self.path = utils.sanitize.to_path(inspect.getfile(self.handler).__name__) + \
+                        utils.sanitize.to_path(self.handler.__name__)
+                except Exception:
+                    module = inspect.getmodule(self.handler)
+                    if module.__name__ == "__main__":
+                        name = pathlib.Path(module.__file__).stem
+                    else:
+                        name = module.__name__
+                    self.path = utils.sanitize.to_path(
+                        name) + utils.sanitize.to_path(self.handler.__name__)
 
         if not self.path.startswith("/"):
             self.path = "/" + self.path
@@ -394,17 +401,20 @@ class Endpoint(object):
     def __copy__(self):
         """Creates a shallow copy of the current Endpoint instance (reperforms the parameters verifications)"""
         return Endpoint(
-            description=self.description,
-            errors=self.errors,
-            headers=self.headers,
-            json=self.json,
-            login=self.login,
-            methods=self.methods,
-            name=self.name,
-            params=self.params,
+            handler=self.handler,
             path=self.path,
+            methods=self.methods,
+            json=self.json,
+            name=self.name,
+            description=self.description,
+            section=self.section,
             returning=self.returning,
-            section=self.section
+            login=self.login,
+            headers=self.headers,
+            cookies=self.cookies,
+            params=self.params,
+            errors=self.errors,
+            base_dir=self.base_dir
         )
 
 
