@@ -118,7 +118,10 @@ class Nasse():
         self.name = str(name or config.General.BASE_DIR.name or "Nasse")
         self.id = str(id or utils.sanitize.alphabetic(self.name).lower())
 
-        self.account_management = account_management
+        if isinstance(account_management, type):
+            self.account_management = account_management()
+        else:
+            self.account_management = account_management
 
         self.flask = flask.Flask(self.name, *args, **kwargs)
 
