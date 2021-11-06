@@ -121,7 +121,7 @@ class ResponseCookie():
 
 
 class Response():
-    def __init__(self, data: typing.Any = None, error: str = None, code: int = Default(200), headers: dict[str, str] = None, cookies: list[ResponseCookie] = [], **kwargs) -> None:
+    def __init__(self, data: typing.Any = None, error: str = None, code: int = Default(200), headers: dict[str, str] = None, cookies: list[ResponseCookie] = [], content_type: str = None, **kwargs) -> None:
         """
         A Response object given to Nasse to format the response
 
@@ -178,6 +178,9 @@ class Response():
             elif len(headers) == 2:
                 # headers: ("HEADER-KEY", "Header Value")
                 self.headers[str(headers[0])] = str(headers[1])
+        
+        if content_type:
+            self.headers["Content-Type"] = str(content_type)
 
         self.cookies = []
         cookies = cookies or args.get("cookie")

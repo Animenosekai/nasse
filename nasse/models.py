@@ -52,8 +52,9 @@ class Return():
 
 
 class Login():
-    def __init__(self, required: bool = False, types: typing.Union[typing.Any, list[typing.Any]] = [], methods: typing.Union[list[str], str] = "*", no_login: bool = True) -> None:
+    def __init__(self, required: bool = False, types: typing.Union[typing.Any, list[typing.Any]] = [], methods: typing.Union[list[str], str] = "*", no_login: bool = True, verification_only: bool = False) -> None:
         self.no_login = bool(no_login)
+        self.verification_only = bool(verification_only)
         self.required = bool(required)
         self.types = set()
         if types is not None:
@@ -69,6 +70,7 @@ class Login():
     def __copy__(self):
         return Login(
             no_login=self.no_login,
+            verification_only=self.verification_only,
             required=self.required,
             types=self.types,
             methods=self.methods
@@ -284,7 +286,8 @@ class Endpoint(object):
             # performs all of the verifications
             self.__setitem__(name=key, value=value)
 
-        super().__setattr__("base_dir", pathlib.Path(base_dir).resolve() if base_dir is not None else None)
+        super().__setattr__("base_dir", pathlib.Path(
+            base_dir).resolve() if base_dir is not None else None)
 
         if not self.path:
             if self.base_dir is not None:
@@ -433,5 +436,12 @@ class AccountManagement(ABC):
     def retrieve_account(self, token: str):
         """
         An abstract method (that needs to be replaced) to retrieve an Account object from a token sent by the client
+        """
+        return None
+
+    @abc.abstractmethod
+    def verify_token(self, token: str):
+        """
+        An abstract method (that needs to be replaced) to verify a token sent by the client (to avoid retrieving the account while still checking for the token)
         """
         return None

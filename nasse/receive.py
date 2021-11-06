@@ -66,11 +66,11 @@ class Receive():
                         if not self.endpoint.login.no_login and self.endpoint.login.required:
                             if self.endpoint.login.all_methods or flask.g.request.method in self.endpoint.login.methods:
                                 token = retrieve_token()
-                                if self.app.account:
-                                    account = self.app.account.retrieve_account(
+                                if self.app.account_management:
+                                    account = self.app.account_management.retrieve_account(
                                         token)
                                     if len(self.endpoint.login.types) > 0:
-                                        if self.app.account.retrieve_type(account) not in self.endpoint.login.types:
+                                        if self.app.account_management.retrieve_type(account) not in self.endpoint.login.types:
                                             raise exceptions.authentication.Forbidden(
                                                 "You can't access this endpoint with your account")
                                 else:
