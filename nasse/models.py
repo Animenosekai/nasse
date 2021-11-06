@@ -277,8 +277,9 @@ class Endpoint(object):
 
     def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(no_login=True)), headers: typing.Union[Header, list[Header]] = Default([]), cookies: typing.Union[Cookie, list[Cookie]] = Default([]), params:  typing.Union[Param, list[Param]] = Default([]), errors:  typing.Union[Error, list[Error]] = Default([]), base_dir: str = None, endpoint: dict = {}, **kwargs) -> None:
         results = dict(endpoint)
+        results.pop("path", None) # path should be different when taking 'endpoint' as the base for another endpoint
         results.update(kwargs)
-        for key, value in [("handler", handler), ("path", path), ("methods", methods), ("json", json), ("name", name), ("description", description), ("section", section), ("returning", returning), ("login", login), ("headers", headers), ("params", params), ("errors", errors)]:
+        for key, value in [("handler", handler), ("path", path), ("methods", methods), ("json", json), ("name", name), ("description", description), ("section", section), ("returning", returning), ("login", login), ("headers", headers), ("cookies", cookies), ("params", params), ("errors", errors)]:
             results[key] = value if not isinstance(
                 value, Default) else value.value
 

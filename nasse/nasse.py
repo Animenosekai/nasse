@@ -191,10 +191,11 @@ class Nasse():
                 The same options that will be passed to nasse.models.Endpoint to create the new endpoint. \n
                 Refer to `nasse.models.Endpoint` docs for more information on what to give here.
         """
-        flask_options = flask_options or {}
+        flask_options = dict(flask_options or {})
 
         def decorator(f):
             results = dict(endpoint or {})
+            results.pop("path", None) # we don't path to overwrite the default behavior
             results.update(kwargs)
             results["handler"] = f
             new_endpoint = models.Endpoint(**results)
