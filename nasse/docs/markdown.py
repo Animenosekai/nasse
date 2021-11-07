@@ -53,7 +53,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
 '''
     if endpoint.login.no_login:
         result += "Login is **not** required"
-    if endpoint.login.required and (endpoint.login.all_methods or method in endpoint.login.methods):
+    elif endpoint.login.required and (endpoint.login.all_methods or method in endpoint.login.methods):
         result += "Login with {types} is **required**".format(
             types=', '.join([str(type_name) for type_name in endpoint.login.types]))
     elif endpoint.login.all_methods or method in endpoint.login.methods:

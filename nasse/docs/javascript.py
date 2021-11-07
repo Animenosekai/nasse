@@ -18,7 +18,7 @@ def create_javascript_example_for_method(endpoint: models.Endpoint, method: str)
     if len(headers) > 0:
         headers_render = ",\n    headers: {render}".format(
             render=utils.json.encoder.encode(headers).replace("\n", "\n    "))
-    return '''fetch({url}, {{
+    return '''fetch("{url}", {{
     method: "{method}"{headers}{cookies}
 }})
 .then((response) => {{response.json()}})
