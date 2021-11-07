@@ -275,7 +275,7 @@ class Endpoint(object):
     errors = []
     base_dir = None
 
-    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(no_login=True)), headers: typing.Union[Header, list[Header]] = Default([]), cookies: typing.Union[Cookie, list[Cookie]] = Default([]), params: typing.Union[Param, list[Param]] = Default([]), errors: typing.Union[Error, list[Error]] = Default([]), base_dir: str = None, endpoint: dict = {}, **kwargs) -> None:
+    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(no_login=True)), headers: typing.Union[Header, list[Header]] = Default([]), cookies: typing.Union[Cookie, list[Cookie]] = Default([]), params: typing.Union[Param, list[Param]] = Default([]), errors: typing.Union[Error, list[Error]] = Default([]), base_dir: str = Default(None), endpoint: dict = {}, **kwargs) -> None:
         results = dict(endpoint)
         # path should be different when taking 'endpoint' as the base for another endpoint
         results.pop("path", None)
@@ -292,8 +292,17 @@ class Endpoint(object):
 
         if not self.path:
             if self.base_dir is not None:
-                self.path = utils.sanitize.to_path(self.base_dir.relative_to(pathlib.Path().resolve())) + \
-                    utils.sanitize.to_path(self.handler.__name__)
+                result = ""
+                base = str(self.base_dir)
+                length_of_base = len(base)
+                filepath = str(pathlib.Path(inspect.getmodule(self.handler).__file__).resolve())
+                for index, letter in enumerate(filepath[:filepath.rfind(".")]): # removing the extension
+                    if index < length_of_base and letter == base[index]:
+                        continue
+                    result += letter
+                name = result
+                self.path = utils.sanitize.to_path(
+                    name) + utils.sanitize.to_path(self.handler.__name__)
             else:
                 try:
                     self.path = utils.sanitize.to_path(inspect.getfile(self.handler).__name__) + \
