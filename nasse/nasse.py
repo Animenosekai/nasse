@@ -24,13 +24,15 @@ from nasse.response import exception_to_response
 
 
 class FileEventHandler(watchdog.events.FileSystemEventHandler):
-    def __init__(self, callback: typing.Callable) -> None:
+    def __init__(self, callback: typing.Callable, watch: list[pathlib.Path], ignore: list[pathlib.Path]) -> None:
         super().__init__()
         self.callback = callback
+        self.watch = [str(file) for file in watch]
+        self.ignore = [str(file) for file in ignore]
 
     def on_modified(self, event):
-        src_path = str(event.src_path)
-        if not any([src_path.endswith(extension) for extension in (".py", ".html", ".js", ".css")]):
+        src_path = str(pathlib.Path(str(event.src_path)).resolve())
+        if src_path not in self.watch or src_path in self.ignore:
             return
         utils.logging.log("{path} modified".format(path=src_path))
         self.callback()
@@ -195,7 +197,8 @@ class Nasse():
 
         def decorator(f):
             results = dict(endpoint or {})
-            results.pop("path", None) # we don't path to overwrite the default behavior
+            # we don't path to overwrite the default behavior
+            results.pop("path", None)
             results.update(kwargs)
             results["handler"] = f
             new_endpoint = models.Endpoint(**results)
@@ -206,23 +209,35 @@ class Nasse():
             return new_endpoint
         return decorator
 
-    def run(self, host: str = None, port: typing.Union[int, str] = None, **kwargs):
+    def run(self, host: str = None, port: typing.Union[int, str] = None, watch: list[str] = ["**/*.py"], ignore: list[str] = [], **kwargs):
         """
-        Runs the application on a local development server.
+        Runs the application by binding to an address and answering to clients.
 
-        Do not use `run()` in a production setting **for now**. It is not intended to
-        meet security and performance requirements for a production server.
+        This uses Gunicorn under the hood.
         """
         parameters = {
             "bind": "{host}:{port}".format(host=host or config.General.HOST, port=port or utils.args.Args.get(("-p", "--port"), 5000))
         }
         parameters.update(kwargs)
         if config.Mode.DEBUG:
+            watching = []
+            ignoring = []
+            for storage, data in [(watching, watch), (ignoring, ignore)]:
+                for file in data:
+                    file = str(file)
+                    path = pathlib.Path(file)
+                    if path.is_file():
+                        storage.append(path.resolve())
+                    elif path.is_dir():
+                        storage.extend(child.resolve()
+                                       for child in path.iterdir())
+                    else:
+                        storage.extend(child.resolve() for child in pathlib.Path().glob(file))
             utils.logging.log("DEBUG MODE IS ENABLED",
                               level=utils.logging.LogLevels.WARNING)
             self._observer = watchdog.observers.Observer()
             self._observer.schedule(FileEventHandler(
-                self.restart), ".", recursive=True)
+                callback=self.restart, watch=watching, ignore=ignoring), ".", recursive=True)
             self._observer.start()
         gunicorn_handler = GunicornServer(self, options=parameters)
         utils.logging.log("🎏 Binding to {color}{address}{normal}".format(
