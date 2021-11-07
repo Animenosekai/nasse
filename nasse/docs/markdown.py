@@ -14,7 +14,8 @@ def make_docs(endpoint: models.Endpoint, postman: bool = False):
                                        method=list(endpoint.methods)[0])
     else:
         for method in endpoint.methods:
-            result += '''\n- #### Using {method}\n{docs}'''.format(method=method, docs=make_docs_for_method(endpoint=endpoint, method=method, postman=postman))
+            result += '''\n- #### Using {method}\n{docs}'''.format(
+                method=method, docs=make_docs_for_method(endpoint=endpoint, method=method, postman=postman))
     return result
 
 
@@ -34,15 +35,15 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
 ```
 
 > [{source_code_path}]({github_path})
-'''.format(method=method, path=endpoint.path, source_code_path=path, github_path=path)
+'''.format(method=method, path=endpoint.path, source_code_path=path, github_path="../" + path)
 
     else:
         result = '''
-> [{path}]({github_path})
+> [{source_code_path}]({github_path})
 
 {description}
 
-'''
+'''.format(source_code_path=path, github_path="../" + path, description=endpoint.description)
 
     result += '''
 #### Authentication
