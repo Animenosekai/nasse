@@ -275,20 +275,20 @@ class Endpoint(object):
     errors = []
     base_dir = None
 
-    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(no_login=True)), headers: typing.Union[Header, list[Header]] = Default([]), cookies: typing.Union[Cookie, list[Cookie]] = Default([]), params:  typing.Union[Param, list[Param]] = Default([]), errors:  typing.Union[Error, list[Error]] = Default([]), base_dir: str = None, endpoint: dict = {}, **kwargs) -> None:
+    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(no_login=True)), headers: typing.Union[Header, list[Header]] = Default([]), cookies: typing.Union[Cookie, list[Cookie]] = Default([]), params: typing.Union[Param, list[Param]] = Default([]), errors: typing.Union[Error, list[Error]] = Default([]), base_dir: str = None, endpoint: dict = {}, **kwargs) -> None:
         results = dict(endpoint)
-        results.pop("path", None) # path should be different when taking 'endpoint' as the base for another endpoint
+        # path should be different when taking 'endpoint' as the base for another endpoint
+        results.pop("path", None)
         results.update(kwargs)
-        for key, value in [("handler", handler), ("path", path), ("methods", methods), ("json", json), ("name", name), ("description", description), ("section", section), ("returning", returning), ("login", login), ("headers", headers), ("cookies", cookies), ("params", params), ("errors", errors)]:
-            results[key] = value if not isinstance(
-                value, Default) else value.value
+        for key, value in [("handler", handler), ("path", path), ("methods", methods), ("json", json), ("name", name), ("description", description), ("section", section), ("returning", returning), ("login", login), ("headers", headers), ("cookies", cookies), ("params", params), ("errors", errors), ("base_dir", base_dir)]:
+            if not isinstance(value, Default):
+                results[key] = value
+            elif key not in results:
+                results[key] = value.value
 
         for key, value in results.items():
             # performs all of the verifications
             self.__setitem__(name=key, value=value)
-
-        super().__setattr__("base_dir", pathlib.Path(
-            base_dir).resolve() if base_dir is not None else None)
 
         if not self.path:
             if self.base_dir is not None:
@@ -318,7 +318,7 @@ class Endpoint(object):
         return "Endpoint(path='{path}')".format(path=self.path)
 
     def keys(self) -> list:
-        return {"handler", "path", "methods", "json", "name", "description", "section", "returning", "login", "headers", "cookies", "params", "errors"}
+        return {"handler", "path", "methods", "json", "name", "description", "section", "returning", "login", "headers", "cookies", "params", "errors", "base_dir"}
 
     def __getitem__(self, name):
         return getattr(self, name)
@@ -353,7 +353,6 @@ class Endpoint(object):
                     self.returning.append(_return_validation(item))
             else:
                 self.returning.append(_return_validation(value))
-
         elif name == "login":
             super().__setattr__("login", _login_validation(value))
         elif name in {"headers", "params", "cookies", "cookie", "header", "param", "parameter", "value", "values", "args", "arg"}:
@@ -391,7 +390,9 @@ class Endpoint(object):
                     self.errors.append(_error_validation(item))
             else:
                 self.errors.append(_error_validation(value))
-
+        elif name == "base_dir":
+            super().__setattr__("base_dir", pathlib.Path(
+                value).resolve() if value is not None else None)
         else:
             logging.log("{name} is not a settable attribute for a Nasse.models.Endpoint instance".format(
                 name=name), logging.LogLevels.WARNING)
