@@ -27,6 +27,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
         ).relative_to(Path().resolve())
     except Exception:
         path = Path(endpoint.handler.__code__.co_filename)
+    line = endpoint.handler.__code__.co_firstlineno
 
     if not postman:
         result = '''
@@ -35,7 +36,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
 ```
 
 > [{source_code_path}]({github_path})
-'''.format(method=method, path=endpoint.path, source_code_path=path, github_path="../" + path)
+'''.format(method=method, path=endpoint.path, source_code_path=path, github_path="../{path}#L{line}".format(path=path, line=line))
 
     else:
         result = '''
@@ -43,7 +44,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
 
 {description}
 
-'''.format(source_code_path=path, github_path="../" + path, description=endpoint.description)
+'''.format(source_code_path=path, github_path="../{path}#L{line}".format(path=path, line=line), description=endpoint.description)
 
     result += '''
 #### Authentication
