@@ -14,9 +14,7 @@ def make_docs(endpoint: models.Endpoint, postman: bool = False):
                                        method=list(endpoint.methods)[0])
     else:
         for method in endpoint.methods:
-            result += '''
-- #### Using {method}
-{docs}'''.format(method=method, docs=make_docs_for_method(endpoint=endpoint, method=method, postman=postman))
+            result += '''\n- #### Using {method}\n{docs}'''.format(method=method, docs=make_docs_for_method(endpoint=endpoint, method=method, postman=postman))
     return result
 
 
@@ -43,11 +41,10 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
 > [{path}]({github_path})
 
 {description}
-        
+
 '''
 
     result += '''
-
 #### Authentication
 
 '''
@@ -114,24 +111,22 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
 {python}
 ```
 
-<!-- tabs:end -->
+<!-- tabs:end -->'''.format(curl=docs.curl.create_curl_example_for_method(endpoint, method=method), javascript=docs.javascript.create_javascript_example_for_method(endpoint, method=method), python=docs.python.create_python_example_for_method(endpoint, method=method))
 
+    returning = [element for element in endpoint.returning if (
+        element.all_methods or method in element.methods)]
+    if len(returning) > 0:
+        if endpoint.json:
+            result += '''
 #### Response Format
-
-    '''.format(curl=docs.curl.create_curl_example_for_method(endpoint, method=method), javascript=docs.javascript.create_javascript_example_for_method(endpoint, method=method), python=docs.python.create_python_example_for_method(endpoint, method=method))
-
-    if endpoint.json:
-        result += '''
 
 ```json
 {example}
 ```
 '''.format(example=docs.example.generate_example(endpoint, method=method))
+        else:
+            result += '''\nThis endpoint doesn't seem to return a JSON formatted response but rather will return data directly:\n'''
 
-    returning = [element for element in endpoint.returning if (
-        element.all_methods or method in element.methods)]
-
-    if len(returning) > 0:
         result += '''
 #### Returns
 
@@ -154,5 +149,5 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
         result += "\n".join(
             ["| `{key}` | {description}  | {code}  |".format(key=error.name, description=error.description, code=error.code) for error in errors])
 
-    result += "\n"
+    # result += "\n"
     return result

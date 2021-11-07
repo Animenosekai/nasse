@@ -363,7 +363,7 @@ class Nasse():
         # Initializing the resulting string by prepending the header
         result = docs.header.DOCS_HEADER.format(name=self.name, id=self.id)
 
-        result += "\n## Index\n"
+        result += "## Index\n\n"
 
         # Sorting the sections alphabetically
         sections = sorted(set(
@@ -400,11 +400,8 @@ class Nasse():
                 postman_output.write(
                     utils.json.minified_encoder.encode(postman_results))
 
-            result += '''
-
-## {section}
-'''.format(section=section)
-            result += "\n[Return to the Index](#index)\n".join(
+            result += '''\n## {section}\n'''.format(section=section)
+            result += "[Return to the Index](#index)\n".join(
                 [docs.markdown.make_docs(endpoint) for endpoint in sections_registry[section]])
 
         with open(docs_path / "Endpoints.md", "w", encoding="utf8") as out:
