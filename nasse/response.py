@@ -2,6 +2,7 @@ import datetime
 import typing
 
 import werkzeug.http
+import werkzeug.exceptions
 
 from nasse import config, exceptions, utils
 from nasse.utils.annotations import Default
@@ -15,6 +16,15 @@ def exception_to_response(value: Exception):
         data = value.MESSAGE
         error = value.EXCEPTION_NAME
         code = int(value.STATUS_CODE)
+    elif isinstance(value, werkzeug.exceptions.HTTPException):
+        code = value.code
+        if code == 500:  # we don't know what kind of exception it might leak
+            data = "An error occured on the server while processing your request"
+        # we consider that they are fewer non basic exceptions (non 500) that are dangerous to leak (i.e: 4xx errors are related to the client)
+        else:
+            data = value.description
+        error = " ".join(utils.sanitize.split_on_uppercase(
+                value.__class__.__name__)).upper().strip().replace(" ", "_")
     else:
         # converts class names to error names: NasseException -> NASSE_EXCEPTION
         if isinstance(value, type):
@@ -178,7 +188,7 @@ class Response():
             elif len(headers) == 2:
                 # headers: ("HEADER-KEY", "Header Value")
                 self.headers[str(headers[0])] = str(headers[1])
-        
+
         if content_type:
             self.headers["Content-Type"] = str(content_type)
 

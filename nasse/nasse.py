@@ -129,22 +129,29 @@ class Nasse():
 
         if isinstance(cors, str):
             rule = utils.sanitize.remove_spaces(cors)
-            parsed = urllib.parse.urlparse(rule)
-            scheme = parsed.scheme or "https"
-            rule = '{scheme}://{netloc}'.format(
-                scheme=scheme, netloc=parsed.netloc) if rule != "*" else "*"
-            self.cors = [rule]
+            if rule == "*":
+                self.cors = ["*"]
+            else:
+                parsed = urllib.parse.urlparse(rule)
+                netloc = parsed.netloc if parsed.netloc else parsed.path.split("/")[0]
+                scheme = parsed.scheme or "https"
+                rule = '{scheme}://{netloc}'.format(scheme=scheme, netloc=netloc)
+                self.cors = [rule]
         elif isinstance(cors, bool):
             self.cors = ["*"] if cors else []
         else:
             self.cors = []
             for rule in cors:
                 rule = utils.sanitize.remove_spaces(rule)
-                parsed = urllib.parse.urlparse(rule)
-                scheme = parsed.scheme or "https"
-                rule = '{scheme}://{netloc}'.format(
-                    scheme=scheme, netloc=parsed.netloc) if rule != "*" else "*"
-                self.cors.append(rule)
+                if rule == "*":
+                    self.cors.append("*")
+                    continue
+                else:
+                    parsed = urllib.parse.urlparse(rule)
+                    netloc = parsed.netloc if parsed.netloc else parsed.path.split("/")[0]
+                    scheme = parsed.scheme or "https"
+                    rule = '{scheme}://{netloc}'.format(scheme=scheme, netloc=netloc)
+                    self.cors.append(rule)
 
         self.endpoints = {}
 
@@ -314,35 +321,46 @@ class Nasse():
                 The response to send
         """
         try:
+            print(response)
             # Ensuring HTTPS (for a year)
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
             # Managing CORS
             # Allowing the right methods
-            if flask.request.method.upper() == "OPTIONS":
-                current_endpoint = self.endpoints.get(
-                    request.url_rule.rule, None)
-                if current_endpoint is not None:
-                    response.headers["Access-Control-Allow-Methods"] = ", ".join(
-                        current_endpoint.methods)
-                    if config.Mode.PRODUCTION:
-                        response.headers["Access-Control-Max-Age"] = 86400
+            try:
+                if flask.request.method.upper() == "OPTIONS":
+                    current_endpoint = self.endpoints.get(
+                        request.url_rule.rule, None)
+                    if current_endpoint is not None:
+                        response.headers["Access-Control-Allow-Methods"] = ", ".join(
+                            current_endpoint.methods)
+                        if config.Mode.PRODUCTION:
+                            response.headers["Access-Control-Max-Age"] = 86400
+            except Exception:
+                pass
+
             # Allowing the right origins
             if self.cors:
+                print("CORS")
                 if "*" in self.cors:
+                    print("All")
                     origin = flask.request.environ.get("HTTP_ORIGIN", None)
                     if origin is not None:
                         response.headers["Vary"] = "Origin"
                         response.headers["Access-Control-Allow-Origin"] = origin
+                    else:
+                        response.headers["Access-Control-Allow-Origin"] = "*"
                 else:
                     response.headers["Vary"] = "Origin"
                     request_origin = flask.request.environ.get(
                         "HTTP_ORIGIN", None)
+                    print(request_origin)
                     if request_origin is self.cors:
                         response.headers["Access-Control-Allow-Origin"] = request_origin
                     else:
                         response.headers["Access-Control-Allow-Origin"] = self.cors[0]
-
+            else:
+                print("NO CORS")
             # Might need to allow the right headers
             # ...
 
