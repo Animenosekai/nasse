@@ -133,9 +133,11 @@ class Nasse():
                 self.cors = ["*"]
             else:
                 parsed = urllib.parse.urlparse(rule)
-                netloc = parsed.netloc if parsed.netloc else parsed.path.split("/")[0]
+                netloc = parsed.netloc if parsed.netloc else parsed.path.split(
+                    "/")[0]
                 scheme = parsed.scheme or "https"
-                rule = '{scheme}://{netloc}'.format(scheme=scheme, netloc=netloc)
+                rule = '{scheme}://{netloc}'.format(
+                    scheme=scheme, netloc=netloc)
                 self.cors = [rule]
         elif isinstance(cors, bool):
             self.cors = ["*"] if cors else []
@@ -148,9 +150,11 @@ class Nasse():
                     continue
                 else:
                     parsed = urllib.parse.urlparse(rule)
-                    netloc = parsed.netloc if parsed.netloc else parsed.path.split("/")[0]
+                    netloc = parsed.netloc if parsed.netloc else parsed.path.split(
+                        "/")[0]
                     scheme = parsed.scheme or "https"
-                    rule = '{scheme}://{netloc}'.format(scheme=scheme, netloc=netloc)
+                    rule = '{scheme}://{netloc}'.format(
+                        scheme=scheme, netloc=netloc)
                     self.cors.append(rule)
 
         self.endpoints = {}
@@ -239,7 +243,8 @@ class Nasse():
                         storage.extend(child.resolve()
                                        for child in path.iterdir())
                     else:
-                        storage.extend(child.resolve() for child in pathlib.Path().glob(file))
+                        storage.extend(child.resolve()
+                                       for child in pathlib.Path().glob(file))
             utils.logging.log("DEBUG MODE IS ENABLED",
                               level=utils.logging.LogLevels.WARNING)
             self._observer = watchdog.observers.Observer()
@@ -274,7 +279,7 @@ class Nasse():
         """
         Handles exception for flask.Flask
         """
-        # from traceback import print_exc; print_exc()
+        from traceback import print_exc; print_exc()
         try:
             try:
                 data, error, code = exception_to_response(e)
@@ -321,7 +326,6 @@ class Nasse():
                 The response to send
         """
         try:
-            print(response)
             # Ensuring HTTPS (for a year)
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
@@ -330,20 +334,44 @@ class Nasse():
             try:
                 if flask.request.method.upper() == "OPTIONS":
                     current_endpoint = self.endpoints.get(
-                        request.url_rule.rule, None)
+                        flask.request.url_rule.rule, None)
                     if current_endpoint is not None:
-                        response.headers["Access-Control-Allow-Methods"] = ", ".join(
-                            current_endpoint.methods)
-                        if config.Mode.PRODUCTION:
-                            response.headers["Access-Control-Max-Age"] = 86400
+                        try:
+                            response.headers["Access-Control-Allow-Methods"] = ", ".join(
+                                current_endpoint.methods)
+                        except Exception:
+                            # from traceback import print_exc
+                            # print_exc()
+                            utils.logging.log(
+                                "An error occured while setting the Access-Control-Allow-Methods header", utils.logging.LogLevels.WARNING)
+                        try:
+                            requested_headers = flask.request.headers.get(
+                                "Access-Control-Request-Headers", "").split(", ")
+                            endpoint_headers = [header.name.lower()
+                                                for header in current_endpoint.headers]
+                            if not current_endpoint.login.no_login:
+                                endpoint_headers.append("authorization")
+                            response.headers["Access-Control-Allow-Headers"] = ", ".join(
+                                (header for header in requested_headers if header.lower() in endpoint_headers))
+                        except Exception:
+                            # from traceback import print_exc
+                            # print_exc()
+                            utils.logging.log(
+                                "An error occured while setting the Access-Control-Allow-Headers header", utils.logging.LogLevels.WARNING)
+                    else:
+                        utils.logging.log(
+                            "We couldn't verify the current endpoint informations on an OPTIONS request", utils.logging.LogLevels.WARNING)
+                    if config.Mode.PRODUCTION:
+                        response.headers["Access-Control-Max-Age"] = 86400
             except Exception:
-                pass
+                # from traceback import print_exc
+                # print_exc()
+                utils.logging.log(
+                    "An error occured while setting some CORS headers", utils.logging.LogLevels.WARNING)
 
             # Allowing the right origins
             if self.cors:
-                print("CORS")
                 if "*" in self.cors:
-                    print("All")
                     origin = flask.request.environ.get("HTTP_ORIGIN", None)
                     if origin is not None:
                         response.headers["Vary"] = "Origin"
@@ -354,13 +382,10 @@ class Nasse():
                     response.headers["Vary"] = "Origin"
                     request_origin = flask.request.environ.get(
                         "HTTP_ORIGIN", None)
-                    print(request_origin)
                     if request_origin is self.cors:
                         response.headers["Access-Control-Allow-Origin"] = request_origin
                     else:
                         response.headers["Access-Control-Allow-Origin"] = self.cors[0]
-            else:
-                print("NO CORS")
             # Might need to allow the right headers
             # ...
 

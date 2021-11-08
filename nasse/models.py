@@ -52,7 +52,7 @@ class Return():
 
 
 class Login():
-    def __init__(self, required: bool = False, types: typing.Union[typing.Any, list[typing.Any]] = [], methods: typing.Union[list[str], str] = "*", no_login: bool = True, verification_only: bool = False) -> None:
+    def __init__(self, required: bool = False, types: typing.Union[typing.Any, list[typing.Any]] = [], methods: typing.Union[list[str], str] = "*", no_login: bool = False, verification_only: bool = False) -> None:
         self.no_login = bool(no_login)
         self.verification_only = bool(verification_only)
         self.required = bool(required)
@@ -61,6 +61,8 @@ class Login():
             self.types = {t for t in types}
         self.methods = _methods_validation(methods)
         self.all_methods = "*" in self.methods
+        if len(self.methods) == 0:
+            self.no_login = True
 
     def __repr__(self) -> str:
         if self.no_login:
@@ -268,14 +270,14 @@ class Endpoint(object):
     description = ""
     section = "Other"
     returning = []
-    login = Login(no_login=True)
+    login = Login(required=False)
     headers = []
     params = []
     cookies = []
     errors = []
     base_dir = None
 
-    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(no_login=True)), headers: typing.Union[Header, list[Header]] = Default([]), cookies: typing.Union[Cookie, list[Cookie]] = Default([]), params: typing.Union[Param, list[Param]] = Default([]), errors: typing.Union[Error, list[Error]] = Default([]), base_dir: str = Default(None), endpoint: dict = {}, **kwargs) -> None:
+    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(required=True)), headers: typing.Union[Header, list[Header]] = Default([]), cookies: typing.Union[Cookie, list[Cookie]] = Default([]), params: typing.Union[Param, list[Param]] = Default([]), errors: typing.Union[Error, list[Error]] = Default([]), base_dir: str = Default(None), endpoint: dict = {}, **kwargs) -> None:
         results = dict(endpoint)
         # path should be different when taking 'endpoint' as the base for another endpoint
         results.pop("path", None)
