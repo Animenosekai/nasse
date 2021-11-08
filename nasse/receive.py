@@ -158,20 +158,23 @@ class Receive():
                         if not self.endpoint.json:
                             final = flask.Response(response=data, status=code)
 
-                            if error:
-                                final.headers["X-NASSE-ERROR"] = str(error)
+                            try:
+                                if error:
+                                    final.headers["X-NASSE-ERROR"] = str(error)
 
-                            if config.Mode.DEBUG:
-                                final.headers["X-NASSE-TIME-GLOBAL"] = str(
-                                    global_timer.stop())
-                                final.headers["X-NASSE-TIME-VERIFICATION"] = str(
-                                    verification_timer.time)
-                                final.headers["X-NASSE-TIME-AUTHENTICATION"] = str(
-                                    authentication_timer.time)
-                                final.headers["X-NASSE-TIME-PROCESSING"] = str(
-                                    processing_timer.time)
-                                final.headers["X-NASSE-TIME-FORMATTING"] = str(
-                                    formatting_timer.stop())
+                                if config.Mode.DEBUG:
+                                    final.headers["X-NASSE-TIME-GLOBAL"] = str(
+                                        global_timer.stop())
+                                    final.headers["X-NASSE-TIME-VERIFICATION"] = str(
+                                        verification_timer.time)
+                                    final.headers["X-NASSE-TIME-AUTHENTICATION"] = str(
+                                        authentication_timer.time)
+                                    final.headers["X-NASSE-TIME-PROCESSING"] = str(
+                                        processing_timer.time)
+                                    final.headers["X-NASSE-TIME-FORMATTING"] = str(
+                                        formatting_timer.stop())
+                            except Exception:
+                                pass
                         else:
                             result = {
                                 "success": error is None,
@@ -269,7 +272,7 @@ class Receive():
 
                         if "call_stack" in flask.g.request.values:
                             result["debug"]["call_stack"] = [frame.as_dict()
-                                                            for frame in CALL_STACK]
+                                                             for frame in CALL_STACK]
 
                     minify = utils.boolean.to_bool(
                         flask.g.request.values.get("minify", False))
