@@ -248,41 +248,42 @@ class Receive():
                     except Exception:
                         headers = {}
 
-                CALL_STACK, LOG_STACK = STACK.stop()
-                if config.Mode.DEBUG:
-                    result["debug"] = {
-                        "time": {
-                            "global": global_timer.stop(),
-                            "verification": verification_timer.time if verification_timer is not None else None,
-                            "authentication": authentication_timer.time if authentication_timer is not None else None,
-                            "processing": processing_timer.time if processing_timer is not None else None,
-                            "formatting": formatting_timer.stop() if formatting_timer is not None else None
-                        },
-                        "ip": flask.g.request.client_ip if isinstance(flask.g.request, request.Request) else utils.ip.get_ip(),
-                        "headers": dict(flask.g.request.headers),
-                        "values": dict(flask.g.request.values),
-                        "domain": flask.g.request.host,
-                        "logs": LOG_STACK,
-                        "call_stack": ["pass the 'call_stack' parameter to get the call stack"]
-                    }
+                if self.endpoint.json:
+                    CALL_STACK, LOG_STACK = STACK.stop()
+                    if config.Mode.DEBUG:
+                        result["debug"] = {
+                            "time": {
+                                "global": global_timer.stop(),
+                                "verification": verification_timer.time if verification_timer is not None else None,
+                                "authentication": authentication_timer.time if authentication_timer is not None else None,
+                                "processing": processing_timer.time if processing_timer is not None else None,
+                                "formatting": formatting_timer.stop() if formatting_timer is not None else None
+                            },
+                            "ip": flask.g.request.client_ip if isinstance(flask.g.request, request.Request) else utils.ip.get_ip(),
+                            "headers": dict(flask.g.request.headers),
+                            "values": dict(flask.g.request.values),
+                            "domain": flask.g.request.host,
+                            "logs": LOG_STACK,
+                            "call_stack": ["pass the 'call_stack' parameter to get the call stack"]
+                        }
 
-                    if "call_stack" in flask.g.request.values:
-                        result["debug"]["call_stack"] = [frame.as_dict()
-                                                         for frame in CALL_STACK]
+                        if "call_stack" in flask.g.request.values:
+                            result["debug"]["call_stack"] = [frame.as_dict()
+                                                            for frame in CALL_STACK]
 
-                minify = utils.boolean.to_bool(
-                    flask.g.request.values.get("minify", False))
+                    minify = utils.boolean.to_bool(
+                        flask.g.request.values.get("minify", False))
 
-                content_type = "application/json"
-                if utils.sanitize.remove_spaces(flask.g.request.values.get("format", "json")).lower() in {"xml", "html"}:
-                    body = utils.xml.encode(data=result, minify=minify)
-                    content_type = "application/xml"
-                else:
-                    body = (utils.json.minified_encoder if minify else utils.json.encoder).encode(
-                        result)
+                    content_type = "application/json"
+                    if utils.sanitize.remove_spaces(flask.g.request.values.get("format", "json")).lower() in {"xml", "html"}:
+                        body = utils.xml.encode(data=result, minify=minify)
+                        content_type = "application/xml"
+                    else:
+                        body = (utils.json.minified_encoder if minify else utils.json.encoder).encode(
+                            result)
 
-                final = flask.Response(body, status=code)
-                final.headers["Content-Type"] = content_type
+                    final = flask.Response(body, status=code)
+                    final.headers["Content-Type"] = content_type
 
             # final is now defined
             for cookie in cookies:
