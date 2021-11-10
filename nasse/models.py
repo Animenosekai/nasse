@@ -129,7 +129,7 @@ class Cookie(UserSent):
 
 
 class Error():
-    def __init__(self, name: str, description: str = "", code: int = 500, methods: typing.Union[list[str], str] = None) -> None:
+    def __init__(self, name: str, description: str = "", code: int = 500, methods: typing.Union[list[str], str] = "*") -> None:
         self.name = str(name)
         self.description = str(description)
         self.code = int(code)
