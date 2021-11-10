@@ -193,7 +193,7 @@ def _return_validation(value):
         if isinstance(e, exceptions.NasseException):
             raise e
         raise exceptions.validate.ReturnConversionError(
-            "Nasse cannot convert value of type <{t}> to Nasse.models.Return".format(t=value.__class__.__name__))
+            "Nasse cannot convert value of type <{t}> to nasse.models.Return".format(t=value.__class__.__name__))
 
 
 def _usersent_validation(value, cast: typing.Union[typing.Type[UserSent], typing.Type[Header], typing.Type[Param], typing.Type[Cookie]] = UserSent):
@@ -211,7 +211,7 @@ def _usersent_validation(value, cast: typing.Union[typing.Type[UserSent], typing
             except TypeError:
                 print(value)
                 raise exceptions.validate.UserSentConversionError(
-                    "Either 'name' is missing or one argument doesn't have the right type while creating a nasse.models.UserSent instance")
+                    "Either 'name' is missing or one argument doesn't have the right type while creating a nasse.models.{cast} instance".format(cast=cast.__name__))
         raise ValueError  # will be catched
     except Exception as e:
         if isinstance(e, exceptions.NasseException):
