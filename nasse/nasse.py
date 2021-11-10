@@ -279,7 +279,7 @@ class Nasse():
         """
         Handles exception for flask.Flask
         """
-        from traceback import print_exc; print_exc()
+        # from traceback import print_exc; print_exc()
         try:
             try:
                 data, error, code = exception_to_response(e)

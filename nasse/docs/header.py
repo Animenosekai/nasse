@@ -88,7 +88,40 @@ Look at [flask_exceptions.json](./flask_exceptions.json) for a list of Flask iss
 The "call_stack" attribute is enabled only when an error occurs or the `call_stack` parameter is passed with the request.
 
 ```json
-
+{{
+    "success": true,
+    "error": null,
+    "data": {{
+        "username": "Animenosekai"
+    }},
+    "debug": {{
+        "time": {{
+            "global": 0.036757,
+            "verification": 0.033558,
+            "authentication": 0.003031,
+            "processing": 4.9e-05,
+            "formatting": 0.0001
+        }},
+        "ip": "127.0.0.1",
+        "headers": {{
+            "Host": "api.{id}.com",
+            "Connection": "close",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "fr-fr",
+            "Accept-Encoding": "gzip, deflate, br",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15"
+        }},
+        "values": {{}},
+        "domain": "api.{id}.com",
+        "logs": [
+            "1636562693.036563｜[INFO] [nasse.receive.Receive.__call__] → Incoming GET request to /account/name from 127.0.0.1",
+            "1636562693.070008｜[ERROR] [nasse.exceptions.base.MissingToken.__init__] An authentication token is missing from the request"
+        ],
+        "call_stack": [
+            "pass the 'call_stack' parameter to get the call stack"
+        ]
+    }}
+}}
 ```
 
 '''

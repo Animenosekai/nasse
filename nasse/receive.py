@@ -63,26 +63,31 @@ class Receive():
 
                     account = None
                     with timer.Timer() as authentication_timer:
-                        if not self.endpoint.login.no_login and self.endpoint.login.required:
+                        if not self.endpoint.login.no_login:
                             if self.endpoint.login.all_methods or flask.g.request.method in self.endpoint.login.methods:
-                                token = retrieve_token()
-                                if self.app.account_management:
-                                    if not self.endpoint.login.verification_only:
-                                        account = self.app.account_management.retrieve_account(
-                                            token)
-                                        if len(self.endpoint.login.types) > 0:
-                                            if self.app.account_management.retrieve_type(account) not in self.endpoint.login.types:
+                                try:
+                                    token = retrieve_token()
+                                    if self.app.account_management:
+                                        if not self.endpoint.login.verification_only:
+                                            account = self.app.account_management.retrieve_account(
+                                                token)
+                                            if len(self.endpoint.login.types) > 0:
+                                                if self.app.account_management.retrieve_type(account) not in self.endpoint.login.types:
+                                                    account = None  # if login is not required, the account might be passed with a wrong type
+                                                    raise exceptions.authentication.Forbidden(
+                                                        "You can't access this endpoint with your account")
+                                        else:
+                                            verification = self.app.account_management.verify_token(
+                                                token)
+                                            if verification == False:
                                                 raise exceptions.authentication.Forbidden(
-                                                    "You can't access this endpoint with your account")
+                                                    "We couldn't verify your token")
                                     else:
-                                        verification = self.app.account_management.verify_token(
-                                            token)
-                                        if verification == False:
-                                            raise exceptions.authentication.Forbidden(
-                                                "We couldn't verify your token")
-                                else:
-                                    utils.logging.log("Couldn't verify login details because 'account_management' is not set properly on {name}".format(
-                                        name=self.app.name), level=utils.logging.LogLevels.WARNING)
+                                        utils.logging.log("Couldn't verify login details because 'account_management' is not set properly on {name}".format(
+                                            name=self.app.name), level=utils.logging.LogLevels.WARNING)
+                                except Exception as e:
+                                    if self.endpoint.login.required:
+                                        raise e
 
                     with timer.Timer() as processing_timer:
                         arguments = {}

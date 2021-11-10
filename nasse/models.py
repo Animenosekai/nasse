@@ -187,7 +187,7 @@ def _return_validation(value):
                 return Return(**value)
             except TypeError:
                 raise exceptions.validate.ReturnConversionError(
-                    "Either 'name' is missing or one argument doesn't have the right type while creating a Nasse.models.Return instance")
+                    "Either 'name' is missing or one argument doesn't have the right type while creating a nasse.models.Return instance")
         raise ValueError  # will be catched
     except Exception as e:
         if isinstance(e, exceptions.NasseException):
@@ -209,8 +209,9 @@ def _usersent_validation(value, cast: typing.Union[typing.Type[UserSent], typing
             try:
                 return cast(**value)
             except TypeError:
+                print(value)
                 raise exceptions.validate.UserSentConversionError(
-                    "Either 'name' is missing or one argument doesn't have the right type while creating a Nasse.models.Return instance")
+                    "Either 'name' is missing or one argument doesn't have the right type while creating a nasse.models.UserSent instance")
         raise ValueError  # will be catched
     except Exception as e:
         if isinstance(e, exceptions.NasseException):
@@ -237,7 +238,7 @@ def _error_validation(value):
                 return Error(**value)
             except TypeError:
                 raise exceptions.validate.ErrorConversionError(
-                    "Either 'name' is missing or one argument doesn't have the right type while creating a Nasse.models.Return instance")
+                    "Either 'name' is missing or one argument doesn't have the right type while creating a nasse.models.Error instance")
         raise ValueError  # will be catched
     except Exception as e:
         if isinstance(e, exceptions.NasseException):
@@ -297,8 +298,10 @@ class Endpoint(object):
                 result = ""
                 base = str(self.base_dir)
                 length_of_base = len(base)
-                filepath = str(pathlib.Path(inspect.getmodule(self.handler).__file__).resolve())
-                for index, letter in enumerate(filepath[:filepath.rfind(".")]): # removing the extension
+                filepath = str(pathlib.Path(
+                    inspect.getmodule(self.handler).__file__).resolve())
+                # removing the extension
+                for index, letter in enumerate(filepath[:filepath.rfind(".")]):
                     if index < length_of_base and letter == base[index]:
                         continue
                     result += letter
@@ -340,7 +343,7 @@ class Endpoint(object):
     def __setitem__(self, name: str, value: typing.Any = None):
         if name == "handler":
             super().__setattr__("handler", value)
-        elif name == "path":
+        elif name in {"path", "route", "rule"}:
             super().__setattr__("path", str(value))
         elif name in {"methods", "method"}:
             super().__setattr__("methods", _methods_validation(value))
@@ -352,7 +355,7 @@ class Endpoint(object):
             super().__setattr__("description", str(value or ""))
         elif name == "section":
             super().__setattr__("section", str(value))
-        elif name == "returning":
+        elif name in {"returning", "return", "response", "output", "answer"}:
             super().__setattr__("returning", [])
             if utils.annotations.is_unpackable(value):
                 for key, val in dict(value).items():
@@ -366,7 +369,7 @@ class Endpoint(object):
                 self.returning.append(_return_validation(value))
         elif name == "login":
             super().__setattr__("login", _login_validation(value))
-        elif name in {"headers", "params", "cookies", "cookie", "header", "param", "parameter", "value", "values", "args", "arg"}:
+        elif name in {"headers", "params", "cookies", "cookie", "header", "param", "parameters", "parameter", "value", "values", "args", "arg"}:
             if name in {"headers", "header"}:
                 super().__setattr__("headers", [])
                 storage = self.headers

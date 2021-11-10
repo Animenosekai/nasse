@@ -53,13 +53,16 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
     if endpoint.login.no_login:
         result += "Login is **not** required"
     elif endpoint.login.required and (endpoint.login.all_methods or method in endpoint.login.methods):
-        result += "Login with {types} is **required**".format(
-            types=', '.join([str(type_name) for type_name in endpoint.login.types]))
+        result += "Login{types} is **required**".format(
+            types=(' with ' + ', '.join([str(type_name) for type_name in endpoint.login.types])) if len(endpoint.login.types) > 0 else "")
     elif endpoint.login.all_methods or method in endpoint.login.methods:
-        result += "Login with {types} is **optional**".format(
-            types=', '.join([str(type_name) for type_name in endpoint.login.types]))
+        result += "Login {types} is **optional**".format(
+            types=(' with ' + ', '.join([str(type_name) for type_name in endpoint.login.types])) if len(endpoint.login.types) > 0 else "")
     else:
         result += "Login is **not** required"
+
+    if endpoint.login.verification_only:
+        result += " but only verified"
 
     if not postman:  # POSTMAN DOESN'T NEED THESE INFORMATION
 
