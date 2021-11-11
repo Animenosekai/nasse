@@ -75,8 +75,11 @@ class Request(object):
                         raise exception(name=value.name)
                 else:
                     if value.type is not None:
-                        current_values[value.name] = value.type(
-                            current_values[value.name])
+                        results = []
+                        for key, val in current_values:
+                            if key == value.name:
+                                results.append(value.type(val))
+                        self.values.setlist(value.name, results)
 
     def __setattr__(self, name: str, value: typing.Any) -> None:
         if name in _overwritten:

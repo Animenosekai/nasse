@@ -180,7 +180,7 @@ class Nasse():
     def __repr__(self) -> str:
         return "Nasse({name})".format(name=self.name)
 
-    def route(self, endpoint: models.Endpoint = None, flask_options: dict = None, **kwargs):
+    def route(self, path: str = utils.annotations.Default(""), endpoint: models.Endpoint = None, flask_options: dict = None, **kwargs):
         """
         # A decorator to register a new endpoint
 
@@ -210,6 +210,7 @@ class Nasse():
             results = dict(endpoint or {})
             # we don't path to overwrite the default behavior
             results.pop("path", None)
+            results["path"] = path
             results.update(kwargs)
             results["handler"] = f
             new_endpoint = models.Endpoint(**results)

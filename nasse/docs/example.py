@@ -48,7 +48,7 @@ def generate_example(endpoint: models.Endpoint, method: str):
         elif key_type == "bool":
             return utils.boolean.to_bool(data.example or True)
         elif key_type == "object":
-            return {child[child.rfind(".") + 1:]: get_value(child) for child in data.children if (data.all_methods or method in data.methods)}
+            return {child.name: get_value(child) for child in data.children if (data.all_methods or method in data.methods)}
         return data.example or "no example"
 
     _response_format = {}

@@ -5,13 +5,13 @@ import json
 from nasse.models import Endpoint, Error, Login, Return, UserSent
 
 
-def return_to_python(element: Return, indent: str = " " * 4):
+def return_to_python(element: Return, indent: str = " " * 4, end_indent: str = ""):
     result = "Return(\n"
     result += indent + "name = " + \
         json.dumps(element.name, ensure_ascii=False) + ",\n"
     if element.example:
-        result += indent + "example = " + json.dumps(element.example, ensure_ascii=False) if isinstance(
-            element.example, str) else str(element.example) + ",\n"
+        result += indent + "example = " + (json.dumps(element.example, ensure_ascii=False) if isinstance(
+            element.example, str) else str(element.example)) + ",\n"
     if element.description:
         result += indent + "description = " + \
             json.dumps(element.description, ensure_ascii=False) + ",\n"
@@ -22,29 +22,28 @@ def return_to_python(element: Return, indent: str = " " * 4):
         result += indent + "children = " + str(element.children) + ",\n"
     result += indent + "methods = " + str(element.methods) + ",\n"
     result += indent + "nullable = " + str(element.nullable) + "\n"
-    result += indent + ")"
+    result += end_indent + ")"
     return result
 
 
-def login_to_python(element: Login, indent: str = " " * 4):
+def login_to_python(element: Login, indent: str = " " * 4, end_indent: str = ""):
     result = "Login(\n"
     if element.required:
         result += indent + "required = True,\n"
     if element.types:
         # we can't really convert non-str types
-        result += indent + "types = " + \
-            json.dumps(str(element.types), ensure_ascii=False) + ",\n"
+        result += indent + "types = " + str(element.types) + ",\n"
     result += indent + "methods = " + str(element.methods) + ",\n"
     if element.no_login:
         result += indent + "no_login = True,\n"
     if element.verification_only:
         result += indent + "verification_only = True\n"
 
-    result += ")"
+    result += end_indent + ")"
     return result
 
 
-def usersent_to_python(element: UserSent, indent: str = " " * 4):
+def usersent_to_python(element: UserSent, indent: str = " " * 4, end_indent: str = ""):
     result = "{t}(\n".format(t=element.__class__.__name__)
     result += indent + "name = " + \
         json.dumps(element.name, ensure_ascii=False) + ",\n"
@@ -58,11 +57,11 @@ def usersent_to_python(element: UserSent, indent: str = " " * 4):
 
     # we can't convert types for now
 
-    result += ")"
+    result += end_indent + ")"
     return result
 
 
-def error_to_python(element: Error, indent: str = " " * 4):
+def error_to_python(element: Error, indent: str = " " * 4, end_indent: str = ""):
     result = "Error(\n"
     result += indent + "name = " + \
         json.dumps(element.name, ensure_ascii=False) + ",\n"
@@ -75,7 +74,7 @@ def error_to_python(element: Error, indent: str = " " * 4):
         result += indent + "code = " + str(element.code) + ",\n"
     result += indent + "methods = " + str(element.methods) + "\n"
 
-    result += ")"
+    result += end_indent + ")"
     return result
 
 
@@ -86,7 +85,7 @@ def endpoint_to_python(endpoint: Endpoint, explicit_path: bool = True, indent: s
         result += indent + "path = " + \
             json.dumps(endpoint.path, ensure_ascii=False) + ",\n"
 
-    if not len(endpoint.methods) == 1 and endpoint.methods[0] == "GET":
+    if not len(endpoint.methods) == 1 and list(endpoint.methods)[0] == "GET":
         result += indent + "methods = " + str(endpoint.methods) + ",\n"
 
     if not endpoint.json:
@@ -106,38 +105,44 @@ def endpoint_to_python(endpoint: Endpoint, explicit_path: bool = True, indent: s
         result += indent + "returning = [\n"
         for elem in endpoint.returning:
             result += indent * 2 + \
-                return_to_python(elem, indent=indent * 3) + ",\n"
+                return_to_python(elem, indent=indent * 3,
+                                 end_indent=indent * 2) + ",\n"
         result += indent + "],\n"
 
     result += indent + "login = " + \
-        login_to_python(endpoint.login, indent=indent * 3)
+        login_to_python(endpoint.login, indent=indent *
+                        2, end_indent=indent) + ",\n"
 
     if endpoint.headers:
         result += indent + "headers = [\n"
         for elem in endpoint.headers:
             result += indent * 2 + \
-                usersent_to_python(elem, indent=indent * 3) + ",\n"
+                usersent_to_python(elem, indent=indent * 3,
+                                   end_indent=indent * 2) + ",\n"
         result += indent + "],\n"
 
     if endpoint.cookies:
         result += indent + "cookies = [\n"
         for elem in endpoint.cookies:
             result += indent * 2 + \
-                usersent_to_python(elem, indent=indent * 3) + ",\n"
+                usersent_to_python(elem, indent=indent * 3,
+                                   end_indent=indent * 2) + ",\n"
         result += indent + "],\n"
 
     if endpoint.params:
         result += indent + "params = [\n"
         for elem in endpoint.params:
             result += indent * 2 + \
-                usersent_to_python(elem, indent=indent * 3) + ",\n"
+                usersent_to_python(elem, indent=indent * 3,
+                                   end_indent=indent * 2) + ",\n"
         result += indent + "],\n"
 
     if endpoint.errors:
         result += indent + "errors = [\n"
         for elem in endpoint.errors:
             result += indent * 2 + \
-                error_to_python(elem, indent=indent * 3) + ",\n"
+                error_to_python(elem, indent=indent * 3,
+                                end_indent=indent * 2) + ",\n"
         result += indent + "],\n"
 
     result += ")"
