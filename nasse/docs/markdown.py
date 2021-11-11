@@ -73,11 +73,11 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
 
 #### Parameters
 
-| Name         | Description                      | Required         |
-| ------------ | -------------------------------- | ---------------- |
+| Name         | Description                      | Required         | Type             |
+| ------------ | -------------------------------- | ---------------- | ---------------- |
 '''
             result += "\n".join(
-                ["| `{param}` | {description}  | {required}            |".format(param=param.name, description=param.description, required=param.required) for param in params])
+                ["| `{param}` | {description}  | {required}            | {type}            |".format(param=param.name, description=param.description, required=param.required, type=param.type.__name__ if param.type is not None else "str") for param in params])
 
         headers = [header for header in endpoint.headers if (
             header.all_methods or method in header.methods)]
@@ -86,11 +86,24 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
 
 #### Headers
 
-| Name         | Description                      | Required         |
-| ------------ | -------------------------------- | ---------------- |
+| Name         | Description                      | Required         | Type             |
+| ------------ | -------------------------------- | ---------------- | ---------------- |
 '''
             result += "\n".join(
-                ["| `{header}` | {description}  | {required}            |".format(header=header.name, description=header.description, required=header.required) for header in headers])
+                ["| `{header}` | {description}  | {required}            | {type}            |".format(header=header.name, description=header.description, required=header.required, type=header.type.__name__ if header.type is not None else "str") for header in headers])
+
+        cookies = [cookie for cookie in endpoint.cookies if (
+            cookie.all_methods or method in cookie.methods)]
+        if len(cookies) > 0:
+            result += '''
+
+#### Cookies
+
+| Name         | Description                      | Required         | Type             |
+| ------------ | -------------------------------- | ---------------- | ---------------- |
+'''
+            result += "\n".join(
+                ["| `{cookie}` | {description}  | {required}            | {type}            |".format(cookie=cookie.name, description=cookie.description, required=cookie.required, type=cookie.type.__name__ if cookie.type is not None else "str") for cookie in cookies])
 
         result += '''
 
