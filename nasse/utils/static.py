@@ -85,7 +85,7 @@ def endpoint_to_python(endpoint: Endpoint, explicit_path: bool = True, indent: s
         result += indent + "path = " + \
             json.dumps(endpoint.path, ensure_ascii=False) + ",\n"
 
-    if not len(endpoint.methods) == 1 or list(endpoint.methods)[0] == "GET":
+    if not len(endpoint.methods) == 1 or list(endpoint.methods)[0] != "GET":
         result += indent + "methods = " + str(endpoint.methods) + ",\n"
 
     if not endpoint.json:
