@@ -10,7 +10,7 @@ def create_javascript_example_for_method(endpoint: models.Endpoint, method: str)
         header.all_methods or method in header.methods)}
     include_cookies = len(
         [cookie for cookie in endpoint.cookies if cookie.all_methods or method in cookie.methods]) > 0
-    url = endpoint.path
+    url = '"{path}"'.format(path=endpoint.path)
     if len(params) > 0:
         url = """`{path}?{params}`""".format(path=endpoint.path, params="&".join(
             ['{escaped}=${{encodeURIComponent("{name}")}}'.format(escaped=urllib.parse.quote(param.name), name=param.name) for param in params]))
@@ -18,7 +18,7 @@ def create_javascript_example_for_method(endpoint: models.Endpoint, method: str)
     if len(headers) > 0:
         headers_render = ",\n    headers: {render}".format(
             render=utils.json.encoder.encode(headers).replace("\n", "\n    "))
-    return '''fetch("{url}", {{
+    return '''fetch({url}, {{
     method: "{method}"{headers}{cookies}
 }})
 .then((response) => {{response.json()}})
