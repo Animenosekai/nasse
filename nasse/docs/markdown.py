@@ -3,7 +3,7 @@ from pathlib import Path
 from nasse import docs, models
 
 
-def make_docs(endpoint: models.Endpoint, postman: bool = False):
+def make_docs(endpoint: models.Endpoint, postman: bool = False, curl: bool = True, javascript: bool = True, python: bool = True):
     result = '''
 ### {name}
 
@@ -15,11 +15,11 @@ def make_docs(endpoint: models.Endpoint, postman: bool = False):
     else:
         for method in endpoint.methods:
             result += '''\n- #### Using {method}\n{docs}'''.format(
-                method=method, docs=make_docs_for_method(endpoint=endpoint, method=method, postman=postman))
+                method=method, docs=make_docs_for_method(endpoint=endpoint, method=method, postman=postman, curl=curl, javascript=javascript, python=python))
     return result
 
 
-def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool = False):
+def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool = False, curl: bool = True, javascript: bool = True, python: bool = True):
     method = str(method)
 
     try:
@@ -105,31 +105,41 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
             result += "\n".join(
                 ["| `{cookie}` | {description}  | {required}            | {type}            |".format(cookie=cookie.name, description=cookie.description, required=cookie.required, type=cookie.type.__name__ if cookie.type is not None else "str") for cookie in cookies])
 
-        result += '''
+        if any((curl, javascript, python)):
+            result += '''
 
 #### Example
 
 <!-- tabs:start -->
-
+'''
+            if curl:
+                result += '''
 #### **cURL**
 
 ```bash
 {curl}
 ```
+'''.format(curl=docs.curl.create_curl_example_for_method(endpoint, method=method))
+
+            if javascript:
+                result += '''
 
 #### **JavaScript**
 
 ```javascript
 {javascript}
 ```
+'''.format(javascript=docs.javascript.create_javascript_example_for_method(endpoint, method=method))
 
+            if python:
+                result += '''
 #### **Python**
 
 ```python
 {python}
 ```
-
-<!-- tabs:end -->'''.format(curl=docs.curl.create_curl_example_for_method(endpoint, method=method), javascript=docs.javascript.create_javascript_example_for_method(endpoint, method=method), python=docs.python.create_python_example_for_method(endpoint, method=method))
+'''.format(python=docs.python.create_python_example_for_method(endpoint, method=method))
+            result += '''<!-- tabs:end -->'''
 
     returning = [element for element in endpoint.returning if (
         element.all_methods or method in element.methods)]

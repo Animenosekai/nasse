@@ -1,4 +1,5 @@
 import base64
+import inspect
 import sys
 import typing
 
@@ -105,7 +106,7 @@ class Receive():
                             ("headers", flask.g.request.headers),
                             ("account", account)
                         ]:
-                            if attr in self.endpoint.handler.__code__.co_varnames:
+                            if attr in inspect.getfullargspec(self.endpoint.handler).args:
                                 arguments[attr] = current_values
                         arguments.update(kwds)
 

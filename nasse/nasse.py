@@ -383,7 +383,7 @@ class Nasse():
                     response.headers["Vary"] = "Origin"
                     request_origin = flask.request.environ.get(
                         "HTTP_ORIGIN", None)
-                    if request_origin is self.cors:
+                    if request_origin in self.cors:
                         response.headers["Access-Control-Allow-Origin"] = request_origin
                     else:
                         response.headers["Access-Control-Allow-Origin"] = self.cors[0]
@@ -399,7 +399,7 @@ class Nasse():
 
         return response
 
-    def make_docs(self, base_dir: typing.Union[pathlib.Path, str] = None):
+    def make_docs(self, base_dir: typing.Union[pathlib.Path, str] = None, curl: bool = True, javascript: bool = True, python: bool = True):
         """
         Creates the documentation for your API/Server
 
@@ -461,7 +461,7 @@ class Nasse():
 
             result += '''\n## {section}\n'''.format(section=section)
             result += "[Return to the Index](#index)\n".join(
-                [docs.markdown.make_docs(endpoint) for endpoint in sections_registry[section]])
+                [docs.markdown.make_docs(endpoint, curl=curl, javascript=javascript, python=python) for endpoint in sections_registry[section]])
 
         with open(docs_path / "Endpoints.md", "w", encoding="utf8") as out:
             out.write(result)
