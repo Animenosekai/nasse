@@ -105,6 +105,18 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
             result += "\n".join(
                 ["| `{cookie}` | {description}  | {required}            | {type}            |".format(cookie=cookie.name, description=cookie.description, required=cookie.required, type=cookie.type.__name__ if cookie.type is not None else "str") for cookie in cookies])
 
+        dynamics = [dynamic for dynamic in endpoint.dynamics if (dynamic.all_methods or method in dynamic.methods)]
+        if len(cookies) > 0:
+            result += '''
+
+#### Dynamic URL
+
+| Name         | Description                      | Required         | Type             |
+| ------------ | -------------------------------- | ---------------- | ---------------- |
+'''
+            result += "\n".join(
+                ["| `{dynamic}` | {description}  | {required}            | {type}            |".format(dynamic=dynamic.name, description=dynamic.description, required=dynamic.required, type=dynamic.type.__name__ if cookie.type is not None else "str") for dynamic in dynamics])
+
         if any((curl, javascript, python)):
             result += '''
 

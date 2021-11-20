@@ -58,7 +58,7 @@ def create_postman_docs(endpoint: models.Endpoint):
                     "query": [
                         {
                             "key": param.name,
-                            "value": "<{param}>".format(param=param.name),
+                            "value": "<{param}:{type}>".format(param=param.name, type=param.type.__name__ if param.type is not None else "str"),
                             "description": param.description or param.name
                         }
                         for param in endpoint.params if param.all_methods or method in param.methods]
