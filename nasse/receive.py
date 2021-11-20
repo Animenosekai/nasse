@@ -300,9 +300,10 @@ class Receive():
                 final.headers.add("Set-Cookie", cookie.dumps())
 
             for key, value in headers.items():
-                final.headers[str(key)] = str(value)
+                final.headers.add(str(key), str(value))
 
             try:
+                size = sys.getsizeof(final.data)
                 if isinstance(flask.g.request, request.Request):
                     path = flask.g.request.nasse_endpoint.path
                     ip = flask.g.request.client_ip
@@ -311,7 +312,6 @@ class Receive():
                     path = flask.g.request.path
                     ip = utils.ip.get_ip()
                     method = str(flask.g.request.method).upper()
-                size = sys.getsizeof(final.data)
                 if size < 500000:
                     color = utils.logging.Colors.green
                 elif size < 1000000:

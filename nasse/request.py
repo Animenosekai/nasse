@@ -76,7 +76,7 @@ class Request(object):
                 else:
                     if value.type is not None:
                         results = []
-                        for key, val in current_values:
+                        for key, val in current_values.items():
                             if key == value.name:
                                 results.append(value.type(val))
                         self.values.setlist(value.name, results)
