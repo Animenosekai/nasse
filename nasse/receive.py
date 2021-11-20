@@ -58,7 +58,7 @@ class Receive():
                 try:
                     with timer.Timer() as verification_timer:
                         flask.g.request = request.Request(
-                            app=self.app, endpoint=self.endpoint)
+                            app=self.app, endpoint=self.endpoint, dynamics=kwds)
                         utils.logging.log("→ Incoming {color}{method}{normal} request to {color}{route}{normal} from {client}".format(method=flask.g.request.method, color=utils.logging.Colors.blue, normal=utils.logging.Colors.normal, route=self.endpoint.path, client=flask.g.request.client_ip),
                                           level=utils.logging.LogLevels.INFO)
 
@@ -93,6 +93,17 @@ class Receive():
                     with timer.Timer() as processing_timer:
                         specs = inspect.getfullargspec(self.endpoint.handler).args
                         arguments = {}
+
+                        for arg in specs:  # for the function arguments
+                            for storage in (flask.g.request.values, flask.g.request.headers, flask.g.request.cookies):
+                                if arg in storage:
+                                    val = storage.getlist(arg)
+                                    if len(val) > 1:
+                                        arguments[arg] = val
+                                    else:
+                                        arguments[arg] = val[0]
+                                    break
+
                         for attr, current_values in [
                             ("app", self.app),
                             ("nasse", self.app),
@@ -105,23 +116,22 @@ class Receive():
                             ("args", flask.g.request.args),
                             ("form", flask.g.request.form),
                             ("headers", flask.g.request.headers),
-                            ("account", account)
+                            ("account", account),
+                            ("dynamics", flask.g.request.dynamics)
                         ]:
-                            if attr in specs:
+                            if attr in specs and attr not in arguments:
                                 arguments[attr] = current_values
-                        arguments.update(kwds)
-                        
-                        for attr in specs: # for the function params
-                            if attr not in arguments: # if we are not passing the param
-                                for storage in (flask.g.request.values, flask.g.request.headers, flask.g.request.cookies):
-                                    if attr in storage:
-                                        val = storage.getlist(attr)
-                                        if len(val) > 1:
-                                            arguments[attr] = val
-                                        else:
-                                            arguments[attr] = val[0]
-                                        break
 
+                        for key, val in flask.g.request.dynamics.items(): # no need for multi=True as dynamics should only have one value
+                            if key in specs:
+                                arguments[key] = val
+
+                        # we don't need this because "dynamics" already holds those values
+                        # and it saves us from making another loop
+                        # arguments.update(kwds)
+                        # for arg in arguments:
+                        #     if arg not in specs:
+                        #         arguments.pop(arg, None)
 
                         # calling the request handler
                         response = self.endpoint.handler(*args, **arguments)

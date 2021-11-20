@@ -112,6 +112,9 @@ class UserSent():
             type=self.type
         )
 
+class Dynamic(UserSent):
+    def __repr__(self) -> str:
+        return "Dynamic({name})".format(name=self.name)
 
 class Header(UserSent):
     def __repr__(self) -> str:
@@ -275,19 +278,21 @@ class Endpoint(object):
     headers = [Header("")]
     params = [Param("")]
     cookies = [Cookie("")]
+    dynamics = [Dynamic("")]
     errors = [Error("")]
     base_dir = None
 
-    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(required=False)), headers: typing.Union[Header, list[Header]] = Default([]), cookies: typing.Union[Cookie, list[Cookie]] = Default([]), params: typing.Union[Param, list[Param]] = Default([]), errors: typing.Union[Error, list[Error]] = Default([]), base_dir: str = Default(None), endpoint: dict = {}, **kwargs) -> None:
+    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(required=False)), headers: typing.Union[Header, list[Header]] = Default([]), cookies: typing.Union[Cookie, list[Cookie]] = Default([]), params: typing.Union[Param, list[Param]] = Default([]), dynamics: typing.Union[Dynamic, list[Dynamic]] = Default([]), errors: typing.Union[Error, list[Error]] = Default([]), base_dir: str = Default(None), endpoint: dict = {}, **kwargs) -> None:
         results = dict(endpoint)
         # path should be different when taking 'endpoint' as the base for another endpoint
         results.pop("path", None)
         results.update(kwargs)
-        for key, value in [("handler", handler), ("path", path), ("methods", methods), ("json", json), ("name", name), ("description", description), ("section", section), ("returning", returning), ("login", login), ("headers", headers), ("cookies", cookies), ("params", params), ("errors", errors), ("base_dir", base_dir)]:
+        for key, value in [("handler", handler), ("path", path), ("methods", methods), ("json", json), ("name", name), ("description", description), ("section", section), ("returning", returning), ("login", login), ("headers", headers), ("cookies", cookies), ("params", params), ("dynamics", dynamics), ("errors", errors), ("base_dir", base_dir)]:
             if not isinstance(value, Default):
                 results[key] = value
             elif key not in results:
                 results[key] = value.value
+        # results.update(kwargs)
 
         for key, value in results.items():
             # performs all of the verifications
@@ -332,7 +337,7 @@ class Endpoint(object):
         return "Endpoint(path='{path}')".format(path=self.path)
 
     def keys(self) -> list:
-        return {"handler", "path", "methods", "json", "name", "description", "section", "returning", "login", "headers", "cookies", "params", "errors", "base_dir"}
+        return {"handler", "path", "methods", "json", "name", "description", "section", "returning", "login", "headers", "cookies", "params", "dynamics", "errors", "base_dir"}
 
     def __getitem__(self, name):
         return getattr(self, name)
@@ -369,7 +374,7 @@ class Endpoint(object):
                 self.returning.append(_return_validation(value))
         elif name == "login":
             super().__setattr__("login", _login_validation(value))
-        elif name in {"headers", "params", "cookies", "cookie", "header", "param", "parameters", "parameter", "value", "values", "args", "arg"}:
+        elif name in {"headers", "params", "cookies", "cookie", "header", "param", "parameters", "parameter", "value", "values", "args", "arg", "dynamic", "dynamics"}:
             if name in {"headers", "header"}:
                 super().__setattr__("headers", [])
                 storage = self.headers
@@ -378,6 +383,10 @@ class Endpoint(object):
                 super().__setattr__("cookies", [])
                 storage = self.cookies
                 cast = Cookie
+            elif name in {"dynamic", "dynamics"}:
+                super().__setattr__("dynamics", [])
+                storage = self.dynamics
+                cast = Dynamic
             else:
                 super().__setattr__("params", [])
                 storage = self.params
@@ -432,6 +441,7 @@ class Endpoint(object):
             headers=self.headers,
             cookies=self.cookies,
             params=self.params,
+            dynamics=self.dynamics,
             errors=self.errors,
             base_dir=self.base_dir
         )

@@ -11,7 +11,7 @@ _overwritten = {"nasse", "app", "nasse_endpoint",
 
 class Request(object):
 
-    def __init__(self, app, endpoint: models.Endpoint) -> None:
+    def __init__(self, app, endpoint: models.Endpoint, dynamics: dict = {}) -> None:
         """
         A request object looking like the flask.Request one, but with the current endpoint in it and verification
 
@@ -64,11 +64,17 @@ class Request(object):
             self.form = werkzeug.datastructures.MultiDict(
                 flask.request.form.items(multi=True))
 
+        if config.General.SANITIZE_USER_SENT:
+            self.dynamics = werkzeug.datastructures.MultiDict((key, utils.sanitize.sanitize_text(value))
+                                                              for key, value in dynamics.items())
+        else:
+            self.dynamics = werkzeug.datastructures.MultiDict(dynamics.items())
+
         self.headers = werkzeug.datastructures.MultiDict(flask.request.headers)
         self.cookies = werkzeug.datastructures.MultiDict(flask.request.cookies)
 
         # verify if missing
-        for attr, exception, current_values in [("params", exceptions.request.MissingParam, self.values), ("headers", exceptions.request.MissingHeader, self.headers), ("cookies", exceptions.request.MissingCookie, self.cookies)]:
+        for attr, exception, current_values in [("params", exceptions.request.MissingParam, self.values), ("headers", exceptions.request.MissingHeader, self.headers), ("cookies", exceptions.request.MissingCookie, self.cookies), ("dynamics", exceptions.request.MissingDynamic, self.dynamics)]:
             for value in self.nasse_endpoint[attr]:
                 if value.name not in current_values:
                     if value.required and (value.all_methods or self.method in value.methods):
@@ -76,10 +82,10 @@ class Request(object):
                 else:
                     if value.type is not None:
                         results = []
-                        for key, val in current_values.items():
+                        for key, val in current_values.items(multi=True):
                             if key == value.name:
                                 results.append(value.type(val))
-                        self.values.setlist(value.name, results)
+                        current_values.setlist(value.name, results)
 
     def __setattr__(self, name: str, value: typing.Any) -> None:
         if name in _overwritten:

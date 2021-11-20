@@ -28,6 +28,14 @@ class MissingParam(MissingValue):
         super().__init__(name=name, missing_type=missing_type, *args)
 
 
+class MissingDynamic(MissingValue):
+    MESSAGE = "A dynamic routing value is missing from your request"
+    EXCEPTION_NAME = "MISSING_DYNAMIC"
+
+    def __init__(self, name: str = "", missing_type: str = "parameter", *args: object) -> None:
+        super().__init__(name=name, missing_type=missing_type, *args)
+
+
 class MissingHeader(MissingValue):
     MESSAGE = "A header is missing from your request"
     EXCEPTION_NAME = "MISSING_HEADER"
