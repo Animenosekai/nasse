@@ -91,6 +91,7 @@ class Receive():
                                         raise e
 
                     with timer.Timer() as processing_timer:
+                        specs = inspect.getfullargspec(self.endpoint.handler).args
                         arguments = {}
                         for attr, current_values in [
                             ("app", self.app),
@@ -106,9 +107,21 @@ class Receive():
                             ("headers", flask.g.request.headers),
                             ("account", account)
                         ]:
-                            if attr in inspect.getfullargspec(self.endpoint.handler).args:
+                            if attr in specs:
                                 arguments[attr] = current_values
                         arguments.update(kwds)
+                        
+                        for attr in specs: # for the function params
+                            if attr not in arguments: # if we are not passing the param
+                                for storage in (flask.g.request.values, flask.g.request.headers, flask.g.request.cookies):
+                                    if attr in storage:
+                                        val = storage.getlist(attr)
+                                        if len(val) > 1:
+                                            arguments[attr] = val
+                                        else:
+                                            arguments[attr] = val[0]
+                                        break
+
 
                         # calling the request handler
                         response = self.endpoint.handler(*args, **arguments)
