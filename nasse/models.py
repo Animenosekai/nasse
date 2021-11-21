@@ -58,7 +58,10 @@ class Login():
         self.required = bool(required)
         self.types = set()
         if types is not None:
-            self.types = {t for t in types}
+            if isinstance(types, str):
+                self.types = {types}
+            else:
+                self.types = {t for t in types}
         self.methods = _methods_validation(methods)
         self.all_methods = "*" in self.methods
         if len(self.methods) == 0:

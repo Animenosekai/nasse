@@ -104,6 +104,9 @@ class Receive():
                                         arguments[arg] = val[0]
                                     break
 
+                        if account is not None:
+                            arguments.pop("account", None)
+
                         for attr, current_values in [
                             ("app", self.app),
                             ("nasse", self.app),
