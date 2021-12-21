@@ -283,6 +283,7 @@ class Receive():
                     except Exception:
                         headers = {}
 
+
                 if self.endpoint.json:
                     CALL_STACK, LOG_STACK = STACK.stop()
                     if config.Mode.DEBUG:
@@ -319,6 +320,22 @@ class Receive():
 
                     final = flask.Response(body, status=code)
                     final.headers["Content-Type"] = content_type
+
+                else:
+                    final = flask.Response(None, status=code)
+
+                    try:
+                        if error:
+                            final.headers["X-NASSE-ERROR"] = str(error)
+
+                        if config.Mode.DEBUG:
+                            final.headers["X-NASSE-TIME-GLOBAL"] = str(global_timer.stop())
+                            final.headers["X-NASSE-TIME-VERIFICATION"] = str(verification_timer.time) if verification_timer is not None else "N/A"
+                            final.headers["X-NASSE-TIME-AUTHENTICATION"] = str(authentication_timer.time) if authentication_timer is not None else "N/A"
+                            final.headers["X-NASSE-TIME-PROCESSING"] = str(processing_timer.time) if processing_timer is not None else "N/A"
+                            final.headers["X-NASSE-TIME-FORMATTING"] = str(formatting_timer.stop()) if formatting_timer is not None else "N/A"
+                    except Exception:
+                        pass
 
             # final is now defined
             for cookie in cookies:
