@@ -13,7 +13,7 @@ def make_docs(endpoint: models.Endpoint, postman: bool = False, curl: bool = Tru
         result += make_docs_for_method(endpoint=endpoint,
                                        method=list(endpoint.methods)[0])
     else:
-        for method in endpoint.methods:
+        for method in sorted(endpoint.methods):
             result += '''\n- #### Using {method}\n{docs}'''.format(
                 method=method, docs=make_docs_for_method(endpoint=endpoint, method=method, postman=postman, curl=curl, javascript=javascript, python=python))
     return result
@@ -106,7 +106,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
                 ["| `{cookie}` | {description}  | {required}            | {type}            |".format(cookie=cookie.name, description=cookie.description, required=cookie.required, type=cookie.type.__name__ if cookie.type is not None else "str") for cookie in cookies])
 
         dynamics = [dynamic for dynamic in endpoint.dynamics if (dynamic.all_methods or method in dynamic.methods)]
-        if len(cookies) > 0:
+        if len(dynamics) > 0:
             result += '''
 
 #### Dynamic URL
@@ -115,7 +115,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str, postman: bool =
 | ------------ | -------------------------------- | ---------------- | ---------------- |
 '''
             result += "\n".join(
-                ["| `{dynamic}` | {description}  | {required}            | {type}            |".format(dynamic=dynamic.name, description=dynamic.description, required=dynamic.required, type=dynamic.type.__name__ if cookie.type is not None else "str") for dynamic in dynamics])
+                ["| `{dynamic}` | {description}  | {required}            | {type}            |".format(dynamic=dynamic.name, description=dynamic.description, required=dynamic.required, type=dynamic.type.__name__ if dynamic.type is not None else "str") for dynamic in dynamics])
 
         if any((curl, javascript, python)):
             result += '''
