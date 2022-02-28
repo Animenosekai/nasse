@@ -1,8 +1,8 @@
 """
-Nasse\n
-Catchphrase
+Nasse
 
-© Anime no Sekai — 2021
+A web server framework written on top of Flask
+Stop spending time making the docs, verify the request, compress or format the response, and focus on making your next cool app!
 """
 
 from . import timer
@@ -30,10 +30,19 @@ request = RequestProxy()
 # if something has been renamed in the new versions
 
 __author__ = 'Anime no Sekai'
-__copyright__ = 'Copyright 2021, Nasse'
+__copyright__ = 'Copyright 2022, Nasse'
 __credits__ = ['animenosekai']
 __license__ = 'MIT License'
-__version__ = 'Nasse v1.0.0'
+__version_tuple__ = (1, 1, 0)
+
+
+def __version_string__():
+    if isinstance(__version_tuple__[-1], str):
+        return '.'.join(map(str, __version_tuple__[:-1])) + __version_tuple__[-1]
+    return '.'.join(str(i) for i in __version_tuple__)
+
+
+__version__ = 'yuno v{version}'.format(version=__version_string__())
 __maintainer__ = 'Anime no Sekai'
 __email__ = 'niichannomail@gmail.com'
 __status__ = 'Stable'

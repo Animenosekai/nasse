@@ -105,7 +105,7 @@ class Nasse():
             `name`: str, defaults = None
                 The name of the server \n
                 If 'name' is None, the name will be implied by the directory name
-            `cors`: str | bool | Iterable, defaults = False
+            `cors`: str | bool | Iterable, defaults = False
                 The Cross-Origin Resource Sharing (CORS) rules for the server \n
                 'cors' as a string represents the allowed `Origin` \n
                 'cors' as a boolean value respresents `*` when True, no CORS rules (no `Access-Control-Allow-Origin` header set) when False \n
@@ -405,7 +405,7 @@ class Nasse():
 
         Parameters
         ----------
-            base_dir: str | Path
+            base_dir: str | Path
                 The path where the docs will be outputted \n
                 This shouldn't be the path to the Endpoints.md file, but rather a directory where
                 the `postman` docs and the Endpoints.md file will be outputted
@@ -435,17 +435,14 @@ class Nasse():
                 if endpoint.section == section:
                     try:
                         sections_registry[section].append(endpoint)
-                    except:
+                    except Exception:
                         sections_registry[section] = [endpoint]
 
         headers_registry = []
 
         for section in sections_registry:
             current_link = docs.header.header_link(section, headers_registry)
-            result += "- [{section}](#{link})\n".format(
-                section=section, link=current_link)
-            current_link = docs.header.header_link(
-                endpoint.name, headers_registry)
+            result += "- [{section}](#{link})\n".format(section=section, link=current_link)
 
             result += "\n".join(
                 ["  - [{endpoint}](#{link})".format(endpoint=endpoint.name, link=docs.header.header_link(endpoint.name, headers_registry)) for endpoint in sections_registry[section]])

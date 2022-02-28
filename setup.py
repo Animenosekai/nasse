@@ -14,7 +14,7 @@ setup(
     author_email="niichannomail@gmail.com",
     url="https://github.com/Animenosekai/Nasse",
     # download_url = "https://github.com/Animenosekai/Nasse/archive/v1.0.0.tar.gz",
-    keywords=['python', 'Anime no Sekai', "animenosekai", "Nasse"],
+    keywords=['python', 'Anime no Sekai', "animenosekai", "Nasse", "flask", "framework", "web", "web-server", "web-framework"],
     install_requires=[
         'typing; python_version<"3.5"',
         "Flask==1.1.2",

@@ -1,6 +1,5 @@
 Flask_Compress==1.10.1 # might replace it by custom implementation
 Flask==1.1.2
-markdown2==2.4.0
 watchdog==2.1.6
 Werkzeug==1.0.1
 bleach==3.3.0

@@ -1,5 +1,5 @@
 import bleach
-import markdown2
+# import markdown2
 from nasse import config, logging
 
 # Source: en.wikipedia.org/wiki/Whitespace_character
@@ -51,13 +51,13 @@ def sanitize_http_method(method: str):
     return method
 
 
-def markdown_to_html(md: str, table_of_content=False):
-    """Markdown to HTML with Sanitizing and Link Recognition"""
-    html = markdown2.markdown(str(md), extras=EXTRAS +
-                              (["toc"] if table_of_content else []))
-    cleaner = bleach.Cleaner(tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS,
-                             protocols=ALLOWED_PROTO, filters=[bleach.linkifier.LinkifyFilter])
-    return cleaner.clean(str(html))
+# def markdown_to_html(md: str, table_of_content=False):
+#     """Markdown to HTML with Sanitizing and Link Recognition"""
+#     html = markdown2.markdown(str(md), extras=EXTRAS +
+#                               (["toc"] if table_of_content else []))
+#     cleaner = bleach.Cleaner(tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS,
+#                              protocols=ALLOWED_PROTO, filters=[bleach.linkifier.LinkifyFilter])
+#     return cleaner.clean(str(html))
 
 
 def sanitize_text(text: str, strict=True):

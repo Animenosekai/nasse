@@ -125,7 +125,7 @@ class Receive():
                             if attr in specs and attr not in arguments:
                                 arguments[attr] = current_values
 
-                        for key, val in flask.g.request.dynamics.items(): # no need for multi=True as dynamics should only have one value
+                        for key, val in flask.g.request.dynamics.items():  # no need for multi=True as dynamics should only have one value
                             if key in specs:
                                 arguments[key] = val
 
@@ -156,7 +156,7 @@ class Receive():
                             error = response.error
                             headers = response.headers
                             cookies = response.cookies
-                        elif isinstance(response, str):
+                        elif isinstance(response, (str, bytes)):
                             # return "Hello world"
                             data = response
                         elif isinstance(response, Exception):
@@ -283,7 +283,6 @@ class Receive():
                     except Exception:
                         headers = {}
 
-
                 if self.endpoint.json:
                     CALL_STACK, LOG_STACK = STACK.stop()
                     if config.Mode.DEBUG:
@@ -335,7 +334,8 @@ class Receive():
                             if config.Mode.DEBUG:
                                 final.headers["X-NASSE-TIME-GLOBAL"] = str(global_timer.stop())
                                 final.headers["X-NASSE-TIME-VERIFICATION"] = str(verification_timer.time) if verification_timer is not None else "N/A"
-                                final.headers["X-NASSE-TIME-AUTHENTICATION"] = str(authentication_timer.time) if authentication_timer is not None else "N/A"
+                                final.headers["X-NASSE-TIME-AUTHENTICATION"] = str(
+                                    authentication_timer.time) if authentication_timer is not None else "N/A"
                                 final.headers["X-NASSE-TIME-PROCESSING"] = str(processing_timer.time) if processing_timer is not None else "N/A"
                                 final.headers["X-NASSE-TIME-FORMATTING"] = str(formatting_timer.stop()) if formatting_timer is not None else "N/A"
                         except Exception:
