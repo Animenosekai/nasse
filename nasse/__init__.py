@@ -42,7 +42,7 @@ def __version_string__():
     return '.'.join(str(i) for i in __version_tuple__)
 
 
-__version__ = 'yuno v{version}'.format(version=__version_string__())
+__version__ = 'Nasse v{version}'.format(version=__version_string__())
 __maintainer__ = 'Anime no Sekai'
 __email__ = 'niichannomail@gmail.com'
 __status__ = 'Stable'
