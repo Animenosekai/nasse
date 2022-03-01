@@ -470,6 +470,22 @@ By default, Nasse will watch all files in the current directory and subdirectori
 
 The other keyword arguments will be passed to the Gunicorn configuration.
 
+### Generate documentation
+
+With the data you provided to the endpoints, Nasse is able to generate markdown and postman documentation for you.
+
+Use the `make_docs` method inside your application to generate the documentation.
+
+```python
+>>> app.make_docs()
+```
+
+It will generate the examples, usage and explanation for each endpoint, along with an index of the endpoints and a general explanation at the top.
+
+It will create a `docs` directory in the current directory to put both documentations.
+
+The Postamn documentation is a set of JSON files, one for each category, that you can import inside Postman to test your API.
+
 ## Deployment
 
 This module is currently in development and might contain bugs.
