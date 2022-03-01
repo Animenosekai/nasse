@@ -27,7 +27,7 @@ def hello():
 
 
 class Return():
-    def __init__(self, name: str, example: typing.Any = None, description: str = None, methods: typing.Union[list[str], str] = "*", type: typing.Any = None, children: list = None, nullable: bool = False) -> None:
+    def __init__(self, name: str, example: typing.Any = None, description: str = None, methods: typing.Union[typing.List[str], str] = "*", type: typing.Any = None, children: list = None, nullable: bool = False) -> None:
         self.name = str(name)
         self.example = example
         self.description = str(description or "")
@@ -52,7 +52,23 @@ class Return():
 
 
 class Login():
-    def __init__(self, required: bool = False, types: typing.Union[typing.Any, list[typing.Any]] = [], methods: typing.Union[list[str], str] = "*", no_login: bool = False, verification_only: bool = False) -> None:
+    def __init__(self, required: bool = False, types: typing.Union[typing.Any, typing.List[typing.Any]] = [], methods: typing.Union[typing.List[str], str] = "*", no_login: bool = False, verification_only: bool = False) -> None:
+        """
+        Creates a new login model
+
+        Parameters
+        ----------
+        required : bool
+            Whether or not the login is required (if any error occurs while authenticating, the request will not fail)
+        types : Any | list[Any]
+            The types of the authorized accounts
+        methods : typing.Union[typing.List[str], str]
+            The HTTP methods that the login model is valid for
+        no_login : bool
+            Will skip the authentication process
+        verification_only : bool
+            Will only verify the login, but not actually retrieve the account
+        """
         self.no_login = bool(no_login)
         self.verification_only = bool(verification_only)
         self.required = bool(required)
@@ -86,7 +102,7 @@ _type = type
 
 
 class UserSent():
-    def __init__(self, name: str, description: str = "", required: bool = True, methods: typing.Union[list[str], str] = "*", type: typing.Type = None) -> None:
+    def __init__(self, name: str, description: str = "", required: bool = True, methods: typing.Union[typing.List[str], str] = "*", type: typing.Type = None) -> None:
         self.name = str(name)
         self.description = str(description)
         self.required = bool(required)
@@ -115,9 +131,11 @@ class UserSent():
             type=self.type
         )
 
+
 class Dynamic(UserSent):
     def __repr__(self) -> str:
         return "Dynamic({name})".format(name=self.name)
+
 
 class Header(UserSent):
     def __repr__(self) -> str:
@@ -135,7 +153,7 @@ class Cookie(UserSent):
 
 
 class Error():
-    def __init__(self, name: str, description: str = "", code: int = 500, methods: typing.Union[list[str], str] = "*") -> None:
+    def __init__(self, name: str, description: str = "", code: int = 500, methods: typing.Union[typing.List[str], str] = "*") -> None:
         self.name = str(name)
         self.description = str(description)
         self.code = int(code)
@@ -285,7 +303,7 @@ class Endpoint(object):
     errors = [Error("")]
     base_dir = None
 
-    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: list[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, list[Return]] = Default([]), login: Login = Default(Login(required=False)), headers: typing.Union[Header, list[Header]] = Default([]), cookies: typing.Union[Cookie, list[Cookie]] = Default([]), params: typing.Union[Param, list[Param]] = Default([]), dynamics: typing.Union[Dynamic, list[Dynamic]] = Default([]), errors: typing.Union[Error, list[Error]] = Default([]), base_dir: str = Default(None), endpoint: dict = {}, **kwargs) -> None:
+    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: typing.List[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, typing.List[Return]] = Default([]), login: Login = Default(Login(required=False)), headers: typing.Union[Header, typing.List[Header]] = Default([]), cookies: typing.Union[Cookie, typing.List[Cookie]] = Default([]), params: typing.Union[Param, typing.List[Param]] = Default([]), dynamics: typing.Union[Dynamic, typing.List[Dynamic]] = Default([]), errors: typing.Union[Error, typing.List[Error]] = Default([]), base_dir: str = Default(None), endpoint: dict = {}, **kwargs) -> None:
         results = dict(endpoint)
         # path should be different when taking 'endpoint' as the base for another endpoint
         results.pop("path", None)

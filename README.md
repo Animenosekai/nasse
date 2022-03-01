@@ -175,7 +175,7 @@ It accepts a lot of parameters:
 
 > The path of the endpoint, overwriting the function name as defined before
 
-- `methods`: list[str] = Default("GET")
+- `methods`: typing.List[str] = Default("GET")
 
 > The HTTP methods that can be used to access the endpoint
 
@@ -195,7 +195,7 @@ It accepts a lot of parameters:
 
 > The section/category of the endpoint, used for documentation purposes
 
-- `returning`: models.Return | list[models.Return] = Default([])
+- `returning`: models.Return | typing.List[models.Return] = Default([])
 
 > What the endpoint returns, used for documentation purposes
 
@@ -203,23 +203,23 @@ It accepts a lot of parameters:
 
 > The login which can be used to access the endpoint
 
-- `headers`: models.Header | list[models.Header] = Default([])
+- `headers`: models.Header | typing.List[models.Header] = Default([])
 
 > The headers which can be used to access the endpoint
 
-- `cookies`: models.Cookie | list[models.Cookie] = Default([])
+- `cookies`: models.Cookie | typing.List[models.Cookie] = Default([])
 
 > The cookies which can be used to access the endpoint
 
-- `params`: models.Param | list[models.Param] = Default([])
+- `params`: models.Param | typing.List[models.Param] = Default([])
 
 > The parameters which can be used to access the endpoint
 
-- `dynamics`: models.Dynamic | list[models.Dynamic] = Default([])
+- `dynamics`: models.Dynamic | typing.List[models.Dynamic] = Default([])
 
 > The dynamic route parameters which can be used to access the endpoint
 
-- `errors`: models.Error | list[models.Error] = Default([])
+- `errors`: models.Error | typing.List[models.Error] = Default([])
 
 > The errors which can be returned by the endpoint
 

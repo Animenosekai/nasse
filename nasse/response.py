@@ -131,7 +131,7 @@ class ResponseCookie():
 
 
 class Response():
-    def __init__(self, data: typing.Any = None, error: str = None, code: int = Default(200), headers: dict[str, str] = None, cookies: list[ResponseCookie] = [], content_type: str = None, **kwargs) -> None:
+    def __init__(self, data: typing.Any = None, error: str = None, code: int = Default(200), headers: typing.Dict[str, str] = None, cookies: typing.List[ResponseCookie] = [], content_type: str = None, **kwargs) -> None:
         """
         A Response object given to Nasse to format the response
 

@@ -1,10 +1,11 @@
+import typing
 from copy import deepcopy
 from uuid import uuid4
 
 from nasse import docs, models
 
 
-def create_postman_data(app, section: str, endpoints: list[models.Endpoint]):
+def create_postman_data(app, section: str, endpoints: typing.List[models.Endpoint]):
     postman_section = {
         "info": {
             "_postman_id": str(uuid4()),

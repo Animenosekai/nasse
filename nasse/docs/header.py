@@ -1,4 +1,6 @@
-def header_link(header: str, registry: list[str]):
+import typing
+
+def header_link(header: str, registry: typing.List[str]):
     """
     - All text is converted to lowercase.
     - All non-word text (e.g., punctuation, HTML) is removed.
@@ -6,7 +8,7 @@ def header_link(header: str, registry: list[str]):
     - Two or more hyphens in a row are converted to one.
     - If a header with the same ID has already been generated, a unique incrementing number is appended, starting at 1.
     """
-    registry = registry
+    # registry = registry
     result = "".join(l for l in str(header) if l.isalpha()
                      or l.isdecimal() or l == " ")
     result = result.replace(" ", "-").lower()

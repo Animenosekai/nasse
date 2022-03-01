@@ -24,7 +24,7 @@ from nasse.response import exception_to_response
 
 
 class FileEventHandler(watchdog.events.FileSystemEventHandler):
-    def __init__(self, callback: typing.Callable, watch: list[pathlib.Path], ignore: list[pathlib.Path]) -> None:
+    def __init__(self, callback: typing.Callable, watch: typing.List[pathlib.Path], ignore: typing.List[pathlib.Path]) -> None:
         super().__init__()
         self.callback = callback
         self.watch = [str(file) for file in watch]
@@ -221,7 +221,7 @@ class Nasse():
             return new_endpoint
         return decorator
 
-    def run(self, host: str = None, port: typing.Union[int, str] = None, watch: list[str] = ["**/*.py"], ignore: list[str] = [], **kwargs):
+    def run(self, host: str = None, port: typing.Union[int, str] = None, watch: typing.List[str] = ["**/*.py"], ignore: typing.List[str] = [], **kwargs):
         """
         Runs the application by binding to an address and answering to clients.
 
