@@ -1,5 +1,5 @@
 """
-Nasse v1.0.0 (Stable)
+Nasse
 
 © Anime no Sekai — 2021
 """
