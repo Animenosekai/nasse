@@ -225,7 +225,7 @@ It accepts a lot of parameters:
 
 - `base_dir`: str = Default(None)
 
-> The base directory of the endpoint, if the endpoint name
+> The base directory of the endpoint, used to determine the route
 
 Everything is meant to be reusable to write less and more readble code.
 
@@ -340,57 +340,19 @@ You can ask whatever you want from their.
 
 Here is a list of the parameters you can ask for:
 
-- `app`
-
-> The current Nasse app instance
-
-- `nasse`
-
-> An alias for `app`
-
-- `endpoint`
-
-> The current Nasse endpoint
-
-- `nasse_endpoint`
-
-> An alias for `endpoint`
-
-- `request`
-
-> The current request context
-
-- `method`
-
-> The HTTP method of the request
-
-- `values`
-
-> The URL/form values of the request
-
-- `params`
-
-> An alias for `values`
-
-- `args`
-
-> The URL arguments of the request
-
-- `form`
-
-> The form values of the request
-
-- `headers`
-
-> The headers of the request
-
-- `account`
-
-> The authenticated account for the request
-
-- `dynamics`
-
-> The dynamic route parameters of the request
+- `app`: The current Nasse app instance
+- `nasse`: An alias for `app`
+- `endpoint`: The current Nasse endpoint
+- `nasse_endpoint`: An alias for `endpoint`
+- `request`: The current request context
+- `method`: The HTTP method of the request
+- `values`: The URL/form values of the request
+- `params`: An alias for `values`
+- `args`: The URL arguments of the request
+- `form`: The form values of the request
+- `headers`: The headers of the request
+- `account`: The authenticated account for the request
+- `dynamics`: The dynamic route parameters of the request
 
 Any other requested parameter will be either a dynamic route parameter or a URL/form parameter.
 
@@ -527,6 +489,7 @@ Please make sure to update the tests as appropriate.
 - [Werkzeug](https://github.com/pallets/werkzeug/) - Flask's core
 - [bleach](https://github.com/mozilla/bleach) - To sanitize inputs
 - [gunicorn](https://github.com/benoitc/gunicorn) - To run the server
+- [Flask-Compress](https://github.com/colour-science/flask-compress) - To compress the responses
 
 ## Authors
 
@@ -536,6 +499,9 @@ Please make sure to update the tests as appropriate.
 
 Thanks to *CherryPieWithPoison* for the Statue of the Seven model.
 > [© 2021 - 2022 CherryPieWithPoison](https://www.deviantart.com/cherrypiewithpoison/art/MMD-Genshin-Impact-Statues-of-the-Seven-DL-871695397)
+
+The Dictionary to XML conversion is heavily inspired by dict2xml by delfick.
+> Licensed under the MIT License. More info in the head of the [xml.py](./nasse/utils/xml.py) file.
 
 ## License
 
