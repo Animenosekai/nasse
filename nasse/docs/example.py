@@ -16,18 +16,19 @@ def _get_type(data):
             return "object"
         else:
             return example.__class__.__name__
-    key_type = str(key_type).lower()
-    if key_type in {"str", "string", "text"}:
+    key_type = str(key_type)
+    key_type_token = key_type.lower()
+    if key_type_token in {"str", "string", "text"}:
         return "string"
-    if key_type in {"int", "integer"}:
+    elif key_type_token in {"int", "integer"}:
         return "int"
-    elif key_type in {"float", "floating", "number"}:
+    elif key_type_token in {"float", "floating", "number"}:
         return "float"
-    elif key_type in {"bool", "true", "false", "boolean"}:
+    elif key_type_token in {"bool", "true", "false", "boolean"}:
         return "bool"
-    elif key_type in {"array", "list", "arr", "set"}:
+    elif key_type_token in {"array", "list", "arr", "set"}:
         return "array"
-    elif key_type in {"object", "obj", "dict", "dictionary"}:
+    elif key_type_token in {"object", "obj", "dict", "dictionary"}:
         return "object"
     return key_type
 

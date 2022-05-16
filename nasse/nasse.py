@@ -254,7 +254,7 @@ class Nasse():
             self._observer.start()
         gunicorn_handler = GunicornServer(self, options=parameters)
         utils.logging.log("🎏 Binding to {color}{address}{normal}".format(
-            address=gunicorn_handler.options["bind"], color=utils.logging.Colors.magenta, normal=utils.logging.Colors.normal))
+            address=gunicorn_handler.options["bind"], color=utils.logging.Colors.magenta, normal=utils.logging.Colors.normal), level=utils.logging.LogLevels.INFO)
         self._arbiter = gunicorn.arbiter.Arbiter(gunicorn_handler)
         self._arbiter.run()
 
@@ -405,10 +405,17 @@ class Nasse():
 
         Parameters
         ----------
-            base_dir: str | Path
-                The path where the docs will be outputted \n
-                This shouldn't be the path to the Endpoints.md file, but rather a directory where
-                the `postman` docs and the Endpoints.md file will be outputted
+        base_dir: str | Path
+            The path where the docs will be outputted \n
+            This shouldn't be the path to the Endpoints.md file, but rather a directory where
+            the `postman` docs and the Endpoints.md file will be outputted
+        curl: bool
+            Whether or not to generate the curl examples
+        javascript: bool
+            Whether or not to generate the javascript examples
+        python: bool
+            Whether or not to generate the python examples
+
         """
         utils.logging.log("Creating the API Reference Documentation")
         docs_path = pathlib.Path(base_dir or pathlib.Path() / "docs")
@@ -425,8 +432,7 @@ class Nasse():
         result += "## Index\n\n"
 
         # Sorting the sections alphabetically
-        sections = sorted(set(
-            [endpoint.section for endpoint in self.endpoints.values()]))
+        sections = sorted({endpoint.section for endpoint in self.endpoints.values()})
 
         # Getting the endpoints for each section
         sections_registry = {}
@@ -450,15 +456,13 @@ class Nasse():
 
         # Dumping all of the docs and creating the Postman Data
         for section in sections_registry:
-            postman_results = docs.postman.create_postman_data(
-                self, section, sections_registry[section])
+            postman_results = docs.postman.create_postman_data(self, section, sections_registry[section])
             with open(postman_path / "{section}.postman_collection.utils.json".format(section=section), "w") as postman_output:
-                postman_output.write(
-                    utils.json.minified_encoder.encode(postman_results))
+                postman_output.write(utils.json.minified_encoder.encode(postman_results))
 
             result += '''\n## {section}\n'''.format(section=section)
-            result += "[Return to the Index](#index)\n".join(
-                [docs.markdown.make_docs(endpoint, curl=curl, javascript=javascript, python=python) for endpoint in sections_registry[section]])
+            result += "\n".join([docs.markdown.make_docs(endpoint, curl=curl, javascript=javascript, python=python)
+                                for endpoint in sections_registry[section]])
 
         with open(docs_path / "Endpoints.md", "w", encoding="utf8") as out:
             out.write(result)

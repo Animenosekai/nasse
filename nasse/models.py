@@ -292,7 +292,7 @@ class Endpoint(object):
     methods = ["GET"]
     json = True
     name = ""
-    description = ""
+    description = {}
     section = "Other"
     returning = [Return("")]
     login = Login(required=False)
@@ -303,7 +303,52 @@ class Endpoint(object):
     errors = [Error("")]
     base_dir = None
 
-    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: typing.List[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: str = Default(""), section: str = Default("Other"), returning: typing.Union[Return, typing.List[Return]] = Default([]), login: Login = Default(Login(required=False)), headers: typing.Union[Header, typing.List[Header]] = Default([]), cookies: typing.Union[Cookie, typing.List[Cookie]] = Default([]), params: typing.Union[Param, typing.List[Param]] = Default([]), dynamics: typing.Union[Dynamic, typing.List[Dynamic]] = Default([]), errors: typing.Union[Error, typing.List[Error]] = Default([]), base_dir: str = Default(None), endpoint: dict = {}, **kwargs) -> None:
+    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: typing.List[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: typing.Union[str, dict[str, str]] = Default(""), section: str = Default(""), returning: typing.Union[Return, typing.List[Return]] = Default([]), login: Login = Default(Login(required=False)), headers: typing.Union[Header, typing.List[Header]] = Default([]), cookies: typing.Union[Cookie, typing.List[Cookie]] = Default([]), params: typing.Union[Param, typing.List[Param]] = Default([]), dynamics: typing.Union[Dynamic, typing.List[Dynamic]] = Default([]), errors: typing.Union[Error, typing.List[Error]] = Default([]), base_dir: str = Default(None), endpoint: dict = {}, **kwargs) -> None:
+        """
+        Creates a new object representing an endpoint in Nasse.
+
+        Parameters
+        ----------
+        handler : typing.Callable, optional
+            The function that will be called when the endpoint is called.
+            Defaults to `nasse.endpoints.hello`.
+        path : str, optional
+            The path of the endpoint.
+            By default, this is defined from the handler name using Nasse's special syntax.
+        methods : typing.List[str], optional
+            The HTTP methods that can be used to call the endpoint.
+            Defaults to `GET`.
+        json : bool, optional
+            Whether the endpoint should return a JSON object.
+            Defaults to `True`.
+        name : str, optional
+            The name of the endpoint.
+        description : typing.Union[str, dict[str, str]], optional
+            The description of the endpoint.
+        section : str, optional
+            The section/category of the endpoint.
+            Defaults to `"Other"`.
+        returning : typing.Union[Return, typing.List[Return]], optional
+            What the endpoint returns.
+        login : Login, optional
+            How the user needs to be logged in to call the endpoint.
+        headers : typing.Union[Header, typing.List[Header]], optional
+            The headers of the endpoint.
+        cookies : typing.Union[Cookie, typing.List[Cookie]], optional
+            The cookies of the endpoint.
+        params : typing.Union[Param, typing.List[Param]], optional
+            The params of the endpoint.
+        dynamics : typing.Union[Dynamic, typing.List[Dynamic]], optional
+            The dynamics parts of the endpoint URL.
+        errors : typing.Union[Error, typing.List[Error]], optional
+            The errors which can be raised from the endpoint.
+        base_dir : str, optional
+            The base directory of the endpoint.
+            This is useful when your files are in a subdirectory of the project.
+        endpoint : dict, optional
+            An endpoint object to build on top.
+            Defaults to no endpoint.
+        """
         results = dict(endpoint)
         # path should be different when taking 'endpoint' as the base for another endpoint
         results.pop("path", None)
@@ -378,7 +423,8 @@ class Endpoint(object):
         elif name == "name":
             super().__setattr__("name", str(value))
         elif name == "description":
-            super().__setattr__("description", str(value or ""))
+            super().__setattr__("description", {"*": str(value or "")} if isinstance(value, str)
+                                else {utils.sanitize.sanitize_http_method(method): str(value or "") for method, value in value.items()})
         elif name == "section":
             super().__setattr__("section", str(value))
         elif name in {"returning", "return", "response", "output", "answer"}:

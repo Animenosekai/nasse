@@ -61,7 +61,7 @@ Specific errors are documented in each endpoint but these are the general errors
 
 | Exception                   | Description                                                                   | Code  |
 | --------------------------- | ----------------------------------------------------------------------------- | ----- |
-| `SERVER_ERROR`              | When an error occurs on Anime Terebi while processing a request               | 500   |
+| `SERVER_ERROR`              | When an error occurs on {name} while processing a request                     | 500   |
 | `INTERNAL_SERVER_ERROR`     | When a critical error occurs on the system                                    | 500   |
 | `METHOD_NOT_ALLOWED`        | When you made a request with the wrong method                                 | 405   |
 | `MISSING_HEADER`            | When a required header is missing or is empty                                 | 400   |
