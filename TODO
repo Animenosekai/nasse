@@ -1,5 +1,18 @@
-- Using app.id as wrapper in nasse.utils.xml --> maybe not
-- Using app.id in nasse.receive.retrieve_token // 
+TOP PRIORITY
+- Think about a solution about endpoints returning objects, which are not parsable by models.Response
+- Add the message field outside of the data container
+- Split documentation for different sections
+- Bring important stuff to a higher level import
+
+TODO
+- Test Environment/CLI
+- Writing Tests
+
+WAITING FOR TEST
+- Decide what to do for different login rules for different methods
+
+DONE
+- Using app.id in nasse.receive.retrieve_token //
 - Using app.id for the log file in nasse.utils.logging //
 - Using app.name for the logs in nasse.utils.logging //
 - Determine app.id from app.name //
@@ -15,6 +28,6 @@
 - Error Catching from Receive //
 - Change the exceptions //
 - Rearrange imports to avoid polluting the namespace (if possible, using module name) //
-- Test Environment/CLI
-- Decide what to do for different login rules for different methods
-- Writing Tests
+
+DROPPED
+- Using app.id as wrapper in nasse.utils.xml --> maybe not

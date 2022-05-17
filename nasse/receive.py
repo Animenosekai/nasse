@@ -145,6 +145,7 @@ class Receive():
 
                         data = ""
                         error = None
+                        message = None
                         code = 200
                         headers = {}
                         cookies = []
@@ -153,34 +154,44 @@ class Receive():
                             # return Response(data=..., code=..., etc.)
                             data = response.data
                             code = response.code
+                            message = response.message
                             error = response.error
                             headers = response.headers
                             cookies = response.cookies
-                        elif isinstance(response, (str, bytes)):
+                        elif isinstance(response, str):
                             # return "Hello world"
+                            message = response
+                        elif isinstance(response, bytes):
+                            # return b"binary data"
                             data = response
                         elif isinstance(response, Exception):
                             # return NasseException("Something went wrong")
                             data, error, code = exception_to_response(response)
-                        elif utils.annotations.is_unpackable(response):
-                            response = Response(**response)
-                            data = response.data
-                            code = response.code
-                            error = response.error
-                            headers = response.headers
-                            cookies = response.cookies
                         elif isinstance(response, typing.Iterable):
-                            # return "Hello", 200 | return NasseException("..."), 400, {"extra": {"issue": "something is missing"}}
-                            for value in response:
-                                if isinstance(value, Exception):
-                                    data, error, code = exception_to_response(
-                                        value)
-                                elif isinstance(value, int):
-                                    code = int(value)
-                                else:
-                                    data = value
+                            found = False
+                            if utils.annotations.is_unpackable(response):
+                                try:
+                                    response = Response(**response)
+                                    data = response.data
+                                    code = response.code
+                                    error = response.error
+                                    headers = response.headers
+                                    cookies = response.cookies
+                                    message = response.message
+                                    found = True
+                                except TypeError:
+                                    pass
+                            if not found:
+                                # return "Hello", 200 | return NasseException("..."), 400, {"extra": {"issue": "something is missing"}}
+                                for value in response:
+                                    if isinstance(value, Exception):
+                                        data, error, code = exception_to_response(
+                                            value)
+                                    elif isinstance(value, int):
+                                        code = int(value)
+                                    else:
+                                        data = value
                         else:
-                            # return bytes(data)
                             data = response
 
                         if code < 100 or code >= 600:
@@ -270,18 +281,7 @@ class Receive():
                             "message": data
                         }
                     }
-                    try:
-                        flask.g.request
-                    except Exception:
-                        flask.g.request = flask.request
-                    try:
-                        cookies
-                    except Exception:
-                        cookies = []
-                    try:
-                        headers
-                    except Exception:
-                        headers = {}
+
 
                 if self.endpoint.json:
                     CALL_STACK, LOG_STACK = STACK.stop()
@@ -306,40 +306,50 @@ class Receive():
                             result["debug"]["call_stack"] = [frame.as_dict()
                                                              for frame in CALL_STACK]
 
-                    minify = utils.boolean.to_bool(
-                        flask.g.request.values.get("minify", False))
+                    minify = utils.boolean.to_bool(flask.g.request.values.get("minify", False))
 
                     content_type = "application/json"
                     if utils.sanitize.remove_spaces(flask.g.request.values.get("format", "json")).lower() in {"xml", "html"}:
                         body = utils.xml.encode(data=result, minify=minify)
                         content_type = "application/xml"
                     else:
-                        body = (utils.json.minified_encoder if minify else utils.json.encoder).encode(
-                            result)
+                        body = (utils.json.minified_encoder if minify else utils.json.encoder).encode(result)
 
                     final = flask.Response(body, status=code)
                     final.headers["Content-Type"] = content_type
 
-                else:
-                    try:
-                        final
-                    except Exception:
-                        # final is not defined, meaning that the exception was raised before the response was created
-                        final = flask.Response(None, status=code)
+            try:
+                final
+            except Exception:
+                # final is not defined, meaning that the exception was raised before the response was created
+                final = flask.Response(None, status=code)
 
-                        try:
-                            if error:
-                                final.headers["X-NASSE-ERROR"] = str(error)
+                try:
+                    if error:
+                        final.headers["X-NASSE-ERROR"] = str(error)
 
-                            if config.Mode.DEBUG:
-                                final.headers["X-NASSE-TIME-GLOBAL"] = str(global_timer.stop())
-                                final.headers["X-NASSE-TIME-VERIFICATION"] = str(verification_timer.time) if verification_timer is not None else "N/A"
-                                final.headers["X-NASSE-TIME-AUTHENTICATION"] = str(
-                                    authentication_timer.time) if authentication_timer is not None else "N/A"
-                                final.headers["X-NASSE-TIME-PROCESSING"] = str(processing_timer.time) if processing_timer is not None else "N/A"
-                                final.headers["X-NASSE-TIME-FORMATTING"] = str(formatting_timer.stop()) if formatting_timer is not None else "N/A"
-                        except Exception:
-                            pass
+                    if config.Mode.DEBUG:
+                        final.headers["X-NASSE-TIME-GLOBAL"] = str(global_timer.stop())
+                        final.headers["X-NASSE-TIME-VERIFICATION"] = str(verification_timer.time) if verification_timer is not None else "N/A"
+                        final.headers["X-NASSE-TIME-AUTHENTICATION"] = str(authentication_timer.time) if authentication_timer is not None else "N/A"
+                        final.headers["X-NASSE-TIME-PROCESSING"] = str(processing_timer.time) if processing_timer is not None else "N/A"
+                        final.headers["X-NASSE-TIME-FORMATTING"] = str(formatting_timer.stop()) if formatting_timer is not None else "N/A"
+                except Exception:
+                    pass
+            
+            try:
+                flask.g.request
+            except Exception:
+                flask.g.request = flask.request
+            try:
+                cookies
+            except Exception:
+                cookies = []
+            try:
+                headers
+            except Exception:
+                headers = {}
+
 
             # final is now defined
             for cookie in cookies:
@@ -376,4 +386,5 @@ class Receive():
                 ))
             except Exception:
                 pass
+            
             return final

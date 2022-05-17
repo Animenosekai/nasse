@@ -52,7 +52,7 @@ class Return():
 
 
 class Login():
-    def __init__(self, required: bool = False, types: typing.Union[typing.Any, typing.List[typing.Any]] = [], methods: typing.Union[typing.List[str], str] = "*", no_login: bool = False, verification_only: bool = False) -> None:
+    def __init__(self, required: bool = False, types: typing.Union[typing.Any, typing.List[typing.Any]] = [], no_login: bool = False, verification_only: bool = False) -> None:
         """
         Creates a new login model
 
@@ -62,8 +62,6 @@ class Login():
             Whether or not the login is required (if any error occurs while authenticating, the request will not fail)
         types : Any | list[Any]
             The types of the authorized accounts
-        methods : typing.Union[typing.List[str], str]
-            The HTTP methods that the login model is valid for
         no_login : bool
             Will skip the authentication process
         verification_only : bool
@@ -78,10 +76,6 @@ class Login():
                 self.types = {types}
             else:
                 self.types = {t for t in types}
-        self.methods = _methods_validation(methods)
-        self.all_methods = "*" in self.methods
-        if len(self.methods) == 0:
-            self.no_login = True
 
     def __repr__(self) -> str:
         if self.no_login:
@@ -93,8 +87,7 @@ class Login():
             no_login=self.no_login,
             verification_only=self.verification_only,
             required=self.required,
-            types=self.types,
-            methods=self.methods
+            types=self.types
         )
 
 
@@ -423,8 +416,19 @@ class Endpoint(object):
         elif name == "name":
             super().__setattr__("name", str(value))
         elif name == "description":
-            super().__setattr__("description", {"*": str(value or "")} if isinstance(value, str)
-                                else {utils.sanitize.sanitize_http_method(method): str(value or "") for method, value in value.items()})
+            if isinstance(value, str):
+                result = {"*": str(value or "")}
+            else:
+                result = {}
+                for m, v in value.items():
+                    value = str(v or "")
+                    if isinstance(m, typing.Iterable):  # ["GET", "POST"]: "This is a description for the endpoint."
+                        for method in _methods_validation(m):
+                            result[method] = value
+                    else:  # "GET": "This is a description for the endpoint."
+                        result[utils.sanitize.sanitize_http_method(m)] = value
+            super().__setattr__("description", result)
+
         elif name == "section":
             super().__setattr__("section", str(value))
         elif name in {"returning", "return", "response", "output", "answer"}:
@@ -440,7 +444,18 @@ class Endpoint(object):
             else:
                 self.returning.append(_return_validation(value))
         elif name == "login":
-            super().__setattr__("login", _login_validation(value))
+            if isinstance(value, Login) or utils.annotations.is_unpackable(value):  # could make a _login_validation and check if an error occurs too
+                result = {"*": _login_validation(value)}
+            else:
+                result = {}
+                for m, v in value.items():
+                    value = _login_validation(v)
+                    if isinstance(m, typing.Iterable):
+                        for method in _methods_validation(m):
+                            result[method] = value
+                    else:
+                        result[utils.sanitize.sanitize_http_method(m)] = value
+            super().__setattr__("login", result)
         elif name in {"headers", "params", "cookies", "cookie", "header", "param", "parameters", "parameter", "value", "values", "args", "arg", "dynamic", "dynamics"}:
             if name in {"headers", "header"}:
                 super().__setattr__("headers", [])
