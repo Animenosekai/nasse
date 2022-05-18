@@ -283,11 +283,10 @@ class Nasse():
         # from traceback import print_exc; print_exc()
         try:
             try:
-                data, error, code = exception_to_response(e)
+                message, error, code = exception_to_response(e)
             except Exception:
-                data, error, code = "An error occured on the server", "SERVER_ERROR", 500
-            result = {"success": False, "error": error,
-                      "data": {"message": data}}
+                message, error, code = "An error occured on the server", "SERVER_ERROR", 500
+            result = {"success": False, "message": message, "error": error, "data": {}}
             content_type = "application/json"
             try:
                 if utils.sanitize.remove_spaces(flask.request.values.get("format", "json")).lower() in {"xml", "html"}:
@@ -298,7 +297,7 @@ class Nasse():
                 body = utils.json.minified_encoder.encode(result)
             return flask.Response(response=body, status=code, content_type=content_type)
         except Exception:
-            return flask.Response(response='{"success": false, "error": "SERVER_ERROR", "data": {"message": "An error occured on the server"}', status=500, content_type="application/utils.json")
+            return flask.Response(response='{"success": false, "message": "An error occured on the server", "error": "SERVER_ERROR", "data": {}', status=500, content_type="application/json")
 
     def before_request(self):
         """
