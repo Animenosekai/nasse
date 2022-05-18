@@ -166,7 +166,7 @@ class Receive():
                             data = response
                         elif isinstance(response, Exception):
                             # return NasseException("Something went wrong")
-                            data, error, code = exception_to_response(response)
+                            message, error, code = exception_to_response(response)
                         elif isinstance(response, typing.Iterable):
                             found = False
                             if utils.annotations.is_unpackable(response):
@@ -185,10 +185,11 @@ class Receive():
                                 # return "Hello", 200 | return NasseException("..."), 400, {"extra": {"issue": "something is missing"}}
                                 for value in response:
                                     if isinstance(value, Exception):
-                                        data, error, code = exception_to_response(
-                                            value)
+                                        message, error, code = exception_to_response(value)
                                     elif isinstance(value, int):
                                         code = int(value)
+                                    elif isinstance(value, str):
+                                        message = value
                                     else:
                                         data = value
                         else:
@@ -222,6 +223,7 @@ class Receive():
                             result = {
                                 "success": error is None,
                                 "error": error,
+                                "message": message,
                                 "data": {}
                             }
                             if utils.annotations.is_unpackable(data):
@@ -229,8 +231,7 @@ class Receive():
                                 result["data"] = dict(data)
                             elif isinstance(data, bytes):
                                 # data: bytes data, raw file content
-                                result["data"]["base64"] = base64.b64encode(
-                                    data).decode("utf-8")
+                                result["data"]["base64"] = base64.b64encode(data).decode("utf-8")
                             elif hasattr(data, "read") and hasattr(data, "tell") and hasattr(data, "seek"):
                                 # a file object
                                 position = data.tell()  # storing the current position
@@ -238,13 +239,12 @@ class Receive():
                                 # go back to the original position
                                 data.seek(position)
                                 if "b" in data.mode:  # if binary mode
-                                    result["data"]["base64"] = base64.b64encode(
-                                        content).decode("utf-8")  # base64 encode the result
+                                    result["data"]["base64"] = base64.b64encode(content).decode("utf-8")  # base64 encode the result
                                 else:
                                     result["data"]["content"] = str(content)
                             elif isinstance(data, str):
                                 # data: "Hello World"
-                                result["data"]["message"] = data
+                                result["data"]["string"] = data
                             elif isinstance(data, typing.Iterable):
                                 # data: ["an", "array", "of", "element"] | ("an", "array", ...) | etc.
                                 result["data"]["array"] = list(data)
@@ -273,13 +273,12 @@ class Receive():
                         formatting_timer
                     except Exception:
                         formatting_timer = None
-                    data, error, code = exception_to_response(e)
+                    message, error, code = exception_to_response(e)
                     result = {
                         "success": False,
                         "error": error,
-                        "data": {
-                            "message": data
-                        }
+                        "message": message,
+                        "data": {}
                     }
 
 

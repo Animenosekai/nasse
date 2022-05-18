@@ -18,27 +18,25 @@ def exception_to_response(value: Exception):
         code = int(value.STATUS_CODE)
     elif isinstance(value, werkzeug.exceptions.HTTPException):
         code = value.code
-        if code == 500:  # we don't know what kind of exception it might leak
+        if code >= 500:  # we don't know what kind of exception it might leak
             data = "An error occured on the server while processing your request"
         # we consider that they are fewer non basic exceptions (non 500) that are dangerous to leak (i.e: 4xx errors are related to the client)
         else:
             data = value.description
-        error = " ".join(utils.sanitize.split_on_uppercase(
-                value.__class__.__name__)).upper().strip().replace(" ", "_")
+        error = " ".join(utils.sanitize.split_on_uppercase(value.__class__.__name__)).upper().strip().replace(" ", "_")
     else:
         # converts class names to error names: NasseException -> NASSE_EXCEPTION
         if isinstance(value, type):
-            error = " ".join(utils.sanitize.split_on_uppercase(
-                value.__name__)).upper().strip().replace(" ", "_")
+            error = " ".join(utils.sanitize.split_on_uppercase(value.__name__)).upper().strip().replace(" ", "_")
         else:
-            error = " ".join(utils.sanitize.split_on_uppercase(
-                value.__class__.__name__)).upper().strip().replace(" ", "_")
+            error = " ".join(utils.sanitize.split_on_uppercase(value.__class__.__name__)).upper().strip().replace(" ", "_")
         if config.Mode.DEBUG:
-            data = "An error occured on the server while processing your request ({error})".format(
-                error=value)
+            data = "An error occured on the server while processing your request ({error})".format(error=value)
         else:
             data = "An error occured on the server while processing your request"
         code = 500
+    if not data:
+        data = "An error occured on the server while processing your request"
     return data, error, code
 
 
@@ -131,7 +129,7 @@ class ResponseCookie():
 
 
 class Response():
-    def __init__(self, data: typing.Any = None, error: str = None, code: int = Default(200), headers: typing.Dict[str, str] = None, cookies: typing.List[ResponseCookie] = [], content_type: str = None, **kwargs) -> None:
+    def __init__(self, data: typing.Any = None, message: str = None, error: str = None, code: int = Default(200), headers: typing.Dict[str, str] = None, cookies: typing.List[ResponseCookie] = [], content_type: str = None) -> None:
         """
         A Response object given to Nasse to format the response
 
@@ -140,6 +138,8 @@ class Response():
             data: typing.Any, default = None
                 The data returned to the client
                 if 'data' is None, nothing extra is returned to the client
+            message: str, default = None
+                The message returned to the client
             error: str, default = None
                 If an error occured, the error name (i.e the client is not correctly authenticated, you might want to set this as "AUTH_ERROR"
             code: int, default = 200
@@ -149,42 +149,31 @@ class Response():
             cookies: dict[str, str], default = None
                 The cookies to send back
         """
-        args = {}
-        for key, value in kwargs.items():
-            args[utils.sanitize.remove_spaces(key).lower()] = value
-
-        self.data = data or args.get("response") or args.get(
-            "return") or args.get("value")
-
-        error = error or args.get("exception") or args.get("err")
+        self.data = data
 
         if isinstance(error, Exception):
             temp_data, error, temp_code = exception_to_response(error)
         else:
             temp_data, temp_code = None, None
 
-        data = data if not isinstance(data, Default) else args.get(
-            "response") or args.get("return") or args.get("value") or temp_data or data.value
+        data = data if not isinstance(data, Default) else temp_data or data.value
 
-        code = code if not isinstance(code, Default) else args.get(
-            "status") or args.get("statuscode") or args.get("status_code") or temp_code or code.value
+        code = code if not isinstance(code, Default) else temp_code or code.value
 
         self.error = str(error) if error is not None else None
         self.code = int(code)
+        self.message = str(message) if message is not None else None
 
         self.headers = {}
-        headers = headers or args.get("header")
         if utils.annotations.is_unpackable(headers):
             # headers: {"HEADER-KEY": "Header Value"}
             for header_key, header_value in dict(headers).items():
-                self.headers[str(header_key)] = str(
-                    header_value)
+                self.headers[str(header_key)] = str(header_value)
         elif isinstance(headers, typing.Iterable):
             if isinstance(headers[0], typing.Iterable) and len(headers[0]) == 2:
                 # headers: [("HEADER-KEY", "Header Value")]
                 for element in headers:
-                    self.headers[str(element[0])] = str(
-                        element[1])
+                    self.headers[str(element[0])] = str(element[1])
             elif len(headers) == 2:
                 # headers: ("HEADER-KEY", "Header Value")
                 self.headers[str(headers[0])] = str(headers[1])
@@ -193,7 +182,6 @@ class Response():
             self.headers["Content-Type"] = str(content_type)
 
         self.cookies = []
-        cookies = cookies or args.get("cookie")
         if cookies is not None:
             if utils.annotations.is_unpackable(cookies):
                 for key, val in dict(cookies).items():
@@ -211,6 +199,7 @@ class Response():
     def __copy__(self):
         return Response(
             data=self.data,
+            message=self.message,
             error=self.error,
             code=self.code,
             headers=self.headers,

@@ -1,6 +1,4 @@
 TOP PRIORITY
-- Think about a solution about endpoints returning objects, which are not parsable by models.Response
-- Add the message field outside of the data container
 - Split documentation for different sections
 - Bring important stuff to a higher level import
 
@@ -10,6 +8,9 @@ TODO
 
 WAITING FOR TEST
 - Decide what to do for different login rules for different methods
+- Think about a solution about endpoints returning objects, which are not parsable by models.Response
+- Safer Response model
+- Add the message field outside of the data container
 
 DONE
 - Using app.id in nasse.receive.retrieve_token //
