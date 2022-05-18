@@ -288,7 +288,7 @@ class Endpoint(object):
     description = {}
     section = "Other"
     returning = [Return("")]
-    login = Login(required=False)
+    login = {"*": Login(required=False)}
     headers = [Header("")]
     params = [Param("")]
     cookies = [Cookie("")]

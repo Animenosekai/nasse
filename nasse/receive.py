@@ -64,31 +64,29 @@ class Receive():
 
                     account = None
                     with timer.Timer() as authentication_timer:
-                        if not self.endpoint.login.no_login:
-                            if self.endpoint.login.all_methods or flask.g.request.method in self.endpoint.login.methods:
-                                try:
-                                    token = retrieve_token()
-                                    if self.app.account_management:
-                                        if not self.endpoint.login.verification_only:
-                                            account = self.app.account_management.retrieve_account(
-                                                token)
-                                            if len(self.endpoint.login.types) > 0:
-                                                if self.app.account_management.retrieve_type(account) not in self.endpoint.login.types:
-                                                    account = None  # if login is not required, the account might be passed with a wrong type
-                                                    raise exceptions.authentication.Forbidden(
-                                                        "You can't access this endpoint with your account")
-                                        else:
-                                            verification = self.app.account_management.verify_token(
-                                                token)
-                                            if verification == False:
-                                                raise exceptions.authentication.Forbidden(
-                                                    "We couldn't verify your token")
+                        method = flask.g.request.method
+                        login_rules = self.endpoint.login.get(method, self.endpoint.login.get("*", None))
+                        if not login_rules.no_login:
+                            try:
+                                token = retrieve_token()
+                                if self.app.account_management:
+                                    if not login_rules.verification_only:
+                                        account = self.app.account_management.retrieve_account(
+                                            token)
+                                        if len(login_rules.types) > 0:
+                                            if self.app.account_management.retrieve_type(account) not in login_rules.types:
+                                                account = None  # if login is not required, the account might be passed with a wrong type
+                                                raise exceptions.authentication.Forbidden("You can't access this endpoint with your account")
                                     else:
-                                        utils.logging.log("Couldn't verify login details because 'account_management' is not set properly on {name}".format(
-                                            name=self.app.name), level=utils.logging.LogLevels.WARNING)
-                                except Exception as e:
-                                    if self.endpoint.login.required:
-                                        raise e
+                                        verification = self.app.account_management.verify_token(token)
+                                        if verification == False:
+                                            raise exceptions.authentication.Forbidden("We couldn't verify your token")
+                                else:
+                                    utils.logging.log("Couldn't verify login details because the 'account_management' is not set properly on {name}".format(
+                                        name=self.app.name), level=utils.logging.LogLevels.WARNING)
+                            except Exception as e:
+                                if login_rules.required:
+                                    raise e
 
                     with timer.Timer() as processing_timer:
                         specs = inspect.getfullargspec(self.endpoint.handler).args
@@ -281,7 +279,6 @@ class Receive():
                         "data": {}
                     }
 
-
                 if self.endpoint.json:
                     CALL_STACK, LOG_STACK = STACK.stop()
                     if config.Mode.DEBUG:
@@ -335,7 +332,7 @@ class Receive():
                         final.headers["X-NASSE-TIME-FORMATTING"] = str(formatting_timer.stop()) if formatting_timer is not None else "N/A"
                 except Exception:
                     pass
-            
+
             try:
                 flask.g.request
             except Exception:
@@ -348,7 +345,6 @@ class Receive():
                 headers
             except Exception:
                 headers = {}
-
 
             # final is now defined
             for cookie in cookies:
@@ -385,5 +381,5 @@ class Receive():
                 ))
             except Exception:
                 pass
-            
+
             return final
