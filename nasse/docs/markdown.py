@@ -5,7 +5,7 @@ from nasse import docs, models
 
 def make_docs(endpoint: models.Endpoint, postman: bool = False, curl: bool = True, javascript: bool = True, python: bool = True):
     result = '''
-### {name}
+## {name}
 '''.format(name=endpoint.name)
     if len(endpoint.methods) == 1:
         result += '''
@@ -14,7 +14,7 @@ def make_docs(endpoint: models.Endpoint, postman: bool = False, curl: bool = Tru
         result += make_docs_for_method(endpoint=endpoint)
     else:
         for method in sorted(endpoint.methods):
-            result += '''\n- #### Using {method}\n{docs}\n'''.format(method=method, docs=make_docs_for_method(
+            result += '''\n- ### Using {method}\n{docs}\n'''.format(method=method, docs=make_docs_for_method(
                 endpoint=endpoint, method=method, postman=postman, curl=curl, javascript=javascript, python=python))
     return result
 
@@ -25,10 +25,10 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 # ENDPOINT HEADER
 
     if len(endpoint.methods) == 1 or method is None:
-        heading_level = "####"
+        heading_level = "###"
         method = list(endpoint.methods)[0]
     else:
-        heading_level = "#####"
+        heading_level = "####"
         method = str(method)
         result += '''
 {description}

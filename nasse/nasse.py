@@ -418,16 +418,18 @@ class Nasse():
 
         """
         utils.logging.log("Creating the API Reference Documentation")
+
         docs_path = pathlib.Path(base_dir or pathlib.Path() / "docs")
-        if not docs_path.is_dir():
-            docs_path.mkdir()
+        docs_path.mkdir(exist_ok=True)
 
         postman_path = docs_path / "postman"
-        if not postman_path.is_dir():
-            postman_path.mkdir()
+        postman_path.mkdir(exist_ok=True)
+
+        sections_path = docs_path / "sections"
+        sections_path.mkdir(exist_ok=True)
 
         # Initializing the resulting string by prepending the header
-        result = docs.header.DOCS_HEADER.format(name=self.name, id=self.id)
+        result = docs.header.GETTING_STARTED_HEADER.format(name=self.name, id=self.id)
 
         result += "## Index\n\n"
 
@@ -450,22 +452,28 @@ class Nasse():
             current_link = docs.header.header_link(section, headers_registry)
             result += "- [{section}](#{link})\n".format(section=section, link=current_link)
 
-            result += "\n".join(
-                ["  - [{endpoint}](#{link})".format(endpoint=endpoint.name, link=docs.header.header_link(endpoint.name, headers_registry)) for endpoint in sections_registry[section]])
+            result += "\n".join(["  - [{endpoint}](./sections/{section}.md#{link})".format(
+                endpoint=endpoint.name,
+                section=section,
+                link=docs.header.header_link(endpoint.name, headers_registry)) for endpoint in sections_registry[section]]
+            )
             result += "\n"
+
+        with open(docs_path / "Getting Started.md", "w", encoding="utf8") as out:
+            out.write(result)
 
         # Dumping all of the docs and creating the Postman Data
         for section in sections_registry:
-            postman_results = docs.postman.create_postman_data(self, section, sections_registry[section])
-            with open(postman_path / "{section}.postman_collection.utils.json".format(section=section), "w") as postman_output:
-                postman_output.write(utils.json.minified_encoder.encode(postman_results))
-
-            result += '''\n## {section}\n'''.format(section=section)
+            result = docs.header.SECTION_HEADER.format(name=section)
+            # result += '''\n## {section}\n'''.format(section=section)
             result += "\n".join([docs.markdown.make_docs(endpoint, curl=curl, javascript=javascript, python=python)
                                 for endpoint in sections_registry[section]])
+            with open(sections_path / f"{section}.md", "w", encoding="utf-8") as out:
+                out.write(result)
 
-        with open(docs_path / "Endpoints.md", "w", encoding="utf8") as out:
-            out.write(result)
+            result = docs.postman.create_postman_data(self, section, sections_registry[section])
+            with open(postman_path / "{section}.postman_collection.utils.json".format(section=section), "w", encoding="utf-8") as out:
+                out.write(utils.json.minified_encoder.encode(result))
 
 
 ############
