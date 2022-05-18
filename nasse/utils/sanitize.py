@@ -1,3 +1,4 @@
+import typing
 import bleach
 # import markdown2
 from nasse import config, logging
@@ -50,6 +51,18 @@ def sanitize_http_method(method: str):
             level=logging.LogLevels.WARNING)
     return method
 
+
+def sort_http_methods(methods: typing.Iterable):
+    """Sorts the given HTTP methods to normalize them"""
+    methods = {sanitize_http_method(method) for method in methods}
+    results = []
+    for method in ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]:  # ordered
+        if method in methods:
+            results.append(method)
+            methods.discard(method)
+    results.extend(methods)  # remaining methods
+
+    return results
 
 # def markdown_to_html(md: str, table_of_content=False):
 #     """Markdown to HTML with Sanitizing and Link Recognition"""

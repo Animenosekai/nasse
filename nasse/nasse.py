@@ -450,7 +450,8 @@ class Nasse():
 
         for section in sections_registry:
             current_link = docs.header.header_link(section, headers_registry)
-            result += "- [{section}](#{link})\n".format(section=section, link=current_link)
+            result += "- [{section}](./sections/{section_url}.md#{link})\n".format(section=section,
+                                                                                   section_url=section.replace(" ", "%20"), link=current_link)
 
             result += "\n".join(["  - [{endpoint}](./sections/{section}.md#{link})".format(
                 endpoint=endpoint.name,
@@ -468,7 +469,7 @@ class Nasse():
             # result += '''\n## {section}\n'''.format(section=section)
             result += "\n".join([docs.markdown.make_docs(endpoint, curl=curl, javascript=javascript, python=python)
                                 for endpoint in sections_registry[section]])
-            with open(sections_path / f"{section}.md", "w", encoding="utf-8") as out:
+            with open(sections_path / "{section}.md".format(section=section), "w", encoding="utf-8") as out:
                 out.write(result)
 
             result = docs.postman.create_postman_data(self, section, sections_registry[section])

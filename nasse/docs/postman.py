@@ -1,14 +1,15 @@
 import typing
 from copy import deepcopy
-from uuid import uuid4
+# from uuid import uuid4
 
 from nasse import docs, models
+from nasse.utils.sanitize import sort_http_methods
 
 
 def create_postman_data(app, section: str, endpoints: typing.List[models.Endpoint]):
     postman_section = {
         "info": {
-            "_postman_id": str(uuid4()),
+            # "_postman_id": str(uuid4()),
             "name": section,
             "description": "All of the endpoints under the '{section}' section of the {name} API Interface".format(section=section, name=app.name),
             "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -37,7 +38,7 @@ def create_postman_data(app, section: str, endpoints: typing.List[models.Endpoin
 
 def create_postman_docs(endpoint: models.Endpoint):
     results = []
-    for method in endpoint.methods:
+    for method in sort_http_methods(endpoint.methods):
         result = {
             "name": str(endpoint.name),
             "event": [],

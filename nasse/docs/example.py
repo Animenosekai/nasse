@@ -59,6 +59,7 @@ def generate_example(endpoint: models.Endpoint, method: str):
 
     return '''{{
     "success": true,
+    "message": "Successfully processed your request",
     "error": null,
     "data": {response}
 }}

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from nasse import docs, models
+from nasse.utils.sanitize import sort_http_methods
 
 
 def make_docs(endpoint: models.Endpoint, postman: bool = False, curl: bool = True, javascript: bool = True, python: bool = True):
@@ -13,7 +14,7 @@ def make_docs(endpoint: models.Endpoint, postman: bool = False, curl: bool = Tru
 '''.format(description=endpoint.description.get(endpoint.methods[0] if "*" not in endpoint.description else "*", 'No description'))
         result += make_docs_for_method(endpoint=endpoint)
     else:
-        for method in sorted(endpoint.methods):
+        for method in sort_http_methods(endpoint.methods):
             result += '''\n- ### Using {method}\n{docs}\n'''.format(method=method, docs=make_docs_for_method(
                 endpoint=endpoint, method=method, postman=postman, curl=curl, javascript=javascript, python=python))
     return result
