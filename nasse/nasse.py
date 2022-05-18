@@ -420,13 +420,16 @@ class Nasse():
         utils.logging.log("Creating the API Reference Documentation")
 
         docs_path = pathlib.Path(base_dir or pathlib.Path() / "docs")
-        docs_path.mkdir(exist_ok=True)
+        if not docs_path.is_dir():
+            docs_path.mkdir()
 
         postman_path = docs_path / "postman"
-        postman_path.mkdir(exist_ok=True)
+        if not postman_path.is_dir():
+            postman_path.mkdir()
 
         sections_path = docs_path / "sections"
-        sections_path.mkdir(exist_ok=True)
+        if not sections_path.is_dir():
+            sections_path.mkdir()
 
         # Initializing the resulting string by prepending the header
         result = docs.header.GETTING_STARTED_HEADER.format(name=self.name, id=self.id)
