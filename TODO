@@ -1,5 +1,6 @@
 TOP PRIORITY
-- Split documentation for different sections
+- Manage different path for docs in the markdown links
+- Manage multiple headers with same name in the same section for docs
 - Bring important stuff to a higher level import
 
 TODO
@@ -11,6 +12,7 @@ WAITING FOR TEST
 - Think about a solution about endpoints returning objects, which are not parsable by models.Response
 - Safer Response model
 - Add the message field outside of the data container
+- Split documentation for different sections
 
 DONE
 - Using app.id in nasse.receive.retrieve_token //

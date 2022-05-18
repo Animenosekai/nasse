@@ -137,5 +137,4 @@ SECTION_HEADER = '''
 # {name} Section API Reference
 
 This file lists and explains the different endpoints available in the {name} section.
-
 '''

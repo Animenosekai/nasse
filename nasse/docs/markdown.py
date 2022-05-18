@@ -50,7 +50,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 ```
 
 > [{source_code_path}]({github_path})
-'''.format(method=method, path=endpoint.path, source_code_path=path, github_path="../{path}#L{line}".format(path=path, line=line))
+'''.format(method=method, path=endpoint.path, source_code_path=path, github_path="../../{path}#L{line}".format(path=path, line=line))
 
     else:
         result = '''
@@ -58,7 +58,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 
 {description}
 
-'''.format(source_code_path=path, github_path="../{path}#L{line}".format(path=path, line=line), description=endpoint.description.get(method if method in endpoint.description else "*", 'No description'))
+'''.format(source_code_path=path, github_path="../../{path}#L{line}".format(path=path, line=line), description=endpoint.description.get(method if method in endpoint.description else "*", 'No description'))
 
 
 # AUTHENTICATION
@@ -67,19 +67,22 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 {heading} Authentication
 
 '''.format(heading=heading_level)
-    if endpoint.login.no_login:
-        result += "Login is **not** required"
-    elif endpoint.login.required and (endpoint.login.all_methods or method in endpoint.login.methods):
-        result += "Login{types} is **required**".format(types=(' with ' + ', '.join(
-            [str(type_name) for type_name in endpoint.login.types])) if len(endpoint.login.types) > 0 else "")
-    elif endpoint.login.all_methods or method in endpoint.login.methods:
-        result += "Login{types} is **optional**".format(types=(' with ' + ', '.join(
-            [str(type_name) for type_name in endpoint.login.types])) if len(endpoint.login.types) > 0 else "")
+    login_rules = endpoint.login.get(method, endpoint.login.get("*", None))
+    if login_rules is None:
+        result += "There is no authentication rules defined"
     else:
-        result += "Login is **not** required"
+        if login_rules.no_login:
+            result += "Login is **not** required"
+        else:
+            if login_rules.required:
+                result += "Login{types} is **required**".format(types=(' with ' + ', '.join(
+                    [str(type_name) for type_name in login_rules.types])) if len(login_rules.types) > 0 else "")
+            else:
+                result += "Login{types} is **optional**".format(types=(' with ' + ', '.join(
+                    [str(type_name) for type_name in login_rules.types])) if len(login_rules.types) > 0 else "")
 
-    if endpoint.login.verification_only:
-        result += " but only verified"
+        if login_rules.verification_only:
+            result += " but only verified"
 
     if not postman:  # POSTMAN DOESN'T NEED THESE INFORMATION
 
@@ -184,5 +187,5 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 
 # INDEX LINKING
 
-    result += "\n[Return to the Index](#index)"
+    result += "\n[Return to the Index](../Getting%20Started.md#index)"
     return result

@@ -77,7 +77,9 @@ def create_postman_docs(endpoint: models.Endpoint):
         result["response"][0]["body"] = docs.example.generate_example(
             endpoint=endpoint, method=method)
 
-        if not endpoint.login.all_methods and method not in endpoint.login.methods:
+        login_rules = endpoint.login.get(method, endpoint.login.get("*", None))
+
+        if login_rules is None or login_rules.no_login:
             result["request"]["auth"] = {
                 "type": "noauth"
             }

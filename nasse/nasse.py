@@ -454,7 +454,7 @@ class Nasse():
 
             result += "\n".join(["  - [{endpoint}](./sections/{section}.md#{link})".format(
                 endpoint=endpoint.name,
-                section=section,
+                section=section.replace(" ", "%20"),
                 link=docs.header.header_link(endpoint.name, headers_registry)) for endpoint in sections_registry[section]]
             )
             result += "\n"

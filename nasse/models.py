@@ -444,17 +444,20 @@ class Endpoint(object):
             else:
                 self.returning.append(_return_validation(value))
         elif name == "login":
-            if isinstance(value, Login) or utils.annotations.is_unpackable(value):  # could make a _login_validation and check if an error occurs too
+            if isinstance(value, Login):
                 result = {"*": _login_validation(value)}
             else:
-                result = {}
-                for m, v in value.items():
-                    value = _login_validation(v)
-                    if isinstance(m, typing.Iterable):
-                        for method in _methods_validation(m):
-                            result[method] = value
-                    else:
-                        result[utils.sanitize.sanitize_http_method(m)] = value
+                try:
+                    result = Login(**value)
+                except TypeError:
+                    result = {}
+                    for m, v in value.items():
+                        value = _login_validation(v)
+                        if isinstance(m, typing.Iterable):
+                            for method in _methods_validation(m):
+                                result[method] = value
+                        else:
+                            result[utils.sanitize.sanitize_http_method(m)] = value
             super().__setattr__("login", result)
         elif name in {"headers", "params", "cookies", "cookie", "header", "param", "parameters", "parameter", "value", "values", "args", "arg", "dynamic", "dynamics"}:
             if name in {"headers", "header"}:
