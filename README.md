@@ -9,13 +9,13 @@ A web framework built on top of Flask
 <br>
 <br>
 
-[![PyPI version](https://badge.fury.io/py/nasse.svg)](https://pypi.org/project/nasse/)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/nasse)](https://pypistats.org/packages/nasse)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/nasse)](https://pypi.org/project/nasse/)
-[![PyPI - Status](https://img.shields.io/pypi/status/nasse)](https://pypi.org/project/nasse/)
-[![GitHub - License](https://img.shields.io/github/license/Animenosekai/nasse)](https://github.com/Animenosekai/nasse/blob/master/LICENSE)
-[![GitHub top language](https://img.shields.io/github/languages/top/Animenosekai/nasse)](https://github.com/Animenosekai/nasse)
-[![CodeQL Checks Badge](https://github.com/Animenosekai/nasse/workflows/CodeQL%20Python%20Analysis/badge.svg)](https://github.com/Animenosekai/nasse/actions?query=workflow%3ACodeQL)
+[![PyPI version](https://badge.fury.io/py/Nasse.svg)](https://pypi.org/project/nasse/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/Nasse)](https://pypistats.org/packages/nasse)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/Nasse)](https://pypi.org/project/nasse/)
+[![PyPI - Status](https://img.shields.io/pypi/status/Nasse)](https://pypi.org/project/nasse/)
+[![GitHub - License](https://img.shields.io/github/license/Animenosekai/Nasse)](https://github.com/Animenosekai/nasse/blob/master/LICENSE)
+[![GitHub top language](https://img.shields.io/github/languages/top/Animenosekai/Nasse)](https://github.com/Animenosekai/nasse)
+[![CodeQL Checks Badge](https://github.com/Animenosekai/nasse/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Animenosekai/nasse/actions/workflows/codeql-analysis.yml)
 [![Pytest](https://github.com/Animenosekai/nasse/actions/workflows/pytest.yml/badge.svg)](https://github.com/Animenosekai/nasse/actions/workflows/pytest.yml)
 ![Code Size](https://img.shields.io/github/languages/code-size/Animenosekai/nasse)
 ![Repo Size](https://img.shields.io/github/repo-size/Animenosekai/nasse)
@@ -58,7 +58,7 @@ You can check if you successfully installed it by printing out its version:
 ```bash
 $ python -c "import nasse; print(nasse.__version__)"
 # output:
-Nasse v1.0.0
+Nasse v1.1
 ```
 
 ## Purpose
@@ -187,7 +187,7 @@ It accepts a lot of parameters:
 
 > The name of the endpoint, used for documentation purposes
 
-- `description`: str = Default("")
+- `description`: str | dict[method\<str>:str] = Default("")
 
 > The description of the endpoint, used for documentation purposes
 
@@ -199,7 +199,7 @@ It accepts a lot of parameters:
 
 > What the endpoint returns, used for documentation purposes
 
-- `login`: models.Login = Default(models.Login(required=False))
+- `login`: models.Login | dict[method\<str>:models.Login] = Default(models.Login(required=False))
 
 > The login which can be used to access the endpoint
 
@@ -280,7 +280,6 @@ Here are its parameters:
 
 - `required`: if the login is required
 - `types`: the type of account that are allowed to access this endpoint
-- `methods`: the methods where the login applies to
 - `no_login`: if no login is required
 - `verification_only`: if it is only required to verify the login token but not to get the account (this will avoid retrieving the account on each request but still validate the token)
 
@@ -426,6 +425,7 @@ If the endpoint is configured as a JSON endpoint, it will be formatted using the
 {
     "success": true,
     "error": null,
+    "message": "",
     "data": {}
 }
 ```

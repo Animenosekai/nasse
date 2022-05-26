@@ -7,13 +7,13 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'), encoding
 setup(
     name="Nasse",
     packages=["nasse"],
-    version="1.0.2",
+    version="1.1",
     license="MIT License",
     description="A web server framework written on top of Flask",
     author="Anime no Sekai",
     author_email="niichannomail@gmail.com",
     url="https://github.com/Animenosekai/nasse",
-    download_url="https://github.com/Animenosekai/nasse/archive/v1.0.2.tar.gz",
+    download_url="https://github.com/Animenosekai/nasse/archive/v1.1.tar.gz",
     keywords=['python', 'Anime no Sekai', "animenosekai", "Nasse", "flask", "framework", "web", "web-server", "web-framework"],
     install_requires=[
         'typing; python_version<"3.5"',

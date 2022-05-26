@@ -6,6 +6,7 @@ TOP PRIORITY
 TODO
 - Test Environment/CLI
 - Writing Tests
+- Support for Windows
 
 WAITING FOR TEST
 - Decide what to do for different login rules for different methods
