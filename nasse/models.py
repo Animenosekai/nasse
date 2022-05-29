@@ -131,6 +131,10 @@ class Dynamic(UserSent):
 
 
 class Header(UserSent):
+    def __init__(self, name: str, description: str = "", required: bool = True, methods: typing.Union[typing.List[str], str] = "*", type: typing.Type = None) -> None:
+        super().__init__(name, description, required, methods, type)
+        self.name = utils.sanitize.remove_spaces(self.name)
+
     def __repr__(self) -> str:
         return "Header({name})".format(name=self.name)
 

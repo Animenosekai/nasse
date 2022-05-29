@@ -337,25 +337,21 @@ class Nasse():
                         flask.request.url_rule.rule, None)
                     if current_endpoint is not None:
                         try:
-                            response.headers["Access-Control-Allow-Methods"] = ", ".join(
-                                current_endpoint.methods)
+                            response.headers["Access-Control-Allow-Methods"] = ",".join(current_endpoint.methods)
                         except Exception:
                             from traceback import print_exc
                             print_exc()
                             utils.logging.log(
                                 "An error occured while setting the Access-Control-Allow-Methods header", utils.logging.LogLevels.WARNING)
                         try:
-                            requested_headers = flask.request.headers.get(
-                                "Access-Control-Request-Headers", "").split(", ")
-                            endpoint_headers = [header.name.lower()
-                                                for header in current_endpoint.headers]
+                            requested_headers = [header.lower() for header in utils.sanitize.remove_spaces(flask.request.headers.get("Access-Control-Request-Headers", "")).split(",")]
+                            endpoint_headers = [header.name.lower() for header in current_endpoint.headers]
                             
                             login_rules = current_endpoint.login.get(flask.request.method.upper(), current_endpoint.login.get("*", None))
                             if login_rules is not None and not login_rules.no_login:
                                 endpoint_headers.append("authorization")
     
-                            response.headers["Access-Control-Allow-Headers"] = ", ".join(
-                                (header for header in requested_headers if header.lower() in endpoint_headers))
+                            response.headers["Access-Control-Allow-Headers"] = ",".join((header for header in requested_headers if header in endpoint_headers))
                         except Exception:
                             from traceback import print_exc
                             print_exc()
