@@ -256,6 +256,11 @@ class Receive():
                 except Exception as e:
                     # from traceback import print_exc; print_exc()
                     try:
+                        flask.g.request
+                    except Exception:
+                        flask.g.request = flask.request
+                    
+                    try:
                         verification_timer
                     except Exception:
                         verification_timer = None
@@ -280,6 +285,11 @@ class Receive():
                     }
 
                 if self.endpoint.json:
+                    try:
+                        flask.g.request
+                    except Exception:
+                        flask.g.request = flask.request
+
                     CALL_STACK, LOG_STACK = STACK.stop()
                     if config.Mode.DEBUG:
                         result["debug"] = {
