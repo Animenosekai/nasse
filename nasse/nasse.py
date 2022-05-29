@@ -349,8 +349,11 @@ class Nasse():
                                 "Access-Control-Request-Headers", "").split(", ")
                             endpoint_headers = [header.name.lower()
                                                 for header in current_endpoint.headers]
-                            if not current_endpoint.login.no_login:
+                            
+                            login_rules = current_endpoint.login.get(flask.request.method.upper(), current_endpoint.login.get("*", None))
+                            if login_rules is not None and not login_rules.no_login:
                                 endpoint_headers.append("authorization")
+    
                             response.headers["Access-Control-Allow-Headers"] = ", ".join(
                                 (header for header in requested_headers if header.lower() in endpoint_headers))
                         except Exception:
