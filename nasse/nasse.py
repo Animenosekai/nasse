@@ -340,8 +340,8 @@ class Nasse():
                             response.headers["Access-Control-Allow-Methods"] = ", ".join(
                                 current_endpoint.methods)
                         except Exception:
-                            # from traceback import print_exc
-                            # print_exc()
+                            from traceback import print_exc
+                            print_exc()
                             utils.logging.log(
                                 "An error occured while setting the Access-Control-Allow-Methods header", utils.logging.LogLevels.WARNING)
                         try:
@@ -354,8 +354,8 @@ class Nasse():
                             response.headers["Access-Control-Allow-Headers"] = ", ".join(
                                 (header for header in requested_headers if header.lower() in endpoint_headers))
                         except Exception:
-                            # from traceback import print_exc
-                            # print_exc()
+                            from traceback import print_exc
+                            print_exc()
                             utils.logging.log(
                                 "An error occured while setting the Access-Control-Allow-Headers header", utils.logging.LogLevels.WARNING)
                     else:
@@ -364,8 +364,8 @@ class Nasse():
                     if config.Mode.PRODUCTION:
                         response.headers["Access-Control-Max-Age"] = 86400
             except Exception:
-                # from traceback import print_exc
-                # print_exc()
+                from traceback import print_exc
+                print_exc()
                 utils.logging.log(
                     "An error occured while setting some CORS headers", utils.logging.LogLevels.WARNING)
 
@@ -394,7 +394,9 @@ class Nasse():
 
         except Exception:
             # would be bad if the `after_request` function raises an exception, especially when used as the `teardown_request`
-            pass
+            from traceback import print_exc
+            print_exc()
+            # pass
 
         return response
 
