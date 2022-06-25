@@ -232,28 +232,28 @@ class Nasse():
             "bind": "{host}:{port}".format(host=host or config.General.HOST, port=port or utils.args.Args.get(("-p", "--port"), 5000))
         }
         parameters.update(kwargs)
-        if config.Mode.DEBUG:
-            watching = []
-            ignoring = []
-            for storage, data in [(watching, watch), (ignoring, ignore)]:
-                for file in data:
-                    file = str(file)
-                    path = pathlib.Path(file)
-                    if path.is_file():
-                        storage.append(path.resolve())
-                    elif path.is_dir():
-                        storage.extend(child.resolve()
-                                       for child in path.iterdir())
-                    else:
-                        storage.extend(child.resolve()
-                                       for child in pathlib.Path().glob(file))
-            utils.logging.log("DEBUG MODE IS ENABLED",
-                              level=utils.logging.LogLevels.WARNING)
-            self._observer = watchdog.observers.Observer()
-            self._observer.schedule(FileEventHandler(
-                callback=self.restart, watch=watching, ignore=ignoring), ".", recursive=True)
-            self._observer.start()
+        try:
+            if config.Mode.DEBUG:
+                utils.logging.log("DEBUG MODE IS ENABLED", level=utils.logging.LogLevels.WARNING)
+                watching = []
+                ignoring = []
+                for storage, data in [(watching, watch), (ignoring, ignore)]:
+                    for file in data:
+                        file = str(file)
+                        path = pathlib.Path(file)
+                        if path.is_file():
+                            storage.append(path.resolve())
+                        elif path.is_dir():
+                            storage.extend(child.resolve() for child in path.iterdir())
+                        else:
+                            storage.extend(child.resolve() for child in pathlib.Path().glob(file))
+                self._observer = watchdog.observers.Observer()
+                self._observer.schedule(FileEventHandler(callback=self.restart, watch=watching, ignore=ignoring), ".", recursive=True)
+                self._observer.start()
+        except Exception:
+            utils.logging.log("Couldn't set up the file changes watcher", level=utils.logging.LogLevels.WARNING)
         gunicorn_handler = GunicornServer(self, options=parameters)
+        utils.logging.log("🍡 Press Ctrl+C to quit", utils.logging.LogLevels.INFO)
         utils.logging.log("🎏 Binding to {color}{address}{normal}".format(
             address=gunicorn_handler.options["bind"], color=utils.logging.Colors.magenta, normal=utils.logging.Colors.normal), level=utils.logging.LogLevels.INFO)
         self._arbiter = gunicorn.arbiter.Arbiter(gunicorn_handler)
@@ -281,7 +281,8 @@ class Nasse():
         """
         Handles exception for flask.Flask
         """
-        from traceback import print_exc; print_exc()
+        from traceback import print_exc
+        print_exc()
         try:
             try:
                 message, error, code = exception_to_response(e)
@@ -345,14 +346,16 @@ class Nasse():
                             utils.logging.log(
                                 "An error occured while setting the Access-Control-Allow-Methods header", utils.logging.LogLevels.WARNING)
                         try:
-                            requested_headers = [header.lower() for header in utils.sanitize.remove_spaces(flask.request.headers.get("Access-Control-Request-Headers", "")).split(",")]
+                            requested_headers = [header.lower() for header in utils.sanitize.remove_spaces(
+                                flask.request.headers.get("Access-Control-Request-Headers", "")).split(",")]
                             endpoint_headers = [header.name.lower() for header in current_endpoint.headers]
-                            
+
                             login_rules = current_endpoint.login.get(flask.request.method.upper(), current_endpoint.login.get("*", None))
                             if login_rules is not None and not login_rules.no_login:
                                 endpoint_headers.append("authorization")
-    
-                            response.headers["Access-Control-Allow-Headers"] = ",".join((header for header in requested_headers if header in endpoint_headers))
+
+                            response.headers["Access-Control-Allow-Headers"] = ",".join(
+                                (header for header in requested_headers if header in endpoint_headers))
                         except Exception:
                             from traceback import print_exc
                             print_exc()
