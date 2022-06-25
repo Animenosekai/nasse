@@ -3,15 +3,16 @@ from copy import deepcopy
 # from uuid import uuid4
 
 from nasse import docs, models
+from nasse.docs.localization.base import Localization
 from nasse.utils.sanitize import sort_http_methods
 
 
-def create_postman_data(app, section: str, endpoints: typing.List[models.Endpoint]):
+def create_postman_data(app, section: str, endpoints: typing.List[models.Endpoint], localization: Localization = Localization()):
     postman_section = {
         "info": {
             # "_postman_id": str(uuid4()),
             "name": section,
-            "description": "All of the endpoints under the '{section}' section of the {name} API Interface".format(section=section, name=app.name),
+            "description": localization.postman_description.format(section=section, name=app.name),
             "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
         },
         "item": [],
@@ -32,11 +33,11 @@ def create_postman_data(app, section: str, endpoints: typing.List[models.Endpoin
         }
     }
     for endpoint in endpoints:
-        postman_section["item"].extend(create_postman_docs(endpoint))
+        postman_section["item"].extend(create_postman_docs(endpoint), localization=localization)
     return postman_section
 
 
-def create_postman_docs(endpoint: models.Endpoint):
+def create_postman_docs(endpoint: models.Endpoint, localization: Localization = Localization()):
     results = []
     for method in sort_http_methods(endpoint.methods):
         result = {
@@ -65,14 +66,15 @@ def create_postman_docs(endpoint: models.Endpoint):
                         }
                         for param in endpoint.params if param.all_methods or method in param.methods]
                 },
-                "description": docs.markdown.make_docs_for_method(endpoint=endpoint, method=method, postman=True)
+                "description": docs.markdown.make_docs_for_method(endpoint=endpoint, method=method, postman=True, localization=localization)
             },
             "response": []
         }
         result["response"].append(deepcopy(result))
         result["response"][0]["status"] = "OK"
         result["response"][0]["code"] = 200
-        result["response"][0]["_postman_previewlanguage"] = "json"
+        if endpoint.json:
+            result["response"][0]["_postman_previewlanguage"] = "json"
         result["response"][0]["header"] = []
         result["response"][0]["cookie"] = []
         result["response"][0]["body"] = docs.example.generate_example(

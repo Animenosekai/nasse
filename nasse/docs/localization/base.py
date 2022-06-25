@@ -1,37 +1,59 @@
-import typing
-
-
-def header_link(header: str, registry: typing.List[str] = None):
+class Localization:
     """
-    - All text is converted to lowercase.
-    - All non-word text (e.g., punctuation, HTML) is removed.
-    - All spaces are converted to hyphens.
-    - Two or more hyphens in a row are converted to one.
-    - If a header with the same ID has already been generated, a unique incrementing number is appended, starting at 1.
+    Represents a Nasse documentation generation localization
     """
-    if registry is None:
-        registry = []
-    # registry = registry
-    result = "".join(l for l in str(header) if l.isalpha()
-                     or l.isdecimal() or l == " ")
-    result = result.replace(" ", "-").lower()
-    final_result = ""
-    for index, letter in enumerate(result):
-        if letter == "-" and index > 0 and result[index - 1] != '-':
-            final_result += letter
-        elif index <= 0 and letter != '-':
-            final_result = letter
-        elif index > 0 and letter != '-':
-            final_result += letter
-    link_count = registry.count(final_result)
-    registry.append(final_result)
-    if link_count > 0:
-        return "{result}-{count}".format(result=final_result, count=link_count)
-    else:
-        return final_result
+    no_description = "No description"
+    using_method = "Using {method}"
 
+    # Authentication
+    authentication = "Authentication"
+    no_auth_rule = "There is no authentication rule defined"
+    no_login = "Login is **not** required"
+    login_with_types_required = "Login with {types} is **required**"
+    login_with_types_optional = "Login with {types} is **optional**"
+    login_required = "Login is **required**"
+    login_optional = "Login is **optional**"
+    login_suffix_only_verified = " but only verified"
 
-GETTING_STARTED_HEADER = '''
+    # User sent values
+    parameters = "Parameters"
+    headers = "Headers"
+    cookies = "Cookies"
+    dynamic_url = "Dynamic URL"
+
+    name = "Name"
+    description = "Description"
+    required = "Required"
+    type = "Type"
+
+    # Example
+    example = "Example"
+
+    # Response
+    response = "Response"
+    example_response = "Example response"
+    not_json_response = "This endpoint doesn't seem to return a JSON-formatted response."
+
+    # Response description
+    returns = "Returns"
+    field = "Field"
+    nullable = "Nullable"
+
+    # Errors
+    possible_errors = "Possible Errors"
+    exception = "Exception"
+    code = "Code"
+
+    # Index
+    index = "Index"
+    return_to_index = "Return to the Index"
+
+    # Postman
+    postman_description = "All of the endpoints under the '{section}' section of the {name} API Interface"
+
+    # Headers
+
+    getting_started_header = '''
 # {name} API Reference
 
 Welcome to the {name} API Reference.
@@ -134,8 +156,7 @@ The "call_stack" attribute is enabled only when an error occurs or the `call_sta
 
 '''
 
-
-SECTION_HEADER = '''
+    section_header = '''
 # {name} Section API Reference
 
 This file lists and explains the different endpoints available in the {name} section.

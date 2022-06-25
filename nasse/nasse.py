@@ -20,6 +20,7 @@ import watchdog.events
 import watchdog.observers
 
 from nasse import config, docs, models, receive, request, utils
+from nasse.docs.localization.base import Localization
 from nasse.response import exception_to_response
 
 
@@ -280,7 +281,7 @@ class Nasse():
         """
         Handles exception for flask.Flask
         """
-        # from traceback import print_exc; print_exc()
+        from traceback import print_exc; print_exc()
         try:
             try:
                 message, error, code = exception_to_response(e)
@@ -399,7 +400,7 @@ class Nasse():
 
         return response
 
-    def make_docs(self, base_dir: typing.Union[pathlib.Path, str] = None, curl: bool = True, javascript: bool = True, python: bool = True):
+    def make_docs(self, base_dir: typing.Union[pathlib.Path, str] = None, curl: bool = True, javascript: bool = True, python: bool = True, localization: Localization = Localization):
         """
         Creates the documentation for your API/Server
 
@@ -432,9 +433,9 @@ class Nasse():
             sections_path.mkdir()
 
         # Initializing the resulting string by prepending the header
-        result = docs.header.GETTING_STARTED_HEADER.format(name=self.name, id=self.id)
+        result = localization.getting_started_header.format(name=self.name, id=self.id)
 
-        result += "## Index\n\n"
+        result += "## {localization__index}\n\n".format(localization__index=localization.index)
 
         # Sorting the sections alphabetically
         sections = sorted({endpoint.section for endpoint in self.endpoints.values()})
@@ -468,14 +469,14 @@ class Nasse():
 
         # Dumping all of the docs and creating the Postman Data
         for section in sections_registry:
-            result = docs.header.SECTION_HEADER.format(name=section)
+            result = localization.section_header.format(name=section)
             # result += '''\n## {section}\n'''.format(section=section)
-            result += "\n".join([docs.markdown.make_docs(endpoint, curl=curl, javascript=javascript, python=python)
+            result += "\n".join([docs.markdown.make_docs(endpoint, curl=curl, javascript=javascript, python=python, localization=localization)
                                 for endpoint in sections_registry[section]])
             with open(sections_path / "{section}.md".format(section=section), "w", encoding="utf-8") as out:
                 out.write(result)
 
-            result = docs.postman.create_postman_data(self, section, sections_registry[section])
+            result = docs.postman.create_postman_data(self, section, sections_registry[section], localization=localization)
             with open(postman_path / "{section}.postman_collection.utils.json".format(section=section), "w", encoding="utf-8") as out:
                 out.write(utils.json.minified_encoder.encode(result))
 

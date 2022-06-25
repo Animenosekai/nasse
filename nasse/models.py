@@ -435,7 +435,7 @@ class Endpoint(object):
 
         elif name == "section":
             super().__setattr__("section", str(value))
-        elif name in {"returning", "return", "response", "output", "answer"}:
+        elif name in {"returning", "return", "response", "output", "answer", "returns"}:
             super().__setattr__("returning", [])
             if utils.annotations.is_unpackable(value):
                 for key, val in dict(value).items():

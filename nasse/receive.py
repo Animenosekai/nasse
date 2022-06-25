@@ -165,7 +165,7 @@ class Receive():
                         elif isinstance(response, Exception):
                             # return NasseException("Something went wrong")
                             message, error, code = exception_to_response(response)
-                        elif isinstance(response, typing.Iterable):
+                        elif isinstance(response, typing.Iterable) and not isinstance(response, typing.Generator):
                             found = False
                             if utils.annotations.is_unpackable(response):
                                 try:

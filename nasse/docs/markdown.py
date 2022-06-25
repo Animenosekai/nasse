@@ -1,26 +1,29 @@
 from pathlib import Path
 
 from nasse import docs, models
+from nasse.docs.header import header_link
+from nasse.docs.localization.base import Localization
 from nasse.utils.sanitize import sort_http_methods
 
 
-def make_docs(endpoint: models.Endpoint, postman: bool = False, curl: bool = True, javascript: bool = True, python: bool = True):
+def make_docs(endpoint: models.Endpoint, postman: bool = False, curl: bool = True, javascript: bool = True, python: bool = True, localization: Localization = Localization()):
     result = '''
-## {name}
+# {name}
 '''.format(name=endpoint.name)
     if len(endpoint.methods) == 1:
         result += '''
 {description}
-'''.format(description=endpoint.description.get(endpoint.methods[0] if "*" not in endpoint.description else "*", 'No description'))
+'''.format(description=endpoint.description.get(endpoint.methods[0] if "*" not in endpoint.description else "*", localization.no_description))
         result += make_docs_for_method(endpoint=endpoint)
     else:
         for method in sort_http_methods(endpoint.methods):
-            result += '''\n- ### Using {method}\n{docs}\n'''.format(method=method, docs=make_docs_for_method(
-                endpoint=endpoint, method=method, postman=postman, curl=curl, javascript=javascript, python=python))
+            result += "\n - ### {localization__using_method}".format(localization__using_method=localization.using_method.format(method=method))
+            result += "\n{docs}\n".format(docs=make_docs_for_method(endpoint=endpoint, method=method,
+                                          postman=postman, curl=curl, javascript=javascript, python=python, localization=localization))
     return result
 
 
-def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman: bool = False, curl: bool = True, javascript: bool = True, python: bool = True):
+def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman: bool = False, curl: bool = True, javascript: bool = True, python: bool = True, localization: Localization = Localization()):
     result = ''
 
 # ENDPOINT HEADER
@@ -33,7 +36,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
         method = str(method)
         result += '''
 {description}
-'''.format(description=endpoint.description.get(method if method in endpoint.description else "*", 'No description'))
+'''.format(description=endpoint.description.get(method if method in endpoint.description else "*", localization.no_description))
 
     try:
         path = Path(endpoint.handler.__code__.co_filename).resolve().relative_to(Path().resolve())
@@ -59,41 +62,45 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 
 {description}
 
-'''.format(source_code_path=path, github_path="../../{path}#L{line}".format(path=path, line=line), description=endpoint.description.get(method if method in endpoint.description else "*", 'No description'))
+'''.format(source_code_path=path, github_path="../../{path}#L{line}".format(path=path, line=line), description=endpoint.description.get(method if method in endpoint.description else "*", localization.no_description))
 
 
 # AUTHENTICATION
 
     result += '''
-{heading} Authentication
+{heading} {localization__authentication}
 
-'''.format(heading=heading_level)
+'''.format(heading=heading_level, localization__authentication=localization.authentication)
     login_rules = endpoint.login.get(method, endpoint.login.get("*", None))
     if login_rules is None:
-        result += "There is no authentication rules defined"
+        result += localization.no_auth_rule
     else:
         if login_rules.no_login:
-            result += "Login is **not** required"
+            result += localization.no_login
         else:
             if login_rules.required:
-                result += "Login{types} is **required**".format(types=(' with ' + ', '.join(
-                    [str(type_name) for type_name in login_rules.types])) if len(login_rules.types) > 0 else "")
+                if len(login_rules.types) > 0:
+                    result += localization.login_with_types_required.format(types=', '.join(str(type_name) for type_name in login_rules.types))
+                else:
+                    result += localization.login_required
             else:
-                result += "Login{types} is **optional**".format(types=(' with ' + ', '.join(
-                    [str(type_name) for type_name in login_rules.types])) if len(login_rules.types) > 0 else "")
+                if len(login_rules.types) > 0:
+                    result += localization.login_with_types_optional.format(types=', '.join(str(type_name) for type_name in login_rules.types))
+                else:
+                    result += localization.login_optional
 
         if login_rules.verification_only:
-            result += " but only verified"
+            result += localization.login_suffix_only_verified
 
     if not postman:  # POSTMAN DOESN'T NEED THESE INFORMATION
 
         # USER SENT VALUES
 
         for field, values in [
-            ("Parameters", endpoint.params),
-            ("Headers", endpoint.headers),
-            ("Cookies", endpoint.cookies),
-            ("Dynamic URL", endpoint.dynamics)
+            (localization.parameters, endpoint.params),
+            (localization.headers, endpoint.headers),
+            (localization.cookies, endpoint.cookies),
+            (localization.dynamic_url, endpoint.dynamics)
         ]:
             params = [param for param in values if (param.all_methods or method in param.methods)]
             if len(params) > 0:
@@ -101,9 +108,9 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 
 {heading} {field}
 
-| Name         | Description                      | Required         | Type             |
+| {localization__name}         | {localization__description}                      | {localization__required}         | {localization__type}             |
 | ------------ | -------------------------------- | ---------------- | ---------------- |
-'''.format(field=field, heading=heading_level)
+'''.format(field=field, heading=heading_level, localization__name=localization.name, localization__description=localization.description, localization__required=localization.required, localization__type=localization.type)
                 result += "\n".join(
                     ["| `{param}` | {description}  | {required}            | {type}            |".format(param=param.name, description=param.description, required=param.required, type=param.type.__name__ if hasattr(param.type, "__name__") else str(param.type) if param.type is not None else "str") for param in params])
 
@@ -113,24 +120,28 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
         if any((curl, javascript, python)):
             result += '''
 
-{heading} Example
+{heading} {localization__example}
 
 <!-- tabs:start -->
-'''.format(heading=heading_level)
-            for proceed, language, function in [
-                (curl, "cURL", docs.curl.create_curl_example_for_method),
-                (javascript, "JavaScript", docs.javascript.create_javascript_example_for_method),
-                (python, "Python", docs.python.create_python_example_for_method)
+'''.format(heading=heading_level, localization__example=localization.example)
+            for proceed, highlight, language, function in [
+                (curl, "bash", "cURL", docs.curl.create_curl_example_for_method),
+                (javascript, "javascript", "JavaScript", docs.javascript.create_javascript_example_for_method),
+                (python, "python", "Python", docs.python.create_python_example_for_method)
             ]:
                 if proceed:
                     result += '''
+
+<details>
+    <summary>{language} {localization__example}</summary>
+
 {heading} **{language}**
 
-```bash
+```{highlight}
 {example}
 ```
-'''.format(heading=heading_level + "#", language=language, example=function(endpoint, method=method))
-            result += '''<!-- tabs:end -->'''
+'''.format(heading=heading_level + "#", localization__example=localization.example, highlight=highlight, language=language, example=function(endpoint, method=method))
+            result += '''<!-- tabs:end --> </details>'''
 
 
 # RESPONSE
@@ -139,31 +150,33 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
     if len(returning) > 0:
         result += '''
 
-{heading} Response
-'''.format(heading=heading_level)
+{heading} {localization__response}
+'''.format(heading=heading_level, localization__response=localization.response)
 
 
 # JSON RESPONSE EXAMPLE
 
         if endpoint.json:
             result += '''
-{heading} Example Response
+{heading} {localization__example_response}
 
 ```json
 {example}
 ```
-'''.format(heading=heading_level + "#", example=docs.example.generate_example(endpoint, method=method))
+'''.format(heading=heading_level + "#", localization__example_response=localization.example_response, example=docs.example.generate_example(endpoint, method=method))
         else:
-            result += '''\nThis endpoint doesn't seem to return a JSON formatted response.\n'''
+            result += "\n"
+            result += localization.not_json_response
+            result += "\n"
 
 # RESPONSE DESCRIPTION
 
         result += '''
-{heading} Returns
+{heading} {localization__returns}
 
-| Field        | Description                      | Type   | Nullable  |
+| {localization__field}        | {localization__description}                      | {localization__type}   | {localization__nullable}  |
 | ----------   | -------------------------------- | ------ | --------- |
-'''.format(heading=heading_level + "#")
+'''.format(heading=heading_level + "#", localization__returns=localization.returns, localization__description=localization.description, localization__type=localization.type, localization__nullable=localization.nullable)
         result += "\n".join(["| `{key}` | {description}  | {type}      | {nullable}      |".format(key=element.name,
                             description=element.description, type=docs.example._get_type(element), nullable=element.nullable) for element in returning])
 
@@ -176,11 +189,11 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
         error.all_methods or method in error.methods)]
     if len(errors) > 0:
         result += '''
-{heading} Possible Errors
+{heading} {localization__possible_errors}
 
-| Exception         | Description                      | Code   |
+| {localization__exception}         | {localization__description}                      | {localization__code}   |
 | ---------------   | -------------------------------- | ------ |
-'''.format(heading=heading_level + "#")
+'''.format(heading=heading_level + "#", localization__possible_errors=localization.possible_errors, localization__exception=localization.exception, localization__description=localization.description, localization__code=localization.code)
 
         result += "\n".join(
             ["| `{key}` | {description}  | {code}  |".format(key=error.name, description=error.description, code=error.code) for error in errors])
@@ -188,5 +201,5 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 
 # INDEX LINKING
 
-    result += "\n[Return to the Index](../Getting%20Started.md#index)"
+    result += "\n[{localization__return_to_index}](../Getting%20Started.md#{localization__index})".format(localization__return_to_index=localization.return_to_index, localization__index=header_link(localization.index))
     return result
