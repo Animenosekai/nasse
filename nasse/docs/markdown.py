@@ -140,8 +140,10 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 ```{highlight}
 {example}
 ```
+
+</details>
 '''.format(heading=heading_level + "#", localization__example=localization.example, highlight=highlight, language=language, example=function(endpoint, method=method))
-            result += '''<!-- tabs:end --> </details>'''
+            result += '''<!-- tabs:end -->'''
 
 
 # RESPONSE
@@ -176,7 +178,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 
 | {localization__field}        | {localization__description}                      | {localization__type}   | {localization__nullable}  |
 | ----------   | -------------------------------- | ------ | --------- |
-'''.format(heading=heading_level + "#", localization__returns=localization.returns, localization__field=localization.field ,localization__description=localization.description, localization__type=localization.type, localization__nullable=localization.nullable)
+'''.format(heading=heading_level + "#", localization__returns=localization.returns, localization__field=localization.field, localization__description=localization.description, localization__type=localization.type, localization__nullable=localization.nullable)
         result += "\n".join(["| `{key}` | {description}  | {type}      | {nullable}      |".format(key=element.name,
                             description=element.description, type=docs.example._get_type(element), nullable=element.nullable) for element in returning])
 
@@ -201,5 +203,6 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 
 # INDEX LINKING
 
-    result += "\n[{localization__return_to_index}](../Getting%20Started.md#{localization__index})".format(localization__return_to_index=localization.return_to_index, localization__index=header_link(localization.index))
+    result += "\n[{localization__return_to_index}](../Getting%20Started.md#{localization__index})".format(
+        localization__return_to_index=localization.return_to_index, localization__index=header_link(localization.index))
     return result
