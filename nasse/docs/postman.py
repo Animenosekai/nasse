@@ -33,7 +33,7 @@ def create_postman_data(app, section: str, endpoints: typing.List[models.Endpoin
         }
     }
     for endpoint in endpoints:
-        postman_section["item"].extend(create_postman_docs(endpoint), localization=localization)
+        postman_section["item"].extend(create_postman_docs(endpoint, localization=localization))
     return postman_section
 
 

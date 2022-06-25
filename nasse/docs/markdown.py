@@ -14,7 +14,7 @@ def make_docs(endpoint: models.Endpoint, postman: bool = False, curl: bool = Tru
         result += '''
 {description}
 '''.format(description=endpoint.description.get(endpoint.methods[0] if "*" not in endpoint.description else "*", localization.no_description))
-        result += make_docs_for_method(endpoint=endpoint)
+        result += make_docs_for_method(endpoint=endpoint, postman=postman, curl=curl, javascript=javascript, python=python, localization=localization)
     else:
         for method in sort_http_methods(endpoint.methods):
             result += "\n - ### {localization__using_method}".format(localization__using_method=localization.using_method.format(method=method))
@@ -176,7 +176,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 
 | {localization__field}        | {localization__description}                      | {localization__type}   | {localization__nullable}  |
 | ----------   | -------------------------------- | ------ | --------- |
-'''.format(heading=heading_level + "#", localization__returns=localization.returns, localization__description=localization.description, localization__type=localization.type, localization__nullable=localization.nullable)
+'''.format(heading=heading_level + "#", localization__returns=localization.returns, localization__field=localization.field ,localization__description=localization.description, localization__type=localization.type, localization__nullable=localization.nullable)
         result += "\n".join(["| `{key}` | {description}  | {type}      | {nullable}      |".format(key=element.name,
                             description=element.description, type=docs.example._get_type(element), nullable=element.nullable) for element in returning])
 
