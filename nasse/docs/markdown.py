@@ -113,7 +113,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 | ------------ | -------------------------------- | ---------------- | ---------------- |
 '''.format(field=field, heading=heading_level, localization__name=localization.name, localization__description=localization.description, localization__required=localization.required, localization__type=localization.type)
                 result += "\n".join(
-                    ["| `{param}` | {description}  | {required}            | {type}            |".format(param=param.name, description=param.description, required=param.required, type=param.type.__name__ if hasattr(param.type, "__name__") else str(param.type) if param.type is not None else "str") for param in params])
+                    ["| `{param}` | {description}  | {required}            | {type}            |".format(param=param.name, description=param.description, required=localization.yes if param.required else localization.no, type=param.type.__name__ if hasattr(param.type, "__name__") else str(param.type) if param.type is not None else "str") for param in params])
 
 
 # LANGUAGE SPECIFIC EXAMPLES
@@ -181,7 +181,7 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 | ----------   | -------------------------------- | ------ | --------- |
 '''.format(heading=heading_level + "#", localization__returns=localization.returns, localization__field=localization.field, localization__description=localization.description, localization__type=localization.type, localization__nullable=localization.nullable)
         result += "\n".join(["| `{key}` | {description}  | {type}      | {nullable}      |".format(key=element.name,
-                            description=element.description, type=docs.example._get_type(element), nullable=element.nullable) for element in returning])
+                            description=element.description, type=docs.example._get_type(element), nullable=localization.yes if element.nullable else localization.no) for element in returning])
 
     result += "\n"
 

@@ -5,6 +5,9 @@ class Localization:
     sections = "Sections"
     getting_started = "Getting Started"
 
+    yes = "Yes"
+    no = "No"
+
     no_description = "No description"
     using_method = "Using {method}"
 

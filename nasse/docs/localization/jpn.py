@@ -5,6 +5,9 @@ class JapaneseLocalization(Localization):
     sections = "セクション"
     getting_started = "はじめに"
 
+    yes = "はい"
+    no = "いいえ"
+
     no_description = "詳細なし"
     using_method = "{method}を使って"
 

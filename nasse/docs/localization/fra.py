@@ -5,6 +5,9 @@ class FrenchLocalization(Localization):
     sections = "Sections"
     getting_started = "Pour commencer"
 
+    yes = "Oui"
+    no = "Non"
+
     no_description = "Il n'y a pas de description"
     using_method = "En utilisant {method}"
 
