@@ -2,127 +2,128 @@ from nasse.docs.localization.base import Localization
 
 
 class JapaneseLocalization(Localization):
-    sections = "Sections"
-    getting_started = "Getting Started"
+    sections = "セクション"
+    getting_started = "はじめに"
 
-    no_description = "No description"
-    using_method = "Using {method}"
+    no_description = "詳細なし"
+    using_method = "{method}を使って"
 
     # Authentication
-    authentication = "Authentication"
-    no_auth_rule = "There is no authentication rule defined"
-    no_login = "Login is **not** required"
-    login_with_types_required = "Login with {types} is **required**"
-    login_with_types_optional = "Login with {types} is **optional**"
-    login_required = "Login is **required**"
-    login_optional = "Login is **optional**"
-    login_suffix_only_verified = " but only verified"
+    authentication = "認証"
+    no_auth_rule = "認証ルールが定義されていません"
+    no_login = "ログインは**不要**です"
+    login_with_types_required = "{types} アカウントでのログインが**必要**です"
+    login_with_types_optional = "{types} アカウントでのログインは**任意**です"
+    login_required = "ログインは**必要**です"
+    login_optional = "ログインは**任意**です"
+    login_suffix_only_verified = " （検証のみ）"
 
     # User sent values
-    parameters = "Parameters"
-    headers = "Headers"
-    cookies = "Cookies"
-    dynamic_url = "Dynamic URL"
+    parameters = "パラメーター"
+    headers = "ヘッダー"
+    cookies = "クッキー"
+    dynamic_url = "ダイナミックURL"
 
-    name = "Name"
-    description = "Description"
-    required = "Required"
-    type = "Type"
+    name = "名前"
+    description = "詳細"
+    required = "必要"
+    type = "タイプ"
 
     # Example
-    example = "Example"
+    example = "例"
 
     # Response
-    response = "Response"
-    example_response = "Example response"
-    not_json_response = "This endpoint doesn't seem to return a JSON-formatted response."
+    response = "レスポンス" # 応答や解答より「レスポンス」の方が使われているよう
+    example_response = "レスポンスの例"
+    not_json_response = "このエンドポイントは、JSON形式のレスポンスを返さないようです。"
 
     # Response description
-    returns = "Returns"
-    field = "Field"
-    nullable = "Nullable"
+    returns = "返したフィールド"
+    field = "フィールド"
+    nullable = "null可能"
 
     # Errors
-    possible_errors = "Possible Errors"
-    exception = "Exception"
-    code = "Code"
+    possible_errors = "起こりうるエラー"
+    exception = "エラー名"
+    code = "コード"
 
     # Index
-    index = "Index"
-    return_to_index = "Return to the Index"
+    index = "インデックス"
+    return_to_index = "インデックスに戻る"
 
     # Postman
-    postman_description = "All of the endpoints under the '{section}' section of the {name} API Interface"
+    postman_description = "{name} APIインターフェイスでの「{section}」セクションの全てのエンドポイント"
 
     # Headers
-
     getting_started_header = '''
-# {name} API Reference
+# {name} APIリファレンス
 
-Welcome to the {name} API Reference.
+{name} APIリファレンスへようこそ！
 
-## Globals
+## 全体的に
 
-### Response Format
+### レスポンスの形式
 
-Globally, JSON responses should be formatted as follows (even when critical errors occur)
+一般的に、JSONで形式されたレスポンスは以下の形に返されます（エラーが発生された時もこの形で返されます）
 
 ```json
 {{
     "success": true,
-    "message": "We successfully did this!",
+    "message": "出来ました!",
     "error": null,
     "data": {{}}
 }}
 ```
 
-| Field        | Description                                      | Nullable         |
-| ------------ | ------------------------------------------------ | ---------------- |
-| `success`    | Wether the request was a success or not          | False            |
-| `message`    | A message describing what happened               | True             |
-| `error`      | The exception name if an error occured           | True             |
-| `data`       | The extra data, information asked in the request | False            |
+| フィールド     | 詳細                            |  null可能         |
+| ------------ | ------------------------------  | ---------------- |
+| `success`    | リクエストが成功したかどうか         | False            |
+| `message`    | 何があったか説明する文章            | True             |
+| `error`      | エラーが発生した時のエラー名         | True             |
+| `data`       | 解答のデータ、リクエストされたデータ  | False            |
 
-### Errors
+### エラー
 
-Multiple Errors can occur, server side or request side.
+サーバー上でも、リクエストからでも、様々なエラーが発生する可能性があります。
 
-Specific errors are documented in each endpoint but these are the general errors that can occur on any endpoint:
+特定なエラーはそれぞれのエンドポイントドキュメントで説明されていなすが、以下に一般的に発生可能のエラーを説明します
 
-| Exception                   | Description                                                                                                     | Code  |
+| エラー名                     | 詳細                                                                                                             | コード  |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------- | ----- |
-| `SERVER_ERROR`              | When an error occurs on {name} while processing a request                                                       | 500   |
-| `MISSING_CONTEXT`           | When you are trying to access something which is only available in a Nasse context, and you aren't in one       | 500   |
-| `INTERNAL_SERVER_ERROR`     | When a critical error occurs on the system                                                                      | 500   |
-| `METHOD_NOT_ALLOWED`        | When you made a request with the wrong method                                                                   | 405   |
-| `CLIENT_ERROR`              | When something is missing or is wrong with the request                                                          | 400   |
-| `MISSING_VALUE`             | When a value is missing from the request                                                                        | 400   |
-| `MISSING_PARAM`             | When a parameter is missing from the request                                                                    | 400   |
-| `MISSING_DYNAMIC`           | When a dynamic routing value is missing from the requested URL                                                  | 400   |
-| `MISSING_HEADER`            | When a header is missing from the request                                                                       | 400   |
-| `MISSING_COOKIE`            | When a cookie is missing from the request                                                                       | 400   |
-| `AUTH_ERROR`                | When an error occured while authenticating the request                                                          | 403   |
+| `SERVER_ERROR`              | リクエストの処理中でサーバー上のエラーが発生した時                                                                       | 500   |
+| `MISSING_CONTEXT`           | Nasseコンテキストに居ないのに、Nasseコンテキストのみで利用可能のデータをアクセスしようとしたとき                               | 500   |
+| `INTERNAL_SERVER_ERROR`     | システム上でエラーが発生した時                                                                                       | 500   |
+| `METHOD_NOT_ALLOWED`        | HTTPリクエストメソッドを間違えた時                                                                                   | 405   |
+| `CLIENT_ERROR`              | リクエストで何か足りないかダメな時                                                                                    | 400   |
+| `MISSING_VALUE`             | リクエストから何か足りない時                                                                                         | 400   |
+| `MISSING_PARAM`             | 必要のパラメーターが一つリクエストから不足している時                                                                     | 400   |
+| `MISSING_DYNAMIC`           | ダイナミックURLのパーツが一つURLから不足している時                                                                      | 400   |
+| `MISSING_HEADER`            | 必要のヘッダーが一つリクエストから不足している時                                                                        | 400   |
+| `MISSING_COOKIE`            | 必要のクッキーが一つリクエストから不足している時                                                                        | 400   |
+| `AUTH_ERROR`                | 認証中にエラーが発生した時                                                                                           | 403   |
 
-### Authenticated Requests
+### 認証されたリクエスト
 
-When a user needs to be logged in, the "Authorization" header needs to be set to the login token provided when logging in.
+ユーザーがログインされていること
 
-Alternatively, the "{id}_token" parameter and "__{id}_token" cookie can be used but these won't be prioritized.
+ユーザーのログインが必要な場合、「Authorization」ヘッダーがログインの時に送られたトークンに設定されることが必要です。
 
-If the endpoint is flagged for a "verified only" login, the account won't be fetched from any database but the token will be checked.
+「{id}_token」のパラメーターと「__{id}_token」のクッキーも利用可能ですがこれらは優先されません
 
-### Debug Mode
+エンドポイントの認証ルールが「検証のみ」になっている場合は、アカウントがデータベースから読み込む事なく、トークンの形式や有効期限をチェックするだけです。
 
-On debug mode (`-d` or `--debug`), multiple information are passed in the `debug` section of the response and the `DEBUG` log level is selected on the server.
+### デバッグモード
 
-The 'debug' section is available on every type of error, except the ones issued by Flask such as `INTERNAL_SERVER_ERROR`, `METHOD_NOT_ALLOWED`, etc. (they need to do the bare minimum to not raise an exception and therefore breaking the server)
+デバッグモードが有効の時(`-d`か`--debug`)は、色々な情報が`debug`フィールドで返送されて、`DEBUG`のロギングレベルが選ばれます。
 
-The "call_stack" attribute is enabled only when an error occurs or the `call_stack` parameter is passed with the request.
+'debug'フィルーどは重大なエラー（`INTERNAL_SERVER_ERROR`、 `METHOD_NOT_ALLOWED`、 など）しない限り、送られます。(重大なエラーが発生したら、なるべくもう一度エラーが発生しないようにする必要があります)
+
+`call_stack`フィールドは`call_stack`パラメーターをリクエストで入れる時だけ送信されます。
 
 ```json
 {{
     "success": true,
-    "message": "We couldn't fullfil your request",
+    "message": "リクエストが成功しませんでした",
     "error": null,
     "data": {{
         "username": "Animenosekai"
@@ -160,8 +161,7 @@ The "call_stack" attribute is enabled only when an error occurs or the `call_sta
 '''
 
     section_header = '''
-# {name} Section API Reference
+# {name} セクションのAPIリファレンス
 
-This file lists and explains the different endpoints available in the {name} section.
+このファイルは「{name}」セクションの全てのエンドポイントを説明します。
 '''
-

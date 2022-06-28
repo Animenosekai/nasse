@@ -55,7 +55,6 @@ class FrenchLocalization(Localization):
     postman_description = "Tous les endpoints sous la section '{section}' de l'interface API de {name}"
 
     # Headers
-
     getting_started_header = '''
 # Référence d'API pour {name}
 
