@@ -1,3 +1,4 @@
+import urllib.parse
 from pathlib import Path
 
 from nasse import docs, models
@@ -203,6 +204,8 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 
 # INDEX LINKING
 
-    result += "\n[{localization__return_to_index}](../Getting%20Started.md#{localization__index})".format(
-        localization__return_to_index=localization.return_to_index, localization__index=header_link(localization.index))
+    result += "\n[{localization__return_to_index}](../{localization__getting_started}.md#{localization__index})".format(
+        localization__return_to_index=localization.return_to_index,
+        localization__getting_started=urllib.parse.quote(localization.getting_started, safe=""),
+        localization__index=header_link(localization.index))
     return result

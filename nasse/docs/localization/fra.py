@@ -2,6 +2,9 @@ from nasse.docs.localization.base import Localization
 
 
 class FrenchLocalization(Localization):
+    sections = "Sections"
+    getting_started = "Pour commencer"
+
     no_description = "Il n'y a pas de description"
     using_method = "En utilisant {method}"
 

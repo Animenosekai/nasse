@@ -2,6 +2,9 @@ class Localization:
     """
     Represents a Nasse documentation generation localization
     """
+    sections = "Sections"
+    getting_started = "Getting Started"
+
     no_description = "No description"
     using_method = "Using {method}"
 

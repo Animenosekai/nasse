@@ -431,7 +431,7 @@ class Nasse():
         if not postman_path.is_dir():
             postman_path.mkdir()
 
-        sections_path = docs_path / "sections"
+        sections_path = docs_path / localization.sections
         if not sections_path.is_dir():
             sections_path.mkdir()
 
@@ -457,17 +457,20 @@ class Nasse():
 
         for section in sections_registry:
             current_link = docs.header.header_link(section, headers_registry)
-            result += "- [{section}](./sections/{section_url}.md#{link})\n".format(section=section,
-                                                                                   section_url=section.replace(" ", "%20"), link=current_link)
+            result += "- [{section}](./{localization__sections}/{section_url}.md#{link})\n".format(section=section,
+                                                                                                   localization__sections=urllib.parse.quote(localization.sections, safe=''),
+                                                                                                   section_url=section.replace(" ", "%20"),
+                                                                                                   link=current_link)
 
-            result += "\n".join(["  - [{endpoint}](./sections/{section}.md#{link})".format(
+            result += "\n".join(["  - [{endpoint}](./{localization__sections}/{section}.md#{link})".format(
                 endpoint=endpoint.name,
+                localization__sections=urllib.parse.quote(localization.sections, safe=""),
                 section=section.replace(" ", "%20"),
                 link=docs.header.header_link(endpoint.name, headers_registry)) for endpoint in sections_registry[section]]
             )
             result += "\n"
 
-        with open(docs_path / "Getting Started.md", "w", encoding="utf8") as out:
+        with open(docs_path / "{localization__getting_started}.md".format(localization__getting_started=localization.getting_started), "w", encoding="utf8") as out:
             out.write(result)
 
         # Dumping all of the docs and creating the Postman Data
