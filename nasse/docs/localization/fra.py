@@ -80,10 +80,10 @@ Généralement, les réponses JSON seront formattez comme suit (même lorsque de
 
 | Champ        | Description                                      | Peut être `null` |
 | ------------ | ------------------------------------------------ | ---------------- |
-| `success`    | Si la requête est un succès ou pas               | False            |
-| `message`    | Un message qui décrit ce qu'il s'est passé       | True             |
-| `error`      | Le nom de l'erreur si il y en a une              | True             |
-| `data`       | Des données supplémentaires, les informations demandées | False            |
+| `success`    | Si la requête est un succès ou pas               | Non            |
+| `message`    | Un message qui décrit ce qu'il s'est passé       | Oui             |
+| `error`      | Le nom de l'erreur si il y en a une              | Oui             |
+| `data`       | Des données supplémentaires, les informations demandées | Non            |
 
 ### Erreurs
 
