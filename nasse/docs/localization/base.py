@@ -80,10 +80,10 @@ Globally, JSON responses should be formatted as follows (even when critical erro
 
 | Field        | Description                                      | Nullable         |
 | ------------ | ------------------------------------------------ | ---------------- |
-| `success`    | Whether the request was a success or not          | False            |
-| `message`    | A message describing what happened               | True             |
-| `error`      | The exception name if an error occurred           | True             |
-| `data`       | The extra data, information asked in the request | False            |
+| `success`    | Whether the request was a success or not         | No               |
+| `message`    | A message describing what happened               | Yes              |
+| `error`      | The exception name if an error occurred          | Yes              |
+| `data`       | The extra data, information asked in the request | No               |
 
 ### Errors
 
