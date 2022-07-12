@@ -76,16 +76,17 @@ class Request(object):
         # verify if missing
         for attr, exception, current_values in [("params", exceptions.request.MissingParam, self.values), ("headers", exceptions.request.MissingHeader, self.headers), ("cookies", exceptions.request.MissingCookie, self.cookies), ("dynamics", exceptions.request.MissingDynamic, self.dynamics)]:
             for value in self.nasse_endpoint[attr]:
-                if value.name not in current_values:
-                    if value.required and (value.all_methods or self.method in value.methods):
-                        raise exception(name=value.name)
-                else:
-                    if value.type is not None:
-                        results = []
-                        for key, val in current_values.items(multi=True):
-                            if key == value.name:
-                                results.append(value.type(val))
-                        current_values.setlist(value.name, results)
+                if value.all_methods or self.method in value.methods:
+                    if value.name not in current_values:
+                        if value.required:
+                            raise exception(name=value.name)
+                    else:
+                        if value.type is not None:
+                            results = []
+                            for key, val in current_values.items(multi=True):
+                                if key == value.name:
+                                    results.append(value.type(val))
+                            current_values.setlist(value.name, results)
 
     def __setattr__(self, name: str, value: typing.Any) -> None:
         if name in _overwritten:
