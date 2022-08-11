@@ -188,7 +188,7 @@ def _methods_validation(value):
                 utils.sanitize.sanitize_http_method(method) for method in value}
         else:
             methods = {utils.sanitize.sanitize_http_method(value)}
-        return methods
+        return list(methods)
     except Exception:
         raise exceptions.validate.MethodsConversionError(
             "Nasse cannot convert value of type <{t}> to a list of HTTP methods".format(t=value.__class__.__name__))
