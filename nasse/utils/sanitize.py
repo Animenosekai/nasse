@@ -177,4 +177,4 @@ def toCamelCase(string: str):
     final_split = []
     for s in split[(1 if string.startswith("_") else 0):]:
         final_split.extend(s.split(" "))  # split by space
-    return "_" if string.startswith("_") else "" + "".join(l.capitalize() if index > 0 else l for index, l in enumerate(final_split))
+    return ("_" if string.startswith("_") else "") + "".join(l.capitalize() if index > 0 else l for index, l in enumerate(final_split))
