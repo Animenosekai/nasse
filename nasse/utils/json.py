@@ -1,4 +1,3 @@
-import math
 import base64
 import io
 import json
@@ -118,10 +117,7 @@ class NasseJSONEncoder(json.JSONEncoder):
                 # also allow them.  Many encoders seem to do something like this.
                 elif isinstance(key, float):
                     # see comment for int/float in _make_iterencode
-                    if math.isnan(key):
-                        key = "null"
-                    else:
-                        key = _floatstr(key)
+                    key = _floatstr(key)
                 elif key is True:
                     key = 'true'
                 elif key is False:
@@ -241,11 +237,11 @@ class NasseJSONEncoder(json.JSONEncoder):
             # internals.
 
             if o != o:
-                text = 'null' # NaN
+                text = 'NaN'
             elif o == _inf:
-                text = 'null'
+                text = 'Infinity'
             elif o == _neginf:
-                text = 'null'
+                text = '-Infinity'
             else:
                 return _repr(o)
 
@@ -274,8 +270,6 @@ class NasseJSONEncoder(json.JSONEncoder):
             return self.encode_file(o)
         elif isinstance(o, typing.Iterable):
             return self.encode_iterable(o)
-        elif isinstance(o, float) and math.isnan(o):
-            return None
         try:
             return PYTHON_DEFAULT_DECODER(o)
         except TypeError:
