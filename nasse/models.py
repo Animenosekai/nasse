@@ -397,10 +397,13 @@ class Endpoint(object):
                         utils.sanitize.to_path(self.handler.__name__)
                 except Exception:
                     module = inspect.getmodule(self.handler)
-                    if module.__name__ == "__main__":
-                        name = pathlib.Path(module.__file__).stem
+                    if module:
+                        if module.__name__ == "__main__" and module.__file__:
+                            name = pathlib.Path(module.__file__).stem
+                        else:
+                            name = module.__name__
                     else:
-                        name = module.__name__
+                        name = ""
                     self.path = utils.sanitize.to_path(
                         name) + utils.sanitize.to_path(self.handler.__name__)
 
@@ -409,7 +412,11 @@ class Endpoint(object):
         if not self.name:
             self.name = _path_to_name(self.path)
         if not self.section:
-            self.section = inspect.getmodule(self.handler).__name__.title()
+            module = inspect.getmodule(self.handler)
+            if module:
+                self.section = module.__name__.title()
+            else:
+                self.section = ""
 
     def __repr__(self) -> str:
         return "Endpoint(path='{path}')".format(path=self.path)

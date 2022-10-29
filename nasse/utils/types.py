@@ -28,11 +28,11 @@ class LimitedString(str):
         if self.REGEX is not None:
             if not self.REGEX.match(value):
                 if self.THROW:
-                    raise ValueError(f"{value} is not valid")
+                    raise ValueError("{value} is not valid".format(value))
                 value = self.DEFAULT
         if len(value) > self.LIMIT:
             if self.THROW:
-                raise ValueError(f"the given value exceeds the {self.LIMIT} characters limit")
+                raise ValueError("the given value exceeds the {limit} characters limit".format(limit=self.LIMIT))
             value = value[:self.LIMIT]
         return str.__new__(self, value, **kw)
 

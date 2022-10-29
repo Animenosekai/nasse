@@ -2,10 +2,10 @@ import dataclasses
 import datetime
 import enum
 import linecache
-import pathlib
 import typing
 
 from nasse.utils import formatter
+import rich.console
 
 
 class LoggingLevel(enum.Enum):
@@ -55,7 +55,10 @@ class Logger:
         self.recording = False
         self.record = []
 
+        self._rich_console = rich.console.Console()
+
         if self.config.log_file:
+            self.config.log_file.parent.mkdir(parents=True, exist_ok=True)
             self.config.log_file.touch(exist_ok=True)
             with open(self.config.log_file, "a") as f:
                 WIDTH = 32
@@ -86,13 +89,14 @@ class Logger:
             self.record.append(Record(level=level, msg=record_output))
 
         if self.config.log_file:
+            self.config.log_file.parent.mkdir(parents=True, exist_ok=True)
             with open(self.config.log_file, "a") as f:
                 f.write(formatter.format("[{level}] ({name}) - {time} - {msg}\n",
-                    time_format=lambda time: int(time.timestamp()),
-                    level=level.name,
-                    name=self.config.name,
-                    msg=record_output
-                ))
+                                         time_format=lambda time: int(time.timestamp()),
+                                         level=level.name,
+                                         name=self.config.name,
+                                         msg=record_output
+                                         ))
 
         template = self.TEMPLATES.get(level, "{message}")
         result = formatter.format(template, time_format=self.TIME_FORMAT, config=self.config, level=level.name, message=result)
@@ -153,6 +157,17 @@ class Logger:
         Stops recording the output
         """
         self.recording = False
+
+    def print_exception(self, show_locals: bool = False, **kwargs):
+        """
+        Prints the latest exception, nicely
+
+        Parameters
+        ----------
+        show_locals: bool, default = False
+            When enabled, shows the local variables to the console
+        """
+        self._rich_console.print_exception(show_locals=show_locals, **kwargs)
 
 
 RECORDING = False

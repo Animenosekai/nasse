@@ -1,9 +1,4 @@
-"""
-Nasse
-
-A web server framework written on top of Flask
-Stop spending time making the docs, verify the request, compress or format the response, and focus on making your next cool app!
-"""
+"""A web server framework written on top of Flask"""
 
 from . import docs
 from flask import g
