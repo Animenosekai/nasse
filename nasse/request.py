@@ -41,7 +41,7 @@ class Request(object):
         self.method = flask.request.method.upper()
 
         # sanitize
-        if self.app.config.sanitize:
+        if self.app.config.sanitize_user_input:
             self.values = werkzeug.datastructures.MultiDict((key, utils.sanitize.sanitize_text(value))
                                                             for key, value in flask.request.values.items(multi=True))
             #values.append((key, value.replace("<", "&lt").replace(">", "&gt")))
@@ -50,21 +50,21 @@ class Request(object):
                 flask.request.values.items(multi=True))
         self.params = self.values
 
-        if self.app.config.sanitize:
+        if self.app.config.sanitize_user_input:
             self.args = werkzeug.datastructures.MultiDict((key, utils.sanitize.sanitize_text(value))
                                                           for key, value in flask.request.args.items(multi=True))
         else:
             self.args = werkzeug.datastructures.MultiDict(
                 flask.request.args.items(multi=True))
 
-        if self.app.config.sanitize:
+        if self.app.config.sanitize_user_input:
             self.form = werkzeug.datastructures.MultiDict((key, utils.sanitize.sanitize_text(value))
                                                           for key, value in flask.request.form.items(multi=True))
         else:
             self.form = werkzeug.datastructures.MultiDict(
                 flask.request.form.items(multi=True))
 
-        if self.app.config.sanitize:
+        if self.app.config.sanitize_user_input:
             self.dynamics = werkzeug.datastructures.MultiDict((key, utils.sanitize.sanitize_text(value))
                                                               for key, value in dynamics.items())
         else:

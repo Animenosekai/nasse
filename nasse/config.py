@@ -7,7 +7,7 @@ from nasse.utils import formatter
 from nasse.utils.annotations import Default
 
 
-def _alphabetic(l):
+def _alphabetic(string):
     return "".join(l for l in str(string) if l.isalpha() or l.isdecimal())
 
 

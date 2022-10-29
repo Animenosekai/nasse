@@ -11,6 +11,7 @@ class AuthenticationError(NasseException):
 
 
 class MissingToken(AuthenticationError):
+    LOG = False
     MESSAGE = "The authentication token is missing from your request"
 
     def __init__(self, message: str = None, *args: object) -> None:

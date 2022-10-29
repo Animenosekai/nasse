@@ -171,7 +171,7 @@ class Node(object):
         elif isinstance(data, typing.Iterable):
             return "iterable"
         else:
-            utils.logging.logger.log("Object of type <{type}> will be converted to str while encoding to XML".format(type=data.__class__.__name__))
+            utils.logging.logger.debug("Object of type <{type}> will be converted to str while encoding to XML".format(type=data.__class__.__name__))
             return "flat"
 
     def convert(self):
@@ -192,7 +192,7 @@ class Node(object):
             if not isinstance(data, collections.OrderedDict):
                 sorted_data = sorted(data)
 
-            for key in sorted_data:
+            for key in (sorted_data or []):
                 item = data[key]
                 children.append(
                     Node(key, "", item,

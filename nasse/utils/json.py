@@ -274,8 +274,7 @@ class NasseJSONEncoder(json.JSONEncoder):
             return PYTHON_DEFAULT_DECODER(o)
         except TypeError:
             pass
-        utils.logging.logger.log("Object of type <{type}> will be converted to str while encoding to JSON".format(
-            type=o.__class__.__name__))
+        utils.logging.logger.debug("Object of type <{type}> will be converted to str while encoding to JSON".format(type=o.__class__.__name__))
         return str(o)
 
 
