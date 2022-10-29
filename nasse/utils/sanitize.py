@@ -1,7 +1,9 @@
+from ctypes import util
 import typing
+
 import bleach
 # import markdown2
-from nasse import config, logging
+from nasse import config, utils
 
 # Source: en.wikipedia.org/wiki/Whitespace_character
 # Note: BRAILLE PATTERN BLANK, HANGUL FILLER, HANGUL CHOSEONG FILLER, HANGUL JUNGSEONG FILLER and HALFWIDTH HANGUL FILLER are also refered here as "whitespaces" while they aren't according to the Unicode standard.
@@ -44,11 +46,11 @@ def alphabetic(string: str, decimals: bool = True):
 def sanitize_http_method(method: str):
     """Sanitizes the given HTTP method to normalize it"""
     method = remove_spaces(method).upper()
-    if method not in config.Enums.Conventions.HTTP_METHODS and method != "*":
-        logging.log(
+    if method not in utils.types.HTTPMethod.ACCEPTED and method != "*":
+        utils.logging.logger.log(
             message="The provided HTTP method {method} does not seem to be in the set of defined HTTP methods".format(
                 method=method),
-            level=logging.LogLevels.WARNING)
+            level=utils.logging.LoggingLevel.WARNING)
     return method
 
 

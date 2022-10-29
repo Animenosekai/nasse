@@ -17,9 +17,8 @@ setup(
     keywords=['python', 'Anime no Sekai', "animenosekai", "Nasse", "flask", "framework", "web", "web-server", "web-framework"],
     install_requires=[
         'typing; python_version<"3.5"',
-        "Flask==1.1.2",
+        "Flask>=2.0",
         "watchdog==2.1.6",
-        "Werkzeug==1.0.1",
         "bleach==3.3.0",
         "gunicorn==20.1.0",
         "Flask-Compress==1.10.1"

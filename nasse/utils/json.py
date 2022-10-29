@@ -4,7 +4,7 @@ import json
 import json.encoder
 import typing
 
-from nasse import logging, utils
+from nasse import utils
 
 PYTHON_DEFAULT_DECODER = json.JSONEncoder().default
 
@@ -274,7 +274,7 @@ class NasseJSONEncoder(json.JSONEncoder):
             return PYTHON_DEFAULT_DECODER(o)
         except TypeError:
             pass
-        logging.log("Object of type <{type}> will be converted to str while encoding to JSON".format(
+        utils.logging.logger.log("Object of type <{type}> will be converted to str while encoding to JSON".format(
             type=o.__class__.__name__))
         return str(o)
 

@@ -1,56 +1,176 @@
+import dataclasses
 import datetime
+import enum
 import inspect
 import linecache
+import os
+import pathlib
+import threading
+import typing
 
-import flask
-from nasse import config
+
+class LoggingLevel(enum.Enum):
+    ERROR = 1
+    WARNING = 2
+    INFO = 3
+    DEBUG = 4
+    HIDDEN = 999
+
+
+@dataclasses.dataclass
+class Record:
+    def __post_init__(self):
+        self.time = datetime.datetime.now()
+
+    level: LoggingLevel
+    msg: str
+
+
+class Colors(enum.Enum):
+    NORMAL = '\033[0m'
+    GREY = '\033[90m'
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    WHITE = '\033[97m'
+    YELLOW = '\033[93m'
+    MAGENTA = '\033[95m'
+
+
+class Logger:
+    TIME_FORMAT: typing.Union[str, typing.Callable[[datetime.datetime], typing.Any]] = "%Y/%m/%d, %H:%M:%S"
+    # TIME_FORMAT = lambda time: int(time.timestamp())
+    """
+    The logging time format
+
+    It can be either a function taking a datetime.datetime object or a string,
+    which will be passed to datetime.datetime.strftime
+    """
+
+    TEMPLATES = {
+        LoggingLevel.INFO: "{grey}{time} | {normal} [{level}] ({app}) {message}",
+        LoggingLevel.DEBUG: "{grey}{time} | [{level}] ({app}) {message}{normal}",
+        LoggingLevel.WARNING: "{grey}{time} | {normal} [{level}] ({app}) {yellow}{message}{normal}",
+        LoggingLevel.ERROR: "{grey}{time} | {normal} [{level}] ({app}) {red}{message}{normal}"
+    }
+
+    def __init__(self, config: "config.NasseConfig" = None, file_output: pathlib.Path = None) -> None:
+        self.config = config
+        if not self.config:
+            from nasse.config import NasseConfig
+
+            class NewConfig(NasseConfig):
+                def verify_logger(self):
+                    return
+
+            self.config = NewConfig()
+        self.recording = False
+        self.record = []
+
+        if file_output:
+            self.file_output = pathlib.Path(file_output)
+            with open(self.file_output, "a") as f:
+                WIDTH = 32
+                MESSAGE = "LOG START"
+                padding = WIDTH - len(MESSAGE) // 2
+                f.write(("=" * padding) + MESSAGE + ("=" * padding) + "\n")
+        else:
+            self.file_output = None
+
+    def log(self, *msg, level: LoggingLevel = LoggingLevel.INFO):
+        """
+        Logging the given message to the console.
+        """
+        if level.value > self.config.logging_level.value:
+            return
+
+        result = " ".join(msg)
+
+        formatter = {
+            # colors
+            "normal": Colors.NORMAL.value,
+            "grey": Colors.GREY.value,
+            "red": Colors.RED.value,
+            "green": Colors.GREEN.value,
+            "blue": Colors.BLUE.value,
+            "cyan": Colors.CYAN.value,
+            "white": Colors.WHITE.value,
+            "yellow": Colors.YELLOW.value,
+            "magenta": Colors.MAGENTA.value,
+            "level": level.name,
+            "app": self.config.app,
+            "host": self.config.host,
+            "port": self.config.port,
+            "debug": self.config.debug,
+            "base_dir": self.config.base_dir
+        }
+        time = datetime.datetime.now()
+        if "{time}" in result:  # current time
+            formatter["time"] = self.TIME_FORMAT(time) if callable(self.TIME_FORMAT) else time.strftime(self.TIME_FORMAT)
+        if "{caller}" in result:  # caller function
+            formatter["caller"] = caller_name()
+        if "{thread}" in result:  # thread id
+            formatter["thread"] = threading.get_ident()
+        if "{pid}" in result:  # process id
+            formatter["pid"] = os.getpid()
+        if "{cwd}" in result:  # current working directory
+            formatter["cwd"] = os.getcwd()
+
+        result = result.format(**formatter)
+
+        record_output = result
+        for element in Colors:
+            # removing the colors for any file or recording output
+            record_output = record_output.replace(element.value, "")
+
+        if self.recording:
+            self.record.append(Record(level=level, msg=record_output))
+
+        if self.file_output:
+            with open(self.file_output, "a") as f:
+                f.write("[{level}] ({app}) - {time} - {msg}\n".format(
+                    level=level.name,
+                    app=self.config.app,
+                    time=int(time.timestamp()),
+                    msg=record_output
+                ))
+
+        formatter["message"] = result
+        template = self.TEMPLATES.get(level, "{message}")
+
+        if "{time}" in template:  # current time
+            formatter["time"] = self.TIME_FORMAT(time) if callable(self.TIME_FORMAT) else time.strftime(self.TIME_FORMAT)
+        if "{caller}" in template:  # caller function
+            formatter["caller"] = caller_name()
+        if "{thread}" in template:  # thread id
+            formatter["thread"] = threading.get_ident()
+        if "{pid}" in template:  # process id
+            formatter["pid"] = os.getpid()
+        if "{cwd}" in template:  # current working directory
+            formatter["cwd"] = os.getcwd()
+
+        result = template.format(**formatter)
+
+        print(result)
+
+    def __enter__(self):
+        """
+        Begins recording the output
+        """
+        self.recording = True
+        self.record = []
+        return self
+
+    def __exit__(self, type, value, traceback):
+        """
+        Stops recording the output
+        """
+        self.recording = False
+
 
 RECORDING = False
-LOG_STACK = []
 CALL_STACK = []
-
-
-class Colors:
-    normal = '\033[0m'
-    grey = '\033[90m'
-    red = '\033[91m'
-    green = '\033[92m'
-    blue = '\033[94m'
-    cyan = '\033[96m'
-    white = '\033[97m'
-    yellow = '\033[93m'
-    magenta = '\033[95m'
-
-    _colors = {normal, grey, red, green, blue, cyan, white, yellow, magenta}
-
-
-class LogLevel():
-    def __init__(self, level: str, template: str, debug: bool = False) -> None:
-        self.level = str(level)
-        self.template = str(template)
-        self.debug = bool(debug)
-
-        self._draw_time = "{time}" in self.template
-        self._draw_name = "{name}" in self.template
-        self._draw_step = "{step}" in self.template
-        self._draw_message = "{message}" in self.template
-
-    def __repr__(self) -> str:
-        return "<LogLevel: {level}>".format(level=self.level)
-
-
-class LogLevels:
-    INFO = LogLevel(level="Info", template=Colors.grey +
-                    "{time}｜" + Colors.normal + "[INFO] ({name}) [{step}] {message}")
-    DEBUG = LogLevel(debug=True, level="Debug", template=Colors.grey +
-                     "{time}｜" + Colors.normal + "[DEBUG] ({name}) [{step}] {message}")
-    WARNING = LogLevel(level="Warning", template=Colors.grey +
-                       "{time}｜" + Colors.normal + "[WARNING] ({name}) [{step}] " + Colors.yellow + "{message}" + Colors.normal)
-    ERROR = LogLevel(level="Error", template=Colors.grey +
-                     "{time}｜" + Colors.normal + "[ERROR] ({name}) [{step}] " + Colors.red + "!! {message} !!" + Colors.normal)
-
-    def __repr__(self) -> str:
-        return "<LogLevels Container>"
 
 
 class StackFrame():
@@ -89,63 +209,57 @@ class StackFrame():
         }
 
 
-def add_to_call_stack(frame, event, arg):
+class CallStackRecorder:
+    def __enter__(self):
+        """
+        Begins recording the calls
+        """
+        global RECORDING
+        global CALL_STACK
+        RECORDING = True
+        CALL_STACK = []
+        return self
+
+    @property
+    def recording(self):
+        return RECORDING
+
+    @property
+    def call_stack(self):
+        return CALL_STACK
+
+    def __exit__(self, type, value, traceback):
+        """
+        Stops recording
+        """
+        global RECORDING
+        RECORDING = False
+
+
+def _generate_trace(config):
     """
-    Internal function to add a call to the call stack
+    Internal function to generate a trace to record the call stack
     """
-    if RECORDING and event == "call":
-        if config.Mode.FULL_DEBUG:
+    def add_to_call_stack(frame, event, arg):
+        """
+        Internal function to add a call to the call stack
+        """
+        if RECORDING and event == "call" and frame.f_code.co_filename.startswith(config.base_dir):
             CALL_STACK.append(StackFrame(frame))
-        elif frame.f_code.co_filename.startswith(str(config.General.BASE_DIR)):
-            CALL_STACK.append(StackFrame(frame))
-    return None
-
-
-def clear_log():
-    try:
-        name = flask.g.request.app.name
-    except Exception:
-        name = config.General.NAME
-    try:
-        app_id = flask.g.request.app.id
-    except Exception:
-        app_id = "".join(l for l in str(name) if l.isalpha()
-                         or l.isdecimal()).lower()
-    with open(config.General.BASE_DIR / "{id}.nasse.log".format(id=app_id), "w", encoding="utf8") as out:
-        out.write("-- {name} DEBUG LOG --\n\n".format(name=str(name).upper()))
-
-
-def write_log(new_line: str):
-    """Writing out the log, wether it's to the log stack or the log file"""
-    #new_line = str(new_line).replace("\n", " ")
-    new_line = str(new_line)
-    for color in Colors._colors:
-        new_line = new_line.replace(color, "")
-    if RECORDING:
-        LOG_STACK.append(new_line)
-    if config.Mode.DEBUG:
-        try:
-            name = flask.g.request.app.name
-        except Exception:
-            name = config.General.NAME
-        try:
-            app_id = flask.g.request.app.id
-        except Exception:
-            app_id = "".join(l for l in str(
-                name) if l.isalpha() or l.isdecimal()).lower()
-        with open(config.General.BASE_DIR / "{id}.nasse.log".format(id=app_id), "a", encoding="utf8") as out:
-            out.write(str(new_line) + "\n")
+        return None
+    return add_to_call_stack
 
 
 def caller_name(skip: int = 2):
     """
-    https://stackoverflow.com/a/9812105/11557354
-       Get a name of a caller in the format module.class.method
+    Get a name of a caller in the format module.class.method
 
-       `skip` specifies how many levels of stack to skip while getting caller
-       name. skip=1 means "who calls me", skip=2 "who calls my caller" etc.
+    `skip` specifies how many levels of stack to skip while getting caller
+    name. skip=1 means "who calls me", skip=2 "who calls my caller" etc.
 
-       An empty string is returned if skipped levels exceed stack height
+    An empty string is returned if skipped levels exceed stack height
+
+    Note: https://stackoverflow.com/a/9812105/11557354       
     """
     stack = inspect.stack()
     start = 0 + skip
@@ -165,67 +279,4 @@ def caller_name(skip: int = 2):
     return ".".join(name)
 
 
-def log(message: str = "Log", level: LogLevel = LogLevels.DEBUG, step: str = None):
-    if config.Mode.PRODUCTION:
-        return
-    now = datetime.datetime.now()
-    write_log("{time}｜[{level}] [{step}] {message}".format(time=now.timestamp(), level=level.level.upper(), step=(
-        step if step is not None else (caller_name() if config.Mode.DEBUG else 'app')), message=message))
-
-    if not level.debug or config.Mode.DEBUG:
-        formatting = {}
-        if level._draw_time:
-            formatting["time"] = config.General.LOGGING_TIME_FORMAT(now) if callable(
-                config.General.LOGGING_TIME_FORMAT) else now.strftime(str(config.General.LOGGING_TIME_FORMAT))
-        if level._draw_step:
-            formatting["step"] = step if step is not None else (
-                caller_name() if config.Mode.DEBUG else 'Nasse App')
-        if level._draw_name:
-            try:
-                name = flask.g.request.app.name
-            except Exception:
-                name = config.General.NAME
-            formatting["name"] = name
-        if level._draw_message:
-            formatting["message"] = message
-
-        print(level.template.format(**formatting))
-
-
-class Record():
-    _call_stack = []
-    _log_stack = []
-
-    @property
-    def CALL_STACK(self):
-        if RECORDING:
-            return CALL_STACK.copy()
-        return self._call_stack.copy()
-
-    @property
-    def LOG_STACK(self):
-        if RECORDING:
-            return LOG_STACK.copy()
-        return self._log_stack.copy()
-
-    def start(self):
-        global RECORDING
-        CALL_STACK.clear()
-        LOG_STACK.clear()
-        RECORDING = True
-
-    def stop(self):
-        global RECORDING
-        self._call_stack = CALL_STACK.copy()
-        self._log_stack = LOG_STACK.copy()
-        RECORDING = False
-        CALL_STACK.clear()
-        LOG_STACK.clear()
-        return self._call_stack, self._log_stack
-
-    def __enter__(self):
-        self.start()
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.stop()
+logger = Logger()

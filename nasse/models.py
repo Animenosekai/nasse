@@ -6,7 +6,7 @@ import inspect
 import pathlib
 import typing
 
-from nasse import exceptions, logging, utils
+from nasse import exceptions, utils
 from nasse.utils.annotations import Default
 
 
@@ -300,7 +300,22 @@ class Endpoint(object):
     errors = [Error("")]
     base_dir = None
 
-    def __init__(self, handler: typing.Callable = Default(hello), path: str = Default(""), methods: typing.List[str] = Default("GET"), json: bool = Default(True), name: str = Default(""), description: typing.Union[str, typing.Dict[str, str]] = Default(""), section: str = Default(""), returning: typing.Union[Return, typing.List[Return]] = Default([]), login: typing.Union[Login, typing.Dict[str, Login]] = Default(Login(required=False)), headers: typing.Union[Header, typing.List[Header]] = Default([]), cookies: typing.Union[Cookie, typing.List[Cookie]] = Default([]), params: typing.Union[Param, typing.List[Param]] = Default([]), dynamics: typing.Union[Dynamic, typing.List[Dynamic]] = Default([]), errors: typing.Union[Error, typing.List[Error]] = Default([]), base_dir: str = Default(None), endpoint: dict = {}, **kwargs) -> None:
+    def __init__(self, handler: typing.Callable = Default(hello),
+                 path: str = Default(""),
+                 methods: typing.List[str] = Default("GET"),
+                 json: bool = Default(True),
+                 name: str = Default(""),
+                 description: typing.Union[str, typing.Dict[str, str]] = Default(""),
+                 section: str = Default(""),
+                 returning: typing.Union[Return, typing.List[Return]] = Default([]),
+                 login: typing.Union[Login, typing.Dict[str, Login]] = Default(Login(required=False)),
+                 headers: typing.Union[Header, typing.List[Header]] = Default([]),
+                 cookies: typing.Union[Cookie, typing.List[Cookie]] = Default([]),
+                 params: typing.Union[Param, typing.List[Param]] = Default([]),
+                 dynamics: typing.Union[Dynamic, typing.List[Dynamic]] = Default([]),
+                 errors: typing.Union[Error, typing.List[Error]] = Default([]),
+                 base_dir: str = Default(None),
+                 endpoint: dict = {}, **kwargs) -> None:
         """
         Creates a new object representing an endpoint in Nasse.
 
@@ -506,8 +521,8 @@ class Endpoint(object):
             super().__setattr__("base_dir", pathlib.Path(
                 value).resolve() if value is not None else None)
         else:
-            logging.log("{name} is not a settable attribute for a Nasse.models.Endpoint instance".format(
-                name=name), logging.LogLevels.WARNING)
+            utils.logging.logger.log("{name} is not a settable attribute for a Nasse.models.Endpoint instance".format(
+                name=name), logging.logging.WARNING)
 
     def __delitem__(self, name):
         return delattr(self, name)

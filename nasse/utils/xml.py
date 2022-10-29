@@ -42,7 +42,7 @@ import collections.abc
 import re
 import typing
 
-from nasse import logging, utils
+from nasse import utils
 
 start_ranges = "|".join(
     "[{0}]".format(r)
@@ -171,8 +171,7 @@ class Node(object):
         elif isinstance(data, typing.Iterable):
             return "iterable"
         else:
-            logging.log("Object of type <{type}> will be converted to str while encoding to XML".format(
-                type=data.__class__.__name__))
+            utils.logging.logger.log("Object of type <{type}> will be converted to str while encoding to XML".format(type=data.__class__.__name__))
             return "flat"
 
     def convert(self):

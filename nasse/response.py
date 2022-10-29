@@ -8,7 +8,7 @@ from nasse import config, exceptions, utils
 from nasse.utils.annotations import Default
 
 
-def exception_to_response(value: Exception):
+def exception_to_response(value: Exception, config: config.NasseConfig = None):
     """
     Internal function to turn an exception to a tuple of values that can be used to make a response
     """
@@ -30,7 +30,7 @@ def exception_to_response(value: Exception):
             error = " ".join(utils.sanitize.split_on_uppercase(value.__name__)).upper().strip().replace(" ", "_")
         else:
             error = " ".join(utils.sanitize.split_on_uppercase(value.__class__.__name__)).upper().strip().replace(" ", "_")
-        if config.Mode.DEBUG:
+        if config and config.debug:
             data = "An error occured on the server while processing your request ({error})".format(error=value)
         else:
             data = "An error occured on the server while processing your request"

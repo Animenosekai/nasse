@@ -5,14 +5,14 @@ A web server framework written on top of Flask
 Stop spending time making the docs, verify the request, compress or format the response, and focus on making your next cool app!
 """
 
-from . import timer
-from . import logging
 from . import docs
-from flask import g, Request as FlaskRequest
+from flask import g
+from flask.wrappers import Request as FlaskRequest
 
 from .nasse import Nasse
 from .request import Request
 from .response import Response
+from .models import *
 
 
 class RequestProxy(FlaskRequest, Request):
