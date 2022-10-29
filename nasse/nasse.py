@@ -12,6 +12,7 @@ import typing
 import urllib.parse
 
 import flask
+import rich.status
 import rich.progress
 import watchdog.events
 import watchdog.observers
@@ -151,40 +152,52 @@ class Nasse():
         """
         Runs the application by binding to an address and answering to clients.
         """
-        if host is not None:
-            self.config.host = host
-        if port is not None:
-            self.config.port = int(port)
-        if "debug" in kwargs:
-            self.config.debug = kwargs["debug"]
+        columns = (rich.progress.TextColumn("[progress.description]{task.description}"),
+                   rich.progress.TimeElapsedColumn())
+        with rich.progress.Progress(rich.progress.SpinnerColumn(),
+                                    *columns,
+                                    transient=True) as progress:
+            main_task = progress.add_task("Setting up the environment", total=None)
 
-        try:
-            if self.config.debug:
-                self.config.logger.log("DEBUG MODE IS ENABLED", level=utils.logging.LoggingLevel.WARNING)
-                watching = []
-                ignoring = []
-                for storage, data in [(watching, watch), (ignoring, ignore)]:
-                    for file in data:
-                        file = str(file)
-                        path = pathlib.Path(file)
-                        if path.is_file():
-                            storage.append(path.resolve())
-                        elif path.is_dir():
-                            storage.extend(child.resolve() for child in path.iterdir())
-                        else:
-                            storage.extend(child.resolve() for child in pathlib.Path().glob(file))
-                self._observer = watchdog.observers.Observer()
-                self._observer.schedule(FileEventHandler(callback=self.restart, watch=watching, ignore=ignoring), ".", recursive=True)
-                self._observer.start()
-        except Exception:
-            self.config.logger.log("Couldn't set up the file changes watcher", level=utils.logging.LoggingLevel.WARNING)
+            if host is not None:
+                self.config.host = host
+            if port is not None:
+                self.config.port = int(port)
+            if "debug" in kwargs:
+                self.config.debug = kwargs["debug"]
 
-        self.instance = server(app=self, config=self.config)
-        self.config.logger.log("🍡 Press Ctrl+C to quit")
-        self.config.logger.log("🎏 Binding to {{magenta}}{host}:{port}{{normal}}"
-                               .format(host=self.config.host,
-                                       port=self.config.port))
-        self.instance.run(*args, **kwargs)
+            try:
+                if self.config.debug:
+                    self.config.logger.log("DEBUG MODE IS ENABLED", level=utils.logging.LoggingLevel.WARNING)
+                    watching = []
+                    ignoring = []
+                    for storage, data in [(watching, watch), (ignoring, ignore)]:
+                        for file in data:
+                            file = str(file)
+                            path = pathlib.Path(file)
+                            if path.is_file():
+                                storage.append(path.resolve())
+                            elif path.is_dir():
+                                storage.extend(child.resolve() for child in path.iterdir())
+                            else:
+                                storage.extend(child.resolve() for child in pathlib.Path().glob(file))
+                    self._observer = watchdog.observers.Observer()
+                    self._observer.schedule(FileEventHandler(callback=self.restart, watch=watching, ignore=ignoring), ".", recursive=True)
+                    self._observer.start()
+            except Exception:
+                self.config.logger.log("Couldn't set up the file changes watcher", level=utils.logging.LoggingLevel.WARNING)
+
+            self.instance = server(app=self, config=self.config)
+            self.config.logger.log("🍡 Press Ctrl+C to quit")
+            self.config.logger.log("🎏 Binding to {{magenta}}{host}:{port}{{normal}}"
+                                   .format(host=self.config.host,
+                                           port=self.config.port))
+            # progress.columns = (rich.progress.SpinnerColumn(spinner_name="earth"), *columns)
+            spinner = rich.progress.SpinnerColumn(spinner_name="simpleDotsScrolling", style="gray")
+            # spinner.spinner.frames = ["・　　", "・・　", "・・・", "　・・", "　　・", "　　　"]
+            progress.columns = (spinner, *columns)
+            progress.update(main_task, description="Running on {host}:{port} —".format(host=self.config.host, port=self.config.port))
+            self.instance.run(*args, **kwargs)
 
     def restart(self):
         """Restarts the current python process"""
