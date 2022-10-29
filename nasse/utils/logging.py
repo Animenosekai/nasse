@@ -1,12 +1,11 @@
 import dataclasses
 import datetime
 import enum
-import inspect
 import linecache
-import os
 import pathlib
-import threading
 import typing
+
+from nasse.utils import formatter
 
 
 class LoggingLevel(enum.Enum):
@@ -26,18 +25,6 @@ class Record:
     msg: str
 
 
-class Colors(enum.Enum):
-    NORMAL = '\033[0m'
-    GREY = '\033[90m'
-    RED = '\033[91m'
-    GREEN = '\033[92m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    WHITE = '\033[97m'
-    YELLOW = '\033[93m'
-    MAGENTA = '\033[95m'
-
-
 class Logger:
     TIME_FORMAT: typing.Union[str, typing.Callable[[datetime.datetime], typing.Any]] = "%Y/%m/%d, %H:%M:%S"
     # TIME_FORMAT = lambda time: int(time.timestamp())
@@ -55,7 +42,7 @@ class Logger:
         LoggingLevel.ERROR: "{grey}{time} |{normal} [{level}] ({app}) {red}{message}{normal}"
     }
 
-    def __init__(self, config: "config.NasseConfig" = None, file_output: pathlib.Path = None) -> None:
+    def __init__(self, config: "config.NasseConfig" = None) -> None:
         self.config = config
         if not self.config:
             from nasse.config import NasseConfig
@@ -68,15 +55,13 @@ class Logger:
         self.recording = False
         self.record = []
 
-        if file_output:
-            self.file_output = pathlib.Path(file_output)
-            with open(self.file_output, "a") as f:
+        if self.config.log_file:
+            self.config.log_file.touch(exist_ok=True)
+            with open(self.config.log_file, "a") as f:
                 WIDTH = 32
                 MESSAGE = "LOG START"
                 padding = WIDTH - len(MESSAGE) // 2
                 f.write(("=" * padding) + MESSAGE + ("=" * padding) + "\n")
-        else:
-            self.file_output = None
 
     def log(self, *msg, level: LoggingLevel = LoggingLevel.INFO, end: str = "\n", sep: str = " "):
         """
@@ -85,78 +70,36 @@ class Logger:
         if level.value > self.config.logging_level.value:
             return
 
-        result = str(sep).join(msg)
-
-        formatter = {
-            # colors
-            "normal": Colors.NORMAL.value,
-            "grey": Colors.GREY.value,
-            "gray": Colors.GREY.value,
-            "red": Colors.RED.value,
-            "green": Colors.GREEN.value,
-            "blue": Colors.BLUE.value,
-            "cyan": Colors.CYAN.value,
-            "turquoise": Colors.CYAN.value,
-            "white": Colors.WHITE.value,
-            "yellow": Colors.YELLOW.value,
-            "purple": Colors.MAGENTA.value,
-            "pink": Colors.MAGENTA.value,
-            "magenta": Colors.MAGENTA.value,
-            "level": level.name,
-            "app": self.config.app,
-            "host": self.config.host,
-            "port": self.config.port,
-            "debug": self.config.debug,
-            "base_dir": self.config.base_dir
-        }
-        time = datetime.datetime.now()
-        if "{time}" in result:  # current time
-            formatter["time"] = self.TIME_FORMAT(time) if callable(self.TIME_FORMAT) else time.strftime(self.TIME_FORMAT)
-        if "{caller}" in result:  # caller function
-            formatter["caller"] = caller_name()
-        if "{thread}" in result:  # thread id
-            formatter["thread"] = threading.get_ident()
-        if "{pid}" in result:  # process id
-            formatter["pid"] = os.getpid()
-        if "{cwd}" in result:  # current working directory
-            formatter["cwd"] = os.getcwd()
-
-        result = result.format(**formatter)
+        result = formatter.format(
+            str(sep).join(msg),
+            time_format=self.TIME_FORMAT,
+            config=self.config,
+            level=level.name
+        )
 
         record_output = result
-        for element in Colors:
+        for element in formatter.Colors:
             # removing the colors for any file or recording output
             record_output = record_output.replace(element.value, "")
 
         if self.recording:
             self.record.append(Record(level=level, msg=record_output))
 
-        if self.file_output:
-            with open(self.file_output, "a") as f:
-                f.write("[{level}] ({app}) - {time} - {msg}\n".format(
+        if self.config.log_file:
+            with open(self.config.log_file, "a") as f:
+                f.write(formatter.format("[{level}] ({name}) - {time} - {msg}\n",
+                    time_format=lambda time: int(time.timestamp()),
                     level=level.name,
-                    app=self.config.app,
-                    time=int(time.timestamp()),
+                    name=self.config.name,
                     msg=record_output
                 ))
 
-        formatter["message"] = result
         template = self.TEMPLATES.get(level, "{message}")
-
-        if "{time}" in template:  # current time
-            formatter["time"] = self.TIME_FORMAT(time) if callable(self.TIME_FORMAT) else time.strftime(self.TIME_FORMAT)
-        if "{caller}" in template:  # caller function
-            formatter["caller"] = caller_name()
-        if "{thread}" in template:  # thread id
-            formatter["thread"] = threading.get_ident()
-        if "{pid}" in template:  # process id
-            formatter["pid"] = os.getpid()
-        if "{cwd}" in template:  # current working directory
-            formatter["cwd"] = os.getcwd()
-
-        result = template.format(**formatter)
+        result = formatter.format(template, time_format=self.TIME_FORMAT, config=self.config, level=level.name, message=result)
 
         print(result, end=str(end))
+
+    __call__ = log
 
     def info(self, *msg, **kwargs):
         """
@@ -291,35 +234,6 @@ def _generate_trace(config):
             CALL_STACK.append(StackFrame(frame))
         return None
     return add_to_call_stack
-
-
-def caller_name(skip: int = 2):
-    """
-    Get a name of a caller in the format module.class.method
-
-    `skip` specifies how many levels of stack to skip while getting caller
-    name. skip=1 means "who calls me", skip=2 "who calls my caller" etc.
-
-    An empty string is returned if skipped levels exceed stack height
-
-    Note: https://stackoverflow.com/a/9812105/11557354       
-    """
-    stack = inspect.stack()
-    start = 0 + skip
-    if len(stack) < start + 1:
-        return ''
-    parentframe = stack[start][0]
-    name = []
-    module = inspect.getmodule(parentframe)
-    if module:
-        name.append(module.__name__)
-    if 'self' in parentframe.f_locals:
-        name.append(parentframe.f_locals['self'].__class__.__name__)
-    codename = parentframe.f_code.co_name
-    if codename != '<module>':  # top level usually
-        name.append(codename)  # function or a method
-    del parentframe, stack
-    return ".".join(name)
 
 
 logger = Logger()

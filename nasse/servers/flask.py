@@ -13,6 +13,9 @@ class Flask:
         # kwargs.setdefault("use_debugger", self.config.debug)
         kwargs.setdefault("threaded", True)
 
+        # make_server does not support `debug`
+        kwargs.pop("debug", None)
+
         self.server = werkzeug.serving.make_server(
             host=self.config.host,
             port=self.config.port,

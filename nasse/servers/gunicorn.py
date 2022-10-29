@@ -30,12 +30,7 @@ class Gunicorn(Flask):
             }
             self.options.update(kwargs or {})
             self.application = app.flask
-            formatting = {}
-            if "{version}" in self.config.server_header:
-                formatting["version"] = "1.0"
-            if "{app}" in self.config.server_header:
-                formatting["app"] = self.config.app
-            gunicorn.SERVER_SOFTWARE = self.config.server_header.format(**formatting)
+            gunicorn.SERVER_SOFTWARE = self.config.server_header
             gunicorn.SERVER = gunicorn.SERVER_SOFTWARE
             super().__init__()
 

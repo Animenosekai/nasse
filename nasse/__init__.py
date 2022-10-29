@@ -8,6 +8,7 @@ Stop spending time making the docs, verify the request, compress or format the r
 from . import docs
 from flask import g
 from flask.wrappers import Request as FlaskRequest
+from flask.wrappers import Response as FlaskResponse
 
 from .nasse import Nasse
 from .config import NasseConfig
@@ -34,7 +35,7 @@ __author__ = 'Anime no Sekai'
 __copyright__ = 'Copyright 2022, Nasse'
 __credits__ = ['animenosekai']
 __license__ = 'MIT License'
-__version_tuple__ = (1, 1)
+__version_tuple__ = (2, 0, "alpha")
 
 
 def __version_string__():

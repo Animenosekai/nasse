@@ -12,8 +12,8 @@ import typing
 import urllib.parse
 
 import flask
-import rich.status
 import rich.progress
+import rich.status
 import watchdog.events
 import watchdog.observers
 
@@ -73,10 +73,11 @@ class Nasse():
         if config:
             config_kwargs = config.__dict__
             config_kwargs.update(kwargs)
-            config_kwargs["app"] = name or config_kwargs.get("app", "Nasse")
+            config_kwargs["name"] = name or config_kwargs.get("app", "Nasse")
+            config_kwargs.pop("VERSION", None)
             self.config = NasseConfig(*args, **config_kwargs)
         else:
-            self.config = NasseConfig(app=name or "Nasse", *args, **kwargs)
+            self.config = NasseConfig(name=name or "Nasse", *args, **kwargs)
 
         self.config.logger.config = self.config
         utils.logging.logger = self.config.logger
@@ -87,7 +88,7 @@ class Nasse():
         if isinstance(self.config.account_management, type):
             self.config.account_management = self.config.account_management()
 
-        self.flask = flask.Flask(self.config.app, **(flask_options or {}))
+        self.flask = flask.Flask(self.config.name, **(flask_options or {}))
 
         self.endpoints = {}
 
@@ -112,7 +113,15 @@ class Nasse():
         self._observer = None
 
     def __repr__(self) -> str:
-        return "Nasse({name})".format(name=self.config.app)
+        return "Nasse({name})".format(name=self.config.name)
+
+    @property
+    def logger(self):
+        return self.config.logger
+
+    @property
+    def log(self, *msg, **kwargs):
+        return self.logger.log(*msg, **kwargs)
 
     def route(self,
               path: str = utils.annotations.Default(""),
@@ -158,11 +167,19 @@ class Nasse():
             return new_endpoint
         return decorator
 
-    def run(self, host: str = None, port: typing.Union[int, str] = None, server: typing.Type[Flask] = Flask, watch: typing.List[str] = ["**/*.py"], ignore: typing.List[str] = [], *args, **kwargs):
+    def run(self, host: str = None, port: typing.Union[int, str] = None, server: typing.Type[Flask] = Flask, watch: typing.List[str] = ["**/*.py"], ignore: typing.List[str] = [], status: bool = True, *args, **kwargs):
         """
         Runs the application by binding to an address and answering to clients.
         """
-        with rich.progress.Progress(transient=True) as progress:
+        class MockProgress:
+            def __overwrite__(self, *args, **kwargs): return self
+
+            add_task = __overwrite__
+            update = __overwrite__
+            __enter__ = __overwrite__
+            __exit__ = __overwrite__
+
+        with (rich.progress.Progress(transient=True) if status else MockProgress()) as progress:
             main_task = progress.add_task("Setting up the environment", total=None)
 
             if host is not None:
@@ -196,10 +213,10 @@ class Nasse():
                     err_type=err.__class__.__name__, err_msg=err))
 
             self.instance = server(app=self, config=self.config)
-        with rich.progress.Progress(*(rich.progress.TextColumn("[progress.description]{task.description}"),
+        with (rich.progress.Progress(*(rich.progress.TextColumn("[progress.description]{task.description}"),
                                     rich.progress.TextColumn("—"),
                                     rich.progress.TimeElapsedColumn()),
-                                    transient=True) as progress:
+                                    transient=True) if status else MockProgress()) as progress:
             progress.add_task(description="🍡 Running on {host}:{port}".format(host=self.config.host, port=self.config.port))
             self.config.logger.log("🎏 Press {cyan}Ctrl+C{normal} to quit")
             self.config.logger.log("🌍 Binding to {{magenta}}{host}:{port}{{normal}}"
@@ -331,7 +348,7 @@ class Nasse():
             # ...
 
             response.headers["Server"] = "Nasse/{version} ({name})".format(
-                version=config.GLOBAL_CONFIG_ARE_A_THING_OF_THE_PAST.VERSION, name=self.name)
+                version=config.GLOBAL_CONFIG_ARE_A_THING_OF_THE_PAST.VERSION, name=self.config.name)
 
         except Exception:
             # would be bad if the `after_request` function raises an exception, especially when used as the `teardown_request`
@@ -376,7 +393,7 @@ class Nasse():
             progress.advance(main_task)
 
             # Initializing the resulting string by prepending the header
-            result = localization.getting_started_header.format(name=self.config.app, id=self.config.id)
+            result = localization.getting_started_header.format(name=self.config.name, id=self.config.id)
 
             result += "## {localization__index}\n\n".format(localization__index=localization.index)
 

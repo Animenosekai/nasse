@@ -85,7 +85,7 @@ class Receive():
                                                 raise exceptions.authentication.Forbidden("We couldn't verify your token")
                                     else:
                                         logger.warn("Couldn't verify login details because the 'account_management' is not set properly on {name}"
-                                                   .format(name=self.app.config.app))
+                                                   .format(name=self.app.config.name))
                                 except Exception as e:
                                     if login_rules.required:
                                         raise e
@@ -110,6 +110,8 @@ class Receive():
                             for attr, current_values in [
                                 ("app", self.app),
                                 ("nasse", self.app),
+                                ("config", self.app.config),
+                                ("logger", self.app.logger),
                                 ("endpoint", self.endpoint),
                                 ("nasse_endpoint", self.endpoint),
                                 ("request", flask.g.request),

@@ -12,7 +12,7 @@ def create_postman_data(app, section: str, endpoints: typing.List[models.Endpoin
         "info": {
             # "_postman_id": str(uuid4()),
             "name": section,
-            "description": localization.postman_description.format(section=section, name=app.config.app),
+            "description": localization.postman_description.format(section=section, name=app.config.name),
             "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
         },
         "item": [],
