@@ -6,12 +6,12 @@ The CLI script
 
 import argparse
 import contextlib
-import pathlib
 import importlib
 import json
+import pathlib
+import sys
 
 import nasse
-
 from nasse.utils.types import StringEnum
 
 
@@ -88,6 +88,10 @@ def main():
                     ignore=args.ignore,
                     **config
                 )
+                break
+        else:
+            print("Nasse: Could not find any Nasse instance in the given file")
+            sys.exit(1)
 
 
 if __name__ == "__main__":
