@@ -10,6 +10,7 @@ from flask import g
 from flask.wrappers import Request as FlaskRequest
 
 from .nasse import Nasse
+from .config import NasseConfig
 from .request import Request
 from .response import Response
 from .models import *

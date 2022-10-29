@@ -47,10 +47,9 @@ def sanitize_http_method(method: str):
     """Sanitizes the given HTTP method to normalize it"""
     method = remove_spaces(method).upper()
     if method not in utils.types.HTTPMethod.ACCEPTED and method != "*":
-        utils.logging.logger.log(
+        utils.logging.logger.warn(
             message="The provided HTTP method {method} does not seem to be in the set of defined HTTP methods".format(
-                method=method),
-            level=utils.logging.LoggingLevel.WARNING)
+                method=method))
     return method
 
 

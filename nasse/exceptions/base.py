@@ -1,5 +1,5 @@
 
-from nasse.utils.logging import Logger, LoggingLevel
+from nasse.utils.logging import logger
 
 
 class NasseException(Exception):
@@ -13,4 +13,4 @@ class NasseException(Exception):
             self.MESSAGE = str(message)
         super().__init__(self.MESSAGE, *args)
         if self.LOG:
-            Logger().log(self.MESSAGE, level=LoggingLevel.ERROR)
+            logger.error(self.MESSAGE)

@@ -63,8 +63,7 @@ class Receive():
                                 app=self.app, endpoint=self.endpoint, dynamics=kwds)
                             logger.log("→ Incoming {{blue}}{method}{{normal}} request to {{blue}}{route}{{normal}} from {client}".format(method=flask.g.request.method,
                                                                                                                                          route=self.endpoint.path,
-                                                                                                                                         client=flask.g.request.client_ip),
-                                       level=utils.logging.LoggingLevel.INFO)
+                                                                                                                                         client=flask.g.request.client_ip))
 
                         account = None
                         with timer.Timer() as authentication_timer:
@@ -85,8 +84,8 @@ class Receive():
                                             if verification == False:
                                                 raise exceptions.authentication.Forbidden("We couldn't verify your token")
                                     else:
-                                        logger.log("Couldn't verify login details because the 'account_management' is not set properly on {name}"
-                                                   .format(name=self.app.config.app), level=utils.logging.LoggingLevel.WARNING)
+                                        logger.warn("Couldn't verify login details because the 'account_management' is not set properly on {name}"
+                                                   .format(name=self.app.config.app))
                                 except Exception as e:
                                     if login_rules.required:
                                         raise e
@@ -197,8 +196,8 @@ class Receive():
                                 data = response
 
                             if code < 100 or code >= 600:
-                                logger.log("The returning HTTP status code doesn't seem to be a standard status code: {code}"
-                                                           .format(code=code), level=utils.logging.LoggingLevel.WARNING)
+                                logger.warn("The returning HTTP status code doesn't seem to be a standard status code: {code}"
+                                                           .format(code=code))
 
                             if not self.endpoint.json:
                                 final = flask.Response(response=data, status=code)
@@ -253,8 +252,8 @@ class Receive():
                                     result["data"]["content"] = None
                                 else:
                                     # data: typing.Any (but json does not support arbitrary content)
-                                    logger.log("Element of type <{type}> is not supported by JSON and will be converted to `str`".format(
-                                        type=data.__class__.__name__), level=utils.logging.LoggingLevel.WARNING)
+                                    logger.warn("Element of type <{type}> is not supported by JSON and will be converted to `str`".format(
+                                        type=data.__class__.__name__))
                                     result["data"]["content"] = str(data)
                     except Exception as e:
                         # from traceback import print_exc; print_exc()

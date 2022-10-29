@@ -49,10 +49,10 @@ class Logger:
     """
 
     TEMPLATES = {
-        LoggingLevel.INFO: "{grey}{time} | {normal} [{level}] ({app}) {message}",
+        LoggingLevel.INFO: "{grey}{time} | {normal}[{level}] ({app}) {message}",
         LoggingLevel.DEBUG: "{grey}{time} | [{level}] ({app}) {message}{normal}",
-        LoggingLevel.WARNING: "{grey}{time} | {normal} [{level}] ({app}) {yellow}{message}{normal}",
-        LoggingLevel.ERROR: "{grey}{time} | {normal} [{level}] ({app}) {red}{message}{normal}"
+        LoggingLevel.WARNING: "{grey}{time} |{normal} [{level}] ({app}) {yellow}{message}{normal}",
+        LoggingLevel.ERROR: "{grey}{time} |{normal} [{level}] ({app}) {red}{message}{normal}"
     }
 
     def __init__(self, config: "config.NasseConfig" = None, file_output: pathlib.Path = None) -> None:
@@ -78,25 +78,29 @@ class Logger:
         else:
             self.file_output = None
 
-    def log(self, *msg, level: LoggingLevel = LoggingLevel.INFO):
+    def log(self, *msg, level: LoggingLevel = LoggingLevel.INFO, end: str = "\n", sep: str = " "):
         """
         Logging the given message to the console.
         """
         if level.value > self.config.logging_level.value:
             return
 
-        result = " ".join(msg)
+        result = str(sep).join(msg)
 
         formatter = {
             # colors
             "normal": Colors.NORMAL.value,
             "grey": Colors.GREY.value,
+            "gray": Colors.GREY.value,
             "red": Colors.RED.value,
             "green": Colors.GREEN.value,
             "blue": Colors.BLUE.value,
             "cyan": Colors.CYAN.value,
+            "turquoise": Colors.CYAN.value,
             "white": Colors.WHITE.value,
             "yellow": Colors.YELLOW.value,
+            "purple": Colors.MAGENTA.value,
+            "pink": Colors.MAGENTA.value,
             "magenta": Colors.MAGENTA.value,
             "level": level.name,
             "app": self.config.app,
@@ -152,7 +156,46 @@ class Logger:
 
         result = template.format(**formatter)
 
-        print(result)
+        print(result, end=str(end))
+
+    def info(self, *msg, **kwargs):
+        """
+        Logs the given message with the `INFO` level
+        """
+        self.log(*msg, level=LoggingLevel.INFO, **kwargs)
+
+    # aliasing `info`
+    print = info
+
+    def debug(self, *msg, **kwargs):
+        """
+        Logs the given message with the `DEBUG` level
+        """
+        self.log(*msg, level=LoggingLevel.DEBUG, **kwargs)
+
+    def warning(self, *msg, **kwargs):
+        """
+        Logs the given message with the `WARNING` level
+        """
+        self.log(*msg, level=LoggingLevel.WARNING, **kwargs)
+
+    warn = warning
+
+    def error(self, *msg, **kwargs):
+        """
+        Logs the given message with the `ERROR` level
+        """
+        self.log(*msg, level=LoggingLevel.ERROR, **kwargs)
+
+    def hidden(self, *msg, **kwargs):
+        """
+        Logs the given message with the `HIDDEN` level
+
+        It only writes to the log file and the records
+        """
+        self.log(*msg, level=LoggingLevel.HIDDEN, **kwargs)
+
+    hide = hidden
 
     def __enter__(self):
         """

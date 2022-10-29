@@ -18,15 +18,16 @@ import watchdog.events
 import watchdog.observers
 
 from nasse import config, docs, models, receive, request, utils
+from nasse.config import NasseConfig
 from nasse.docs.localization.base import Localization
 from nasse.response import exception_to_response
 from nasse.servers.flask import Flask
 
 
 class FileEventHandler(watchdog.events.FileSystemEventHandler):
-    def __init__(self, callback: typing.Callable, watch: typing.List[pathlib.Path], ignore: typing.List[pathlib.Path], config: config.NasseConfig = None) -> None:
+    def __init__(self, callback: typing.Callable, watch: typing.List[pathlib.Path], ignore: typing.List[pathlib.Path], config: NasseConfig = None) -> None:
         super().__init__()
-        self.config = config or config.NasseConfig()
+        self.config = config or NasseConfig()
         self.callback = callback
         self.watch = [str(file) for file in watch]
         self.ignore = [str(file) for file in ignore]
@@ -40,7 +41,7 @@ class FileEventHandler(watchdog.events.FileSystemEventHandler):
 
 
 class Nasse():
-    def __init__(self, name: str = None, flask_options: dict = None, *args, **kwargs) -> None:
+    def __init__(self, name: str = None, config: NasseConfig = None, flask_options: dict = None, *args, **kwargs) -> None:
         """
         # A Nasse web server instance
 
@@ -55,19 +56,28 @@ class Nasse():
 
         Parameters
         -----------
-        `name`: str, default = None
-            The name of the server \n
-            If 'name' is None, the name will be implied by the directory name
-        `cors`: str | bool | Iterable, default = False
-            The Cross-Origin Resource Sharing (CORS) rules for the server \n
-            'cors' as a string represents the allowed `Origin` \n
-            'cors' as a boolean value respresents `*` when True, no CORS rules (no `Access-Control-Allow-Origin` header set) when False \n
-            'cors' as an iterable represents a list of allowed `Origin`s
-        `max_body_size`: int, default = 10^9
-            The maximum size/length of the request \n
-            Setting this as None is dangerous as it will not perform any content size/length check
+        name: str, default = None
+            Defines the name of the server
+        config: NasseConfig, default = None
+            A NasseConfig object, with all of the configuration for the server
+        flask_options: dict, default = None
+            A dictionary with the options to pass to Flask when creating the Flask instance
+        *args
+            Arguments to give to NasseConfig
+        **kwargs
+            Keyword arguments to give to NasseConfig
         """
-        self.config = config.NasseConfig(app=name or "Nasse", *args, **kwargs)
+        if isinstance(name, NasseConfig):
+            config = name
+            name = None
+        if config:
+            config_kwargs = config.__dict__
+            config_kwargs.update(kwargs)
+            config_kwargs["app"] = name or config_kwargs.get("app", "Nasse")
+            self.config = NasseConfig(*args, **config_kwargs)
+        else:
+            self.config = NasseConfig(app=name or "Nasse", *args, **kwargs)
+
         self.config.logger.config = self.config
         utils.logging.logger = self.config.logger
 
@@ -152,11 +162,7 @@ class Nasse():
         """
         Runs the application by binding to an address and answering to clients.
         """
-        columns = (rich.progress.TextColumn("[progress.description]{task.description}"),
-                   rich.progress.TimeElapsedColumn())
-        with rich.progress.Progress(rich.progress.SpinnerColumn(),
-                                    *columns,
-                                    transient=True) as progress:
+        with rich.progress.Progress(transient=True) as progress:
             main_task = progress.add_task("Setting up the environment", total=None)
 
             if host is not None:
@@ -168,7 +174,7 @@ class Nasse():
 
             try:
                 if self.config.debug:
-                    self.config.logger.log("DEBUG MODE IS ENABLED", level=utils.logging.LoggingLevel.WARNING)
+                    self.config.logger.warn("DEBUG MODE IS ENABLED")
                     watching = []
                     ignoring = []
                     for storage, data in [(watching, watch), (ignoring, ignore)]:
@@ -182,28 +188,32 @@ class Nasse():
                             else:
                                 storage.extend(child.resolve() for child in pathlib.Path().glob(file))
                     self._observer = watchdog.observers.Observer()
-                    self._observer.schedule(FileEventHandler(callback=self.restart, watch=watching, ignore=ignoring), ".", recursive=True)
+                    self._observer.schedule(FileEventHandler(callback=self.restart, watch=watching,
+                                            ignore=ignoring, config=self.config), ".", recursive=True)
                     self._observer.start()
-            except Exception:
-                self.config.logger.log("Couldn't set up the file changes watcher", level=utils.logging.LoggingLevel.WARNING)
+            except Exception as err:
+                self.config.logger.warn("Couldn't set up the file changes watcher ({err_type}: {err_msg})".format(
+                    err_type=err.__class__.__name__, err_msg=err))
 
             self.instance = server(app=self, config=self.config)
-            self.config.logger.log("🍡 Press Ctrl+C to quit")
-            self.config.logger.log("🎏 Binding to {{magenta}}{host}:{port}{{normal}}"
+        with rich.progress.Progress(*(rich.progress.TextColumn("[progress.description]{task.description}"),
+                                    rich.progress.TextColumn("—"),
+                                    rich.progress.TimeElapsedColumn()),
+                                    transient=True) as progress:
+            progress.add_task(description="🍡 Running on {host}:{port}".format(host=self.config.host, port=self.config.port))
+            self.config.logger.log("🎏 Press {cyan}Ctrl+C{normal} to quit")
+            self.config.logger.log("🌍 Binding to {{magenta}}{host}:{port}{{normal}}"
                                    .format(host=self.config.host,
                                            port=self.config.port))
-            # progress.columns = (rich.progress.SpinnerColumn(spinner_name="earth"), *columns)
-            spinner = rich.progress.SpinnerColumn(spinner_name="simpleDotsScrolling", style="gray")
+            # spinner = rich.progress.SpinnerColumn(spinner_name="simpleDotsScrolling", style="gray")
             # spinner.spinner.frames = ["・　　", "・・　", "・・・", "　・・", "　　・", "　　　"]
-            progress.columns = (spinner, *columns)
-            progress.update(main_task, description="Running on {host}:{port} —".format(host=self.config.host, port=self.config.port))
             self.instance.run(*args, **kwargs)
 
     def restart(self):
         """Restarts the current python process"""
         self.config.logger.log("Restarting... 🎐")
         if self._observer:
-            self.config.logger.log("Waiting for watchdog to terminate", level=utils.logging.LoggingLevel.DEBUG)
+            self.config.logger.debug("Waiting for watchdog to terminate")
             try:
                 self._observer.stop()
                 self._observer.join()
@@ -277,8 +287,7 @@ class Nasse():
                         except Exception:
                             from traceback import print_exc
                             print_exc()
-                            self.config.logger.log("An error occured while setting the Access-Control-Allow-Methods header",
-                                                   level=utils.logging.LoggingLevel.WARNING)
+                            self.config.logger.warn("An error occured while setting the Access-Control-Allow-Methods header")
                         try:
                             requested_headers = [header.lower() for header in utils.sanitize.remove_spaces(
                                 flask.request.headers.get("Access-Control-Request-Headers", "")).split(",")]
@@ -294,14 +303,12 @@ class Nasse():
                         except Exception:
                             from traceback import print_exc
                             print_exc()
-                            self.config.logger.log("An error occured while setting the Access-Control-Allow-Headers header",
-                                                   level=utils.logging.LoggingLevel.WARNING)
+                            self.config.logger.warn("An error occured while setting the Access-Control-Allow-Headers header")
                     else:
-                        self.config.logger.log("We couldn't verify the current endpoint informations on an OPTIONS request",
-                                               level=utils.logging.LoggingLevel.WARNING)
+                        self.config.logger.warn("We couldn't verify the current endpoint informations on an OPTIONS request")
                     response.headers["Access-Control-Max-Age"] = 86400
             except Exception:
-                self.config.logger.log("An error occured while setting some CORS headers", level=utils.logging.LoggingLevel.WARNING)
+                self.config.logger.warn("An error occured while setting some CORS headers")
 
             # Allowing the right origins
             if self.config.cors:
@@ -350,9 +357,10 @@ class Nasse():
             Whether or not to generate the python examples
         """
         with rich.progress.Progress(rich.progress.SpinnerColumn(),
-                                    *rich.progress.Progress.get_default_columns()) as progress:
+                                    *rich.progress.Progress.get_default_columns(),
+                                    transient=True) as progress:
             main_task = progress.add_task("Creating the API Reference Documentation", total=5)
-            self.config.logger.log("Creating the API Reference Documentation", level=utils.logging.LoggingLevel.HIDDEN)
+            self.config.logger.hide("Creating the API Reference Documentation")
 
             docs_path = pathlib.Path(base_dir or pathlib.Path() / "docs")
             if not docs_path.is_dir():
