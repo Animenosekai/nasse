@@ -30,8 +30,7 @@ class Request(object):
                 The request's endpoint
         """
         if not isinstance(endpoint, models.Endpoint):
-            raise exceptions.request.MissingEndpoint(
-                "The current request doesn't have any Nasse endpoint")
+            raise exceptions.request.MissingEndpoint("The current request does not have any Nasse endpoint")
         self.nasse = app
         self.app = self.nasse
         self.nasse_endpoint = endpoint

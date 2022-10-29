@@ -26,8 +26,7 @@ def retrieve_token(context: request.Request = None) -> str:
     token = context.headers.get("Authorization", None)
     if token is None:
         # should be app.id + "_token"
-        token = context.values.get(
-            "{id}_token".format(id=context.nasse.config.id), None)
+        token = context.values.get("{id}_token".format(id=context.nasse.config.id), None)
         if token is None:
             # should be "__" + app.id + "_token"
             token = context.cookies.get(
@@ -59,7 +58,8 @@ class Receive():
                     with timer.Timer() as global_timer:
                         try:
                             with timer.Timer() as verification_timer:
-                                flask.g.request = request.Request(app=self.app, endpoint=self.endpoint, dynamics=kwds)
+                                context = request.Request(app=self.app, endpoint=self.endpoint, dynamics=kwds)
+                                flask.g.request = context
                                 logger.info("→ Incoming {{blue}}{method}{{normal}} request to {{blue}}{route}{{normal}} from {client}".format(method=flask.g.request.method,
                                                                                                                                               route=self.endpoint.path,
                                                                                                                                               client=flask.g.request.client_ip))
@@ -70,7 +70,7 @@ class Receive():
                                 login_rules = self.endpoint.login.get(method, self.endpoint.login.get("*", None))
                                 if not login_rules.no_login:
                                     try:
-                                        token = retrieve_token()
+                                        token = retrieve_token(context)
                                         if self.app.config.account_management:
                                             if not login_rules.verification_only:
                                                 account = self.app.config.account_management.retrieve_account(token)
@@ -257,8 +257,11 @@ class Receive():
                                             type=data.__class__.__name__))
                                         result["data"]["content"] = str(data)
                         except Exception as e:
-                            if not isinstance(e, exceptions.authentication.MissingToken) and self.app.config.debug:
-                                logger.print_exception()
+                            if self.app.config.debug:
+                                if not isinstance(e, exceptions.authentication.MissingToken):
+                                    logger.print_exception()
+                                else:
+                                    logger.debug("The request seems to be lacking an authentication token")
 
                             message, error, code = exception_to_response(e)
                             result = {

@@ -33,7 +33,7 @@ class NasseConfig:
         self.VERSION = "2.0(alpha)"
 
         if isinstance(self.id, Default):
-            self.id = str(self.id or _alphabetic(self.name).lower())
+            self.id = _alphabetic(self.name).lower()
 
         self.verify_logger()
 
