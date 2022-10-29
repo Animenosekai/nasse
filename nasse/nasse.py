@@ -217,7 +217,7 @@ class Nasse():
                                     rich.progress.TextColumn("—"),
                                     rich.progress.TimeElapsedColumn()),
                                     transient=True) if status else MockProgress()) as progress:
-            progress.add_task(description="🍡 Running on {host}:{port}".format(host=self.config.host, port=self.config.port))
+            progress.add_task(description='🍡 {name} is running on {host}:{port}'.format(name=self.config.name, host=self.config.host, port=self.config.port))
             self.config.logger.log("🎏 Press {cyan}Ctrl+C{normal} to quit")
             self.config.logger.log("🌍 Binding to {{magenta}}{host}:{port}{{normal}}"
                                    .format(host=self.config.host,
