@@ -18,6 +18,12 @@ class NasseConfig:
         if self.logger is None:
             self.logger = Logger()
 
+    def __setattr__(self, __name: str, __value: typing.Any) -> None:
+        if __name == "debug" and (isinstance(self.logging_level, Default) or self.logging_level.value < 4):
+            from nasse.utils.logging import LoggingLevel
+            self.logging_level = LoggingLevel.DEBUG
+        super().__setattr__(__name, __value)
+
     def __post_init__(self):
         from nasse.utils.logging import LoggingLevel
         # from nasse import __version_string__

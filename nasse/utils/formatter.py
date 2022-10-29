@@ -4,6 +4,7 @@ import inspect
 import os
 import threading
 import typing
+from string import Formatter
 
 
 class Colors(enum.Enum):
@@ -49,6 +50,37 @@ def caller_name(skip: int = 2):
         name.append(codename)  # function or a method
     del parentframe, stack
     return ".".join(name)
+
+
+class Unformatted:
+    def __init__(self, key):
+        self.key = key
+
+    def __format__(self, format_spec):
+        return "{{{}{}}}".format(self.key, ":" + format_spec if format_spec else "")
+
+
+class SilentFormatter(Formatter):
+    """
+    A formatter which silences the KeyErrors and IndexErrors
+
+    Author
+    ------
+    CodeManX
+        https://stackoverflow.com/a/21754294/11557354
+    """
+
+    def get_value(self, key, args, kwargs):
+        if isinstance(key, int):
+            try:
+                return args[key]
+            except IndexError:
+                return Unformatted(key)
+        else:
+            try:
+                return kwargs[key]
+            except KeyError:
+                return Unformatted(key)
 
 
 def format(string: str, time_format: typing.Union[str, typing.Callable[[datetime.datetime], typing.Any]] = "%Y/%m/%d, %H:%M:%S", config: "NasseConfig" = None, *args, **kwargs):
@@ -102,7 +134,7 @@ def format(string: str, time_format: typing.Union[str, typing.Callable[[datetime
     if "{cwd}" in string:  # current working directory
         formatting["cwd"] = os.getcwd()
 
-    return string.format(*args, **{
+    return SilentFormatter().format(string, *args, **{
         **formatting,
         **kwargs
     })

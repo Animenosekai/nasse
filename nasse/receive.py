@@ -257,7 +257,8 @@ class Receive():
                                             type=data.__class__.__name__))
                                         result["data"]["content"] = str(data)
                         except Exception as e:
-                            # logger.print_exception()
+                            if not isinstance(e, exceptions.authentication.MissingToken) and self.app.config.debug:
+                                logger.print_exception()
 
                             message, error, code = exception_to_response(e)
                             result = {
@@ -313,7 +314,11 @@ class Receive():
                                     "headers": dict(flask.g.request.headers),
                                     "values": dict(flask.g.request.values),
                                     "domain": flask.g.request.host,
-                                    "logs": logger.record,
+                                    "logs": [{
+                                        "time": r.time,
+                                        "level": r.level.name,
+                                        "msg": r.msg
+                                    } for r in logger.record],
                                     "call_stack": ["pass the 'call_stack' parameter to get the call stack"]
                                 }
 
@@ -390,11 +395,23 @@ class Receive():
                         color = "{yellow}"
                     else:
                         color = "{magenta}"
-                    self.app.config.logger.info("← Sending back {color}{size}{{normal}} bytes of data to {ip} following {{blue}}{method} {path}{{normal}}".format(
+                    if final.status_code < 200: # ?
+                        status_color = "{white}"
+                    elif final.status_code < 300:
+                        status_color = "{blue}"
+                    elif final.status_code < 400:
+                        status_color = "{green}"
+                    elif final.status_code < 500:
+                        status_color = "{yellow}"
+                    else:
+                        status_color = "{magenta}"
+                    self.app.config.logger.info("← Sending back {color}{size}{{normal}} bytes of data to {ip} following {status_color}{status}{{normal}} {{blue}}{method} {path}{{normal}}".format(
                         color=color,
                         size=size,
                         ip=ip,
                         method=method,
+                        status=final.status_code,
+                        status_color=status_color,
                         path=path,
                     ))
                 except Exception:

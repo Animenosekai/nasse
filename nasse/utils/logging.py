@@ -74,7 +74,7 @@ class Logger:
             return
 
         result = formatter.format(
-            str(sep).join(msg),
+            str(sep).join(str(m) for m in msg),
             time_format=self.TIME_FORMAT,
             config=self.config,
             level=level.name
