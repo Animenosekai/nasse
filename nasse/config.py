@@ -21,7 +21,10 @@ class NasseConfig:
     def __setattr__(self, __name: str, __value: typing.Any) -> None:
         if __name == "debug" and (isinstance(self.logging_level, Default) or self.logging_level.value < 4):
             from nasse.utils.logging import LoggingLevel
-            self.logging_level = LoggingLevel.DEBUG
+            if __value:
+                self.logging_level = LoggingLevel.DEBUG
+            else:
+                self.logging_level = LoggingLevel.INFO
         super().__setattr__(__name, __value)
 
     def __post_init__(self):
@@ -83,7 +86,7 @@ class NasseConfig:
     max_request_size: int = 1e+9
     compress: bool = True
     log_file: pathlib.Path = Default(None)
-    logging_level: "LoggingLevel" = Default("LoggingLevel.INFO")
+    logging_level: "LoggingLevel" = Default("INFO")
     logger: "Logger" = None
     server_header: str = "Nasse/{version} ({name})"
     sanitize_user_input: bool = True
