@@ -89,14 +89,7 @@ class Logger:
             self.record.append(Record(level=level, msg=record_output))
 
         if self.config.log_file:
-            self.config.log_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.config.log_file, "a") as f:
-                f.write(formatter.format("[{level}] ({name}) - {time} - {msg}\n",
-                                         time_format=lambda time: int(time.timestamp()),
-                                         level=level.name,
-                                         name=self.config.name,
-                                         msg=record_output
-                                         ))
+            self.write_to_file(msg=record_output, level=level)
 
         template = self.TEMPLATES.get(level, "{message}")
         result = formatter.format(template, time_format=self.TIME_FORMAT, config=self.config, level=level.name, message=result)
@@ -104,6 +97,16 @@ class Logger:
         print(result, end=str(end))
 
     __call__ = log
+
+    def write_to_file(self, msg: str, level: LoggingLevel = LoggingLevel.INFO):
+        self.config.log_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.config.log_file, "a") as f:
+            f.write(formatter.format("[{level}] ({name}) - {time} - {msg}\n",
+                                     time_format=lambda time: int(time.timestamp()),
+                                     level=level.name,
+                                     name=self.config.name,
+                                     msg=msg
+                                     ))
 
     def info(self, *msg, **kwargs):
         """
@@ -169,6 +172,7 @@ class Logger:
         """
         self._rich_console.print_exception(show_locals=show_locals, **kwargs)
 
+    exception = print_exception
 
 RECORDING = False
 CALL_STACK = []
