@@ -525,11 +525,10 @@ class Endpoint(object):
             else:
                 self.errors.append(_error_validation(value))
         elif name == "base_dir":
-            super().__setattr__("base_dir", pathlib.Path(
-                value).resolve() if value is not None else None)
+            super().__setattr__("base_dir", pathlib.Path(value).resolve() if value is not None else None)
         else:
-            utils.logging.logger.log("{name} is not a settable attribute for a Nasse.models.Endpoint instance".format(
-                name=name), logging.logging.WARNING)
+            super().__setattr__(name, value)
+            utils.logging.logger.warn("{name} is not defined for a Nasse.models.Endpoint instance".format(name=name))
 
     def __delitem__(self, name):
         return delattr(self, name)

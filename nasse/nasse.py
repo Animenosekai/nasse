@@ -119,7 +119,6 @@ class Nasse():
     def logger(self):
         return self.config.logger
 
-    @property
     def log(self, *msg, **kwargs):
         return self.logger.log(*msg, **kwargs)
 
