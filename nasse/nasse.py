@@ -116,7 +116,7 @@ class Nasse():
         return "Nasse({name})".format(name=self.config.name)
 
     @property
-    def logger(self):
+    def logger(self) -> utils.logging.Logger:
         return self.config.logger
 
     def log(self, *msg, **kwargs):
