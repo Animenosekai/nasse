@@ -2,19 +2,17 @@ from os import path
 
 from setuptools import setup
 
-import nasse
-
 with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'), encoding='utf-8') as f:
     readme_description = f.read()
 
 setup(
     name="nasse",
     packages=["nasse"],
-    version=nasse.__version_string__(),
-    license=nasse.__license__,
-    description=nasse.__doc__,
-    author=nasse.__author__,
-    author_email=nasse.__email__,
+    version="2.0.0",
+    license="MIT License",
+    description="""A web server framework written on top of Flask""",
+    author="Animenosekai",
+    author_email="niichannomail@gmail.com",
     url="https://github.com/Animenosekai/nasse",
     download_url="https://github.com/Animenosekai/nasse/archive/v2.0.tar.gz",
     keywords=["Anime no Sekai", "nasse" "flask", "framework", "web", "web-server", "web-framework"],
