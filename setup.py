@@ -17,7 +17,7 @@ setup(
     download_url="https://github.com/Animenosekai/nasse/archive/v2.0.tar.gz",
     keywords=["Anime no Sekai", "nasse" "flask", "framework", "web", "web-server", "web-framework"],
     install_requires=[
-        "Werkzeug==2.2.2",
+        "Werkzeug==2.2.3",
         "bleach==3.3.0",
         "Flask_Compress==1.10.1",
         "watchdog==2.1.6",
