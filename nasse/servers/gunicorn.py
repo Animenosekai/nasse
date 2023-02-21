@@ -1,3 +1,9 @@
+"""
+The Gunicorn backend
+
+Note: Should be more suitable for production use
+"""
+
 import multiprocessing
 
 from nasse import Nasse, config
@@ -9,7 +15,14 @@ import gunicorn.arbiter
 
 
 class Gunicorn(Flask):
+    """
+    The Gunicorn backend
+    """
     class BaseApp(gunicorn.app.base.BaseApplication):
+        """
+        The internal Gunicorn base app
+        """
+
         def __init__(self, app: Nasse, config: config.NasseConfig = None, **kwargs):
             self.app = app
             self.config = config or config.NasseConfig()

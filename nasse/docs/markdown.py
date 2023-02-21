@@ -1,3 +1,15 @@
+"""
+Automatically generates Markdown Docs
+
+Copyright
+---------
+Animenosekai
+    Original author, MIT License
+"""
+
+# pylint: disable=consider-using-f-string
+
+import typing
 import urllib.parse
 from pathlib import Path
 
@@ -7,71 +19,151 @@ from nasse.docs.localization.base import Localization
 from nasse.utils.sanitize import sort_http_methods
 
 
-def make_docs(endpoint: models.Endpoint, postman: bool = False, curl: bool = True, javascript: bool = True, python: bool = True, localization: Localization = Localization()):
-    result = '''
+def make_docs(endpoint: models.Endpoint,
+              postman: bool = False,
+              curl: bool = True,
+              javascript: bool = True,
+              python: bool = True,
+              localization: Localization = Localization()) -> str:
+    """
+    Generates the documentation for the given endpoint
+
+    Parameters
+    ----------
+    endpoint: models.Endpoint
+        The endpoint to generate the docs for
+    postman: bool, default = False
+        If the docs are generated for Postman
+        (doesn't include all of the details since a lot is already included by the Postamn docs generator)
+    curl: bool, default = True
+        If the `curl` examples should be included too
+    javascript: bool, default = True
+        If the JavaScript examples should be included too
+    python: bool, default = True
+        If the Python examples should be included too
+    localization: Localization, optional
+        The language to use to create the docs
+
+    Returns
+    -------
+    str
+        The generated docs
+    """
+
+    result = """
 # {name}
-'''.format(name=endpoint.name)
-    if len(endpoint.methods) == 1:
-        result += '''
-{description}
-'''.format(description=endpoint.description.get(endpoint.methods[0] if "*" not in endpoint.description else "*", localization.no_description))
-        result += make_docs_for_method(endpoint=endpoint, postman=postman, curl=curl, javascript=javascript, python=python, localization=localization)
+""".format(name=endpoint.name)
+
+    kwargs = {"endpoint": endpoint,
+              "postman": postman,
+              "curl": curl,
+              "javascript": javascript,
+              "python": python,
+              "localization": localization}
+
+    if len(endpoint.methods) <= 1:
+        result += """
+{}
+""".format(endpoint.description.get(endpoint.methods[0] if "*" not in endpoint.description else "*",
+                                    localization.no_description))
+        result += make_docs_for_method(**kwargs)
     else:
         for method in sort_http_methods(endpoint.methods):
-            result += "\n - ### {localization__using_method}".format(localization__using_method=localization.using_method.format(method=method))
-            result += "\n{docs}\n".format(docs=make_docs_for_method(endpoint=endpoint, method=method,
-                                          postman=postman, curl=curl, javascript=javascript, python=python, localization=localization))
+            kwargs["method"] = method
+            result += "\n - ### {}".format(localization.using_method.format(method=method))
+            result += "\n{}\n".format(make_docs_for_method(**kwargs))
     return result
 
 
-def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman: bool = False, curl: bool = True, javascript: bool = True, python: bool = True, localization: Localization = Localization()):
-    result = ''
+def make_docs_for_method(
+        endpoint: models.Endpoint,
+        method: typing.Optional[str] = None,
+        postman: bool = False,
+        curl: bool = True,
+        javascript: bool = True,
+        python: bool = True,
+        localization: Localization = Localization()) -> str:
+    """
+    Creates the docs for the given method
 
-# ENDPOINT HEADER
+    Parameters
+    ----------
+    endpoint: models.Endpoint
+        The endpoint to generate the docs for
+    method: str, optional
+        The method to generate the docs for
+    postman: bool, default = False
+        If the docs are generated for Postman
+        (doesn't include all of the details since a lot is already included by the Postamn docs generator)
+    curl: bool, default = True
+        If the `curl` examples should be included too
+    javascript: bool, default = True
+        If the JavaScript examples should be included too
+    python: bool, default = True
+        If the Python examples should be included too
+    localization: Localization, optional
+        The language to use to create the docs
+
+    Returns
+    -------
+    str
+        The generated docs
+    """
+    result = ""
 
     if len(endpoint.methods) == 1 or method is None:
+        # treating it as only a single method endpoint
         heading_level = "###"
         method = list(endpoint.methods)[0]
     else:
         heading_level = "####"
         method = str(method)
-        result += '''
-{description}
-'''.format(description=endpoint.description.get(method if method in endpoint.description else "*", localization.no_description))
+        result += """
+{}
+""".format(endpoint.description.get(method if method in endpoint.description else "*",
+                                    localization.no_description))
 
     try:
         path = Path(endpoint.handler.__code__.co_filename).resolve().relative_to(Path().resolve())
     except Exception:
         path = Path(endpoint.handler.__code__.co_filename)
+
     line = endpoint.handler.__code__.co_firstlineno
 
-
-# ENDPOINT HEADING
+    # ENDPOINT HEADING
 
     if not postman:
-        result += '''
+        result += """
 ```http
 {method} {path}
 ```
 
 > [{source_code_path}]({github_path})
-'''.format(method=method, path=endpoint.path, source_code_path=path, github_path="../../{path}#L{line}".format(path=path, line=line))
+""".format(method=method,
+           path=endpoint.path,
+           source_code_path=path,
+           # FIXME: this needs to be fixed because it sometimes fails
+           github_path="../../{path}#L{line}".format(path=path, line=line))
 
     else:
-        result = '''
+        result = """
 > [{source_code_path}]({github_path})
 
 {description}
 
-'''.format(source_code_path=path, github_path="../../{path}#L{line}".format(path=path, line=line), description=endpoint.description.get(method if method in endpoint.description else "*", localization.no_description))
+""".format(source_code_path=path,
+            github_path="../../{path}#L{line}".format(path=path, line=line),
+            description=endpoint.description.get(method if method in endpoint.description else "*",
+                                                 localization.no_description))
 
 
 # AUTHENTICATION
 
-    result += '''
+    result += """
 {heading} {localization__authentication}
 
-'''.format(heading=heading_level, localization__authentication=localization.authentication)
+""".format(heading=heading_level, localization__authentication=localization.authentication)
+
     login_rules = endpoint.login.get(method, endpoint.login.get("*", None))
     if login_rules is None:
         result += localization.no_auth_rule
@@ -105,13 +197,13 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
         ]:
             params = [param for param in values if (param.all_methods or method in param.methods)]
             if len(params) > 0:
-                result += '''
+                result += """
 
 {heading} {field}
 
 | {localization__name}         | {localization__description}                      | {localization__required}         | {localization__type}             |
 | ------------ | -------------------------------- | ---------------- | ---------------- |
-'''.format(field=field, heading=heading_level, localization__name=localization.name, localization__description=localization.description, localization__required=localization.required, localization__type=localization.type)
+""".format(field=field, heading=heading_level, localization__name=localization.name, localization__description=localization.description, localization__required=localization.required, localization__type=localization.type)
                 result += "\n".join(
                     ["| `{param}` | {description}  | {required}            | {type}            |".format(param=param.name, description=param.description, required=localization.yes if param.required else localization.no, type=param.type.__name__ if hasattr(param.type, "__name__") else str(param.type) if param.type is not None else "str") for param in params])
 
@@ -119,19 +211,19 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 # LANGUAGE SPECIFIC EXAMPLES
 
         if any((curl, javascript, python)):
-            result += '''
+            result += """
 
 {heading} {localization__example}
 
 <!-- tabs:start -->
-'''.format(heading=heading_level, localization__example=localization.example)
+""".format(heading=heading_level, localization__example=localization.example)
             for proceed, highlight, language, function in [
                 (curl, "bash", "cURL", docs.curl.create_curl_example_for_method),
                 (javascript, "javascript", "JavaScript", docs.javascript.create_javascript_example_for_method),
                 (python, "python", "Python", docs.python.create_python_example_for_method)
             ]:
                 if proceed:
-                    result += '''
+                    result += """
 
 <details>
     <summary>{language} {localization__example}</summary>
@@ -143,30 +235,36 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 ```
 
 </details>
-'''.format(heading=heading_level + "#", localization__example=localization.example, highlight=highlight, language=language, example=function(endpoint, method=method))
-            result += '''<!-- tabs:end -->'''
+""".format(heading=heading_level + "#",
+                        localization__example=localization.example,
+                        highlight=highlight,
+                        language=language,
+                        example=function(endpoint, method=method))
+            result += """<!-- tabs:end -->"""
 
 
 # RESPONSE
 
     returning = [element for element in endpoint.returning if (element.all_methods or method in element.methods)]
     if len(returning) > 0:
-        result += '''
+        result += """
 
 {heading} {localization__response}
-'''.format(heading=heading_level, localization__response=localization.response)
+""".format(heading=heading_level, localization__response=localization.response)
 
 
 # JSON RESPONSE EXAMPLE
 
         if endpoint.json:
-            result += '''
+            result += """
 {heading} {localization__example_response}
 
 ```json
 {example}
 ```
-'''.format(heading=heading_level + "#", localization__example_response=localization.example_response, example=docs.example.generate_example(endpoint, method=method))
+""".format(heading=heading_level + "#",
+                localization__example_response=localization.example_response,
+                example=docs.example.generate_example(endpoint, method=method))
         else:
             result += "\n"
             result += localization.not_json_response
@@ -174,14 +272,23 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
 
 # RESPONSE DESCRIPTION
 
-        result += '''
+        result += """
 {heading} {localization__returns}
 
 | {localization__field}        | {localization__description}                      | {localization__type}   | {localization__nullable}  |
 | ----------   | -------------------------------- | ------ | --------- |
-'''.format(heading=heading_level + "#", localization__returns=localization.returns, localization__field=localization.field, localization__description=localization.description, localization__type=localization.type, localization__nullable=localization.nullable)
+""".format(heading=heading_level + "#",
+           localization__returns=localization.returns,
+           localization__field=localization.field,
+           localization__description=localization.description,
+           localization__type=localization.type,
+           localization__nullable=localization.nullable)
+
         result += "\n".join(["| `{key}` | {description}  | {type}      | {nullable}      |".format(key=element.name,
-                            description=element.description, type=docs.example._get_type(element), nullable=localization.yes if element.nullable else localization.no) for element in returning])
+                                                                                                   description=element.description,
+                                                                                                   type=docs.example._get_type(element),
+                                                                                                   nullable=localization.yes if element.nullable else localization.no)
+                             for element in returning])
 
     result += "\n"
 
@@ -191,15 +298,21 @@ def make_docs_for_method(endpoint: models.Endpoint, method: str = None, postman:
     errors = [error for error in endpoint.errors if (
         error.all_methods or method in error.methods)]
     if len(errors) > 0:
-        result += '''
+        result += """
 {heading} {localization__possible_errors}
 
 | {localization__exception}         | {localization__description}                      | {localization__code}   |
 | ---------------   | -------------------------------- | ------ |
-'''.format(heading=heading_level + "#", localization__possible_errors=localization.possible_errors, localization__exception=localization.exception, localization__description=localization.description, localization__code=localization.code)
+""".format(heading=heading_level + "#",
+           localization__possible_errors=localization.possible_errors,
+           localization__exception=localization.exception,
+           localization__description=localization.description,
+           localization__code=localization.code)
 
-        result += "\n".join(
-            ["| `{key}` | {description}  | {code}  |".format(key=error.name, description=error.description, code=error.code) for error in errors])
+        result += "\n".join(["| `{key}` | {description}  | {code}  |".format(key=error.name,
+                                                                             description=error.description,
+                                                                             code=error.code)
+                             for error in errors])
 
 
 # INDEX LINKING

@@ -1,6 +1,7 @@
 """
 Helper to create static Python code from Nasse objects
 """
+
 import json
 from nasse.models import Endpoint, Error, Login, Return, UserSent
 

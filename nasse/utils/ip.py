@@ -1,3 +1,6 @@
+"""
+A utility to retrieve the IP address of the client
+"""
 import flask
 
 

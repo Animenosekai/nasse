@@ -1,3 +1,6 @@
+"""
+This is where the responses and errors are partly processed
+"""
 import datetime
 import typing
 
@@ -8,7 +11,7 @@ from nasse import config, exceptions, utils
 from nasse.utils.annotations import Default
 
 
-def exception_to_response(value: Exception, config: config.NasseConfig = None):
+def exception_to_response(value: Exception, config: typing.Optional[config.NasseConfig] = None):
     """
     Internal function to turn an exception to a tuple of values that can be used to make a response
     """
@@ -17,7 +20,7 @@ def exception_to_response(value: Exception, config: config.NasseConfig = None):
         error = value.EXCEPTION_NAME
         code = int(value.STATUS_CODE)
     elif isinstance(value, werkzeug.exceptions.HTTPException):
-        code = value.code
+        code = value.code or 500
         if code >= 500:  # we don't know what kind of exception it might leak
             data = "An error occured on the server while processing your request"
         # we consider that they are fewer non basic exceptions (non 500) that are dangerous to leak (i.e: 4xx errors are related to the client)
@@ -56,9 +59,9 @@ def _cookie_validation(value):
                 raise exceptions.validate.CookieConversionError(
                     "Either 'name' is missing or one argument doesn't have the right type while creating a Nasse.response.ResponseCookie instance")
         raise ValueError  # will be catched
-    except Exception as e:
-        if isinstance(e, exceptions.NasseException):
-            raise e
+    except Exception as err:
+        if isinstance(err, exceptions.NasseException):
+            raise err
         raise exceptions.validate.CookieConversionError(
             "Nasse cannot convert value of type <{t}> to Nasse.response.ResponseCookie".format(t=value.__class__.__name__))
 

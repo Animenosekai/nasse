@@ -1,6 +1,7 @@
+"""
+Provides a lightweight and easy way to access CLI arguments
+"""
 import sys
-
-# from nasse import exceptions
 
 
 class NoDefault:

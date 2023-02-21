@@ -1,7 +1,19 @@
+"""
+The japanese translation
+
+Copyright
+---------
+Animenosekai
+    Original Author, MIT License
+"""
+
 from nasse.docs.localization.base import Localization
 
 
 class JapaneseLocalization(Localization):
+    """
+    The japanese version of the docs generation
+    """
     sections = "セクション"
     getting_started = "はじめに"
 
@@ -36,7 +48,7 @@ class JapaneseLocalization(Localization):
     example = "例"
 
     # Response
-    response = "レスポンス" # 応答や解答より「レスポンス」の方が使われているよう
+    response = "レスポンス"  # 応答や解答より「レスポンス」の方が使われているよう
     example_response = "レスポンスの例"
     not_json_response = "このエンドポイントは、JSON形式のレスポンスを返さないようです。"
 

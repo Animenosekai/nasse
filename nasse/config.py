@@ -1,3 +1,7 @@
+"""
+Nasse configuration
+"""
+
 import dataclasses
 import pathlib
 import typing
@@ -13,6 +17,10 @@ def _alphabetic(string):
 
 @dataclasses.dataclass
 class NasseConfig:
+    """
+    A configuration object for a Nasse app
+    """
+
     def verify_logger(self):
         from nasse.utils.logging import Logger
         if self.logger is None:

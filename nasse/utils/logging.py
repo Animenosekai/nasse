@@ -1,3 +1,11 @@
+"""
+Nasse logging utilities
+
+Copyright
+---------
+Animenosekai
+    Original author, MIT License
+"""
 import dataclasses
 import datetime
 import enum
@@ -173,6 +181,7 @@ class Logger:
         self._rich_console.print_exception(show_locals=show_locals, **kwargs)
 
     exception = print_exception
+
 
 RECORDING = False
 CALL_STACK = []

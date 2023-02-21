@@ -1,3 +1,7 @@
+"""
+The Nasse JSON Encoder
+"""
+
 import base64
 import io
 import json
@@ -12,19 +16,19 @@ PYTHON_DEFAULT_DECODER = json.JSONEncoder().default
 class NasseJSONEncoder(json.JSONEncoder):
 
     def _make_iterencode(self, markers, _default, _encoder, _indent, _floatstr,
-                     _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
-                     # HACK: hand-optimized bytecode; turn globals into locals
-                     ValueError=ValueError,
-                     dict=dict,
-                     float=float,
-                     id=id,
-                     int=int,
-                     isinstance=isinstance,
-                     list=list,
-                     str=str,
-                     tuple=tuple,
-                     _intstr=int.__repr__,
-                     ):
+                         _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
+                         # HACK: hand-optimized bytecode; turn globals into locals
+                         ValueError=ValueError,
+                         dict=dict,
+                         float=float,
+                         id=id,
+                         int=int,
+                         isinstance=isinstance,
+                         list=list,
+                         str=str,
+                         tuple=tuple,
+                         _intstr=int.__repr__,
+                         ):
 
         if _indent is not None and not isinstance(_indent, str):
             _indent = ' ' * _indent
@@ -84,7 +88,10 @@ class NasseJSONEncoder(json.JSONEncoder):
                 yield '\n' + _indent * _current_indent_level
             yield ']'
             if markers is not None:
-                del markers[markerid]
+                try:
+                    del markers[markerid]
+                except Exception:
+                    pass
 
         def _iterencode_dict(dct, _current_indent_level):
             dct = self.default(dct)
@@ -165,7 +172,10 @@ class NasseJSONEncoder(json.JSONEncoder):
                 yield '\n' + _indent * _current_indent_level
             yield '}'
             if markers is not None:
-                del markers[markerid]
+                try:
+                    del markers[markerid]
+                except Exception:
+                    pass
 
         def _iterencode(o, _current_indent_level):
             o = _default(o)

@@ -1,3 +1,7 @@
+"""
+This is where the request context is created and gets sanitized
+"""
+
 import typing
 
 import flask

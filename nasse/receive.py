@@ -1,3 +1,6 @@
+"""
+This is where the requests are received and first processed
+"""
 import base64
 import inspect
 import sys
@@ -18,8 +21,8 @@ def retrieve_token(context: request.Request = None) -> str:
 
     Parameters
     ----------
-        context: nasse.request.request.Request
-            The current request, if not properly set, the current context is used.
+    context: nasse.request.request.Request
+        The current request, if not properly set, the current context is used.
     """
     if not isinstance(context, request.Request):
         context = flask.g.request or flask.request
@@ -48,8 +51,7 @@ class Receive():
         self.app = app
         self.endpoint = endpoint
         RECEIVERS_COUNT += 1
-        self.__name__ = "__nasse_receiver_{number}".format(
-            number=RECEIVERS_COUNT)
+        self.__name__ = "__nasse_receiver_{number}".format(number=RECEIVERS_COUNT)
 
     def __call__(self, *args: typing.Any, **kwds: typing.Any) -> typing.Any:
         try:
@@ -398,7 +400,7 @@ class Receive():
                         color = "{yellow}"
                     else:
                         color = "{magenta}"
-                    if final.status_code < 200: # ?
+                    if final.status_code < 200:  # ?
                         status_color = "{white}"
                     elif final.status_code < 300:
                         status_color = "{blue}"

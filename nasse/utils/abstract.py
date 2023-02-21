@@ -1,3 +1,7 @@
+"""
+A minimal polyfill for more python versions
+"""
+
 import abc
 from abc import abstractmethod
 

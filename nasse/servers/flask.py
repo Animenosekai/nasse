@@ -1,8 +1,15 @@
+"""
+This is the flask default server backend
+"""
 import werkzeug
-from nasse import config
+from nasse import config, servers
 
 
-class Flask:
+class Flask(servers.ServerBackend):
+    """
+    The default Flask server backend
+    """
+
     def __init__(self, app: "Nasse", config: config.NasseConfig) -> None:
         self.app = app
         self.config = config or config.NasseConfig()

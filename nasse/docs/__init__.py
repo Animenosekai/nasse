@@ -1,1 +1,6 @@
-from nasse.docs import curl, example, header, javascript, markdown, postman, python
+"""
+Automatic Documentation Generation on Nasse
+"""
+
+from nasse.docs import (curl, example, header, javascript, markdown, postman,
+                        python)

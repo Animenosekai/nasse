@@ -1,3 +1,8 @@
+"""
+The base strings
+"""
+
+
 class Localization:
     """
     Represents a Nasse documentation generation localization

@@ -1,7 +1,19 @@
+"""
+The french translation
+
+Copyright
+---------
+Animenosekai
+    Original Author, MIT License
+"""
+
 from nasse.docs.localization.base import Localization
 
 
 class FrenchLocalization(Localization):
+    """
+    The french translation for the docs generation
+    """
     sections = "Sections"
     getting_started = "Pour commencer"
 

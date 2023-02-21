@@ -1,3 +1,6 @@
+"""
+A utility to parse boolean values
+"""
 import typing
 
 from nasse import utils

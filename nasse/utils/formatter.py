@@ -1,3 +1,11 @@
+"""
+A string formatter for Nasse
+
+Copyright
+---------
+Animenosekai
+    MIT License
+"""
 import datetime
 import enum
 import inspect

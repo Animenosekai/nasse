@@ -1,7 +1,7 @@
 """
 nasse/__main__
 
-The CLI script
+The CLI entry
 """
 
 import argparse

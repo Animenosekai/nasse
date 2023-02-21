@@ -1,47 +1,40 @@
+"""
+A list of internal exceptions for Nasse validations
+"""
 from nasse.exceptions.base import NasseException
 
 
 class ValidationError(NasseException):
+    """When there is an input validation error"""
     MESSAGE = "Nasse couldn't validate an input"
     EXCEPTION_NAME = "VALIDATION_ERROR"
 
-    def __init__(self, message: str = None, *args: object) -> None:
-        super().__init__(message=message, *args)
-
 
 class ConversionError(ValidationError):
+    """An internal error occuring when Nasse can't convert an input to a Nasse object"""
     EXCEPTION_NAME = "INTERNAL_CONVERSION_ERROR"
     MESSAGE = "Nasse couldn't convert a given input to a Nasse object instance"
 
-    def __init__(self, message: str = None, *args: object) -> None:
-        super().__init__(message=message, *args)
-
 
 class MethodsConversionError(ConversionError):
-    def __init__(self, message: str = None, *args: object) -> None:
-        super().__init__(message=message, *args)
+    """An internal error occuring when Nasse can't convert an input to methods"""
 
 
 class ReturnConversionError(ConversionError):
-    def __init__(self, message: str = None, *args: object) -> None:
-        super().__init__(message=message, *args)
+    """An internal error occuring when Nasse can't convert an input to a Nasse `Return` object"""
 
 
 class UserSentConversionError(ConversionError):
-    def __init__(self, message: str = None, *args: object) -> None:
-        super().__init__(message=message, *args)
+    """An internal error occuring when Nasse can't convert an input to a Nasse `UserSent` object"""
 
 
 class ErrorConversionError(ConversionError):
-    def __init__(self, message: str = None, *args: object) -> None:
-        super().__init__(message=message, *args)
+    """An internal error occuring when Nasse can't convert an input to a Nasse `Error` object"""
 
 
 class LoginConversionError(ConversionError):
-    def __init__(self, message: str = None, *args: object) -> None:
-        super().__init__(message=message, *args)
+    """An internal error occuring when Nasse can't convert an input to a Nasse `Login` object"""
 
 
 class CookieConversionError(ConversionError):
-    def __init__(self, message: str = None, *args: object) -> None:
-        super().__init__(message=message, *args)
+    """An internal error occuring when Nasse can't convert an input to a Nasse `Cookie` object"""

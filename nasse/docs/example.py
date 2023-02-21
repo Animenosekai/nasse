@@ -1,9 +1,28 @@
+"""
+Generates response examples
+"""
+
 from nasse import models, utils
 
 
-def _get_type(data):
-    """Retrieves the type of the given returning item"""
+def _get_type(data: models.Return) -> str:
+    """
+    An internal function to retrieves the type of the given returning item
+
+    Parameters
+    ----------
+    data: models.Return
+        The return value to get the type from
+
+    Returns
+    -------
+    "string" | "int" | "float | "bool" | "array" | "object"
+        The type, when possible
+    str
+        When impossible, returns the type as a string
+    """
     key_type = data.type
+
     if key_type is None:
         example = data.example
         if example is None:
@@ -15,9 +34,13 @@ def _get_type(data):
         elif isinstance(example, dict):
             return "object"
         else:
-            return example.__class__.__name__
+            try:
+                return example.__class__.__name__  # should be `str`
+            except AttributeError:
+                pass
+
     key_type = str(key_type)
-    key_type_token = key_type.lower()
+    key_type_token = key_type.lower().replace(" ", "")
     if key_type_token in {"str", "string", "text"}:
         return "string"
     elif key_type_token in {"int", "integer"}:
@@ -33,8 +56,29 @@ def _get_type(data):
     return key_type
 
 
-def generate_example(endpoint: models.Endpoint, method: str):
+def generate_example(endpoint: models.Endpoint, method: str) -> str:
+    """
+    Generates a JSON response example
+
+    Parameters
+    ----------
+    endpoint: models.Endpoint
+        The endpoint to get the response example from
+    method: str
+        The method to get the response example from
+
+    Returns
+    -------
+    str
+        The response example
+    """
     def get_value(data):
+        """
+
+        Parameters
+        ----------
+        data
+        """
         key_type = _get_type(data)
         # if self.returning[key].get("nullable", False) and key_type != "object":
         #    return None
@@ -57,6 +101,8 @@ def generate_example(endpoint: models.Endpoint, method: str):
         if element.all_methods or method in element.methods:
             _response_format[element.name] = get_value(element)
 
+    # we can't consider using f-strings because they came with py3.6
+    # pylint: disable=consider-using-f-string
     return '''{{
     "success": true,
     "message": "Successfully processed your request",

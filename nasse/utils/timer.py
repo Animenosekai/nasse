@@ -1,12 +1,21 @@
+"""
+A pretty accurate timer to measure code
+"""
+
 import time
 import sys
 
 if sys.version_info > (3, 7):
-    process_time_ns = time.process_time_ns # novermin
+    process_time_ns = time.process_time_ns  # novermin
 else:
-    process_time_ns = lambda: int(time.process_time() * 1e+9)
+    def process_time_ns(): return int(time.process_time() * 1e+9)
+
 
 class Timer():
+    """
+    A pretty accurate timer
+    """
+
     def __init__(self) -> None:
         """
         A timer to measure performance of a piece of code

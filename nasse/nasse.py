@@ -124,15 +124,17 @@ class Nasse():
 
     def route(self,
               path: str = utils.annotations.Default(""),
-              endpoint: models.Endpoint = None,
-              flask_options: dict = None, **kwargs):
+              endpoint: typing.Optional[models.Endpoint] = None,
+              flask_options: typing.Optional[dict] = None, **kwargs):
         """
         # A decorator to register a new endpoint
 
-        Can be used like so:
+        Examples
+        --------
+        >>> # Can be used like so:
         >>> from nasse import Nasse, Param
         >>> app = Nasse()
-        >>>
+        >>> 
         >>> @app.route(path="/hello", params=Param(name="username", description="the person welcomed"))
         ... def hello(params: dict):
         ...     if "username" in params:
@@ -141,9 +143,11 @@ class Nasse():
 
         Parameters
         -----------
-        `endpoint`: nasse.models.Endpoint
+        path: str, default = ""
+            The path to register the handler to
+        endpoint: models.Endpoint
             A base endpoint object. Other given values will overwrite the values from this Endpoint object.
-        `flask_options`: dict
+        flask_options: dict
             If needed, extra options to give to flask.Flask
         `**kwargs`
             The same options that will be passed to nasse.models.Endpoint to create the new endpoint. \n
@@ -159,7 +163,10 @@ class Nasse():
             results.update(kwargs)
             results["handler"] = f
             new_endpoint = models.Endpoint(**results)
-            flask_options["methods"] = new_endpoint.methods if "*" not in new_endpoint.methods else utils.types.HTTPMethod.ACCEPTED
+            try:
+                flask_options["methods"] = new_endpoint.methods if "*" not in new_endpoint.methods else utils.types.HTTPMethod.ACCEPTED
+            except Exception:
+                pass
             self.flask.add_url_rule(new_endpoint.path, flask_options.pop(
                 "endpoint", None), receive.Receive(self, new_endpoint), **flask_options)
             self.endpoints[new_endpoint.path] = new_endpoint
@@ -213,10 +220,11 @@ class Nasse():
 
             self.instance = server(app=self, config=self.config)
         with (rich.progress.Progress(*(rich.progress.TextColumn("[progress.description]{task.description}"),
-                                    rich.progress.TextColumn("—"),
-                                    rich.progress.TimeElapsedColumn()),
-                                    transient=True) if status else MockProgress()) as progress:
-            progress.add_task(description='🍡 {name} is running on {host}:{port}'.format(name=self.config.name, host=self.config.host, port=self.config.port))
+                                       rich.progress.TextColumn("—"),
+                                       rich.progress.TimeElapsedColumn()),
+                                     transient=True) if status else MockProgress()) as progress:
+            progress.add_task(description='🍡 {name} is running on {host}:{port}'.format(
+                name=self.config.name, host=self.config.host, port=self.config.port))
             self.config.logger.log("🎏 Press {cyan}Ctrl+C{normal} to quit")
             self.config.logger.log("🌍 Binding to {{magenta}}{host}:{port}{{normal}}"
                                    .format(host=self.config.host,
@@ -279,12 +287,12 @@ class Nasse():
 
         Parameters
         -----------
-        `response`: flask.flask.Response
+        response: flask.flask.Response
             The response to send back
 
         Returns
         --------
-        `flask.Response`:
+        flask.Response:
             The response to send
         """
         try:

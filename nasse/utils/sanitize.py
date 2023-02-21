@@ -1,3 +1,7 @@
+"""
+Nasse's sanitizing and convert utility
+"""
+
 from ctypes import util
 import typing
 

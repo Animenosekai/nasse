@@ -1,29 +1,95 @@
+"""
+Creating `curl` examples
+"""
+
+import typing
+
 from nasse import models
 
 
-def create_curl_example_for_method(endpoint: models.Endpoint, method: str):
+def create_curl_example_for_method(endpoint: models.Endpoint, method: str) -> str:
+    """
+    Creates a `curl` example for the given method
+
+    Parameters
+    ----------
+    endpoint: models.Endpoint
+        The endpoint to create the example from
+    method: str
+        The method to create the example for
+
+    Returns
+    -------
+    str
+        A usage example for `curl`
+    """
+
+    def sanitize_backslashes(element: str):
+        """
+        Turns the backslashes into triple backslashes
+
+        Parameters
+        ---------
+        element: str
+            The element to sanitize
+
+        Returns
+        -------
+        str
+            The sanitized element
+        """
+        return str(element).replace("\"", "\\\"")
+
     params = {param.name: param.description or param.name for param in endpoint.params if param.required and (
         param.all_methods or method in param.methods)}
     headers = {header.name: header.description or header.name for header in endpoint.headers if header.required and (
         header.all_methods or method in header.methods)}
+
     params_render = ""
     headers_render = ""
+
     if len(params) > 0:
-        params_render = "\\\n    --data-urlencode " + "\\\n    --data-urlencode ".join(['"' + param.replace(
-            "\"", "\\\"") + '=<' + description.replace("\"", "\\\"") + '>"' for param, description in params.items()]) + " "
+        # ref: https://everything.curl.dev/http/post/url-encode
+        params_render = "\\\n    --data-urlencode " + "\\\n    --data-urlencode ".join(
+            ['"' + sanitize_backslashes(param)
+             + '=<' + sanitize_backslashes(description)
+             + '>"' for param, description in params.items()]
+        ) + " "
         if len(headers) <= 0:
             params_render += "\\\n    "
+
     if len(headers) > 0:
-        headers_render = "\\\n    -H " + '\\\n    -H '.join(['"' + header.replace(
-            "\"", "\\\"") + ': ' + description.replace("\"", "\\\"") + '"' for header, description in headers.items()]) + " "
+        # ref: https://everything.curl.dev/http/requests/headers
+        headers_render = "\\\n    -H " + '\\\n    -H '.join([
+            '"' + sanitize_backslashes(header)
+            + ': ' + sanitize_backslashes(description)
+            + '"' for header, description in headers.items()]
+        ) + " "
         headers_render += "\\\n    "
+
     return '''curl -X {method} {params}{headers}"{path}"'''.format(
-        method=method, params=params_render, headers=headers_render, path=endpoint.path)
+        method=method,
+        params=params_render,
+        headers=headers_render,
+        path=endpoint.path
+    )
 
 
-def create_curl_example(endpoint: models.Endpoint):
+def create_curl_example(endpoint: models.Endpoint) -> typing.Dict[str, str]:
+    """
+    Creates a `curl` example command to use the endpoint.
+
+    Parameters
+    ----------
+    endpoint: models.Endpoint
+        The endpoint to create the example for
+
+    Returns
+    -------
+    dict[str, str]
+        A dictionary of {method: example} values.
+    """
     results = {}
     for method in endpoint.methods:
-        results[method] = create_curl_example_for_method(
-            endpoint=endpoint, method=method)
+        results[method] = create_curl_example_for_method(endpoint=endpoint, method=method)
     return results

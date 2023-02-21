@@ -1,3 +1,7 @@
+"""
+Generates docs for Postman
+"""
+
 import typing
 from copy import deepcopy
 # from uuid import uuid4
@@ -7,7 +11,25 @@ from nasse.docs.localization.base import Localization
 from nasse.utils.sanitize import sort_http_methods
 
 
-def create_postman_data(app, section: str, endpoints: typing.List[models.Endpoint], localization: Localization = Localization()):
+def create_postman_data(app, section: str, endpoints: typing.List[models.Endpoint], localization: Localization = Localization()) -> typing.Dict[str, typing.Any]:
+    """
+    Generates the data for postman
+
+    Parameters
+    ----------
+    app
+    section: str
+        The section to document
+    endpoint: list[models.Endpoint]
+        A list of endpoints
+    localization: Localization
+        The language of the docs
+
+    Returns
+    -------
+    dict[str, Any]
+        The data for Postman
+    """
     postman_section = {
         "info": {
             # "_postman_id": str(uuid4()),
@@ -38,6 +60,21 @@ def create_postman_data(app, section: str, endpoints: typing.List[models.Endpoin
 
 
 def create_postman_docs(endpoint: models.Endpoint, localization: Localization = Localization()):
+    """
+    Generates the Postman docs for an endpoint
+
+    Parameters
+    ----------
+    endpoint: models.Endpoint
+        The endpoint to generate the docs for
+    localization: Localization
+        The language to use
+
+    Returns
+    -------
+    list[dict[str, Any]]
+        A list of documentation data for Postman (one item per method)
+    """
     results = []
     for method in sort_http_methods(endpoint.methods):
         result = {
