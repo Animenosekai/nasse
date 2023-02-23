@@ -124,7 +124,7 @@ import json
 from flask import Flask, request
 from flask_compress import Compress
 from flask_cors import CORS
-from flask_security import Talisman
+from flask_talisman import Talisman
 
 app = Flask(__name__)
 Compress(app)
@@ -144,7 +144,7 @@ def v1_accounts_profile():
         return 400, json.dumps({"error": "MISSING_ARG", "message": "The `password` argument is missing from the request"})
 
     [...]
-    # ...password validation an all...
+    # ...password validation and all...
 
     if str(request.method).upper() == "POST":
         email = request.params.get("email", None)
@@ -724,7 +724,7 @@ You can specify the backend you want to use to run the server using one of the a
 
 You can here specify the host and port to run the server on.
 
-If not specified, the port and host specified in the program arguments/flags `--host something --port 4000` will be used, or if none found, `127.0.0.1:5000` will be used.
+If not specified, the host and port `127.0.0.1:5005` will be used.
 
 On debug mode, Nasse will reload on any file change.
 

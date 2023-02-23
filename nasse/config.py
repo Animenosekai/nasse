@@ -87,7 +87,7 @@ class NasseConfig:
     name: str = "Nasse"
     id: str = Default(None)
     host: str = "127.0.0.1"
-    port: int = 5000
+    port: int = 5005
     debug: bool = False
     account_management: "AccountManagement" = None
     cors: typing.Union[str, bool, typing.Iterable] = True
