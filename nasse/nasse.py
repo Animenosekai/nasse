@@ -1,7 +1,7 @@
 """
 Nasse
 
-© Anime no Sekai — 2021
+© Anime no Sekai — 2023
 """
 import logging
 import os
@@ -21,6 +21,7 @@ from nasse import config, docs, models, receive, request, utils
 from nasse.config import NasseConfig
 from nasse.docs.localization.base import Localization
 from nasse.response import exception_to_response
+from nasse.servers import ServerBackend
 from nasse.servers.flask import Flask
 
 
@@ -173,7 +174,7 @@ class Nasse():
             return new_endpoint
         return decorator
 
-    def run(self, host: str = None, port: typing.Union[int, str] = None, server: typing.Type[Flask] = Flask, watch: typing.List[str] = ["**/*.py"], ignore: typing.List[str] = [], status: bool = True, *args, **kwargs):
+    def run(self, host: str = None, port: typing.Union[int, str] = None, server: typing.Type[ServerBackend] = Flask, watch: typing.List[str] = ["**/*.py"], ignore: typing.List[str] = [], status: bool = True, *args, **kwargs):
         """
         Runs the application by binding to an address and answering to clients.
         """
@@ -354,8 +355,10 @@ class Nasse():
             # Might need to allow the right headers
             # ...
 
-            response.headers["Server"] = "Nasse/{version} ({name})".format(
-                version=config.GLOBAL_CONFIG_ARE_A_THING_OF_THE_PAST.VERSION, name=self.config.name)
+            response.headers["Server"] = utils.formatter.format(self.config.server_header, config=self.config)
+
+            # response.headers["Server"] = "Nasse/{version} ({name})".format(version=self.config.VERSION,
+            #                                                                name=self.config.name)
 
         except Exception:
             # would be bad if the `after_request` function raises an exception, especially when used as the `teardown_request`

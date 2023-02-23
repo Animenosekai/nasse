@@ -4,7 +4,7 @@
 
 A web framework built on top of Flask
 
-***Stop spending time making the docs, verify the request, compress or format the response, and focus on making your next cool app!***
+***Actually spend time making your next app, we will do the annoying stuff for you!***
 
 <br>
 <br>
@@ -21,6 +21,49 @@ A web framework built on top of Flask
 ![Repo Size](https://img.shields.io/github/repo-size/Animenosekai/nasse)
 ![Issues](https://img.shields.io/github/issues/Animenosekai/nasse)
 
+## Index
+
+- [Index](#index)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+- [Installing](#installing)
+  - [Option 1: From PyPI](#option-1-from-pypi)
+  - [Option 2: From Git](#option-2-from-git)
+- [Purpose](#purpose)
+  - [Comparison](#comparison)
+    - [Before](#before)
+    - [After](#after)
+- [Usage](#usage)
+  - [Creating a new app](#creating-a-new-app)
+  - [Flask integration](#flask-integration)
+    - [Flask Configuration](#flask-configuration)
+      - [Example](#example)
+    - [In the routes](#in-the-routes)
+      - [Example](#example-1)
+  - [Registering new endpoints](#registering-new-endpoints)
+  - [Documenting your endpoints](#documenting-your-endpoints)
+  - [Documentation Values](#documentation-values)
+    - [Return](#return)
+    - [Login](#login)
+    - [UserSent](#usersent)
+    - [Error](#error)
+  - [Context](#context)
+  - [Returned Values](#returned-values)
+  - [Error handling](#error-handling)
+  - [JSON](#json)
+  - [Utilities](#utilities)
+    - [Logging](#logging)
+    - [String Formatting](#string-formatting)
+  - [Running the server](#running-the-server)
+  - [Generate documentation](#generate-documentation)
+    - [Localization](#localization)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [Built With](#built-with)
+- [Authors](#authors)
+- [Acknowledgments](#acknowledgments)
+- [License](#license)
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
@@ -31,41 +74,145 @@ You will need Python 3 to use this module
 
 ```bash
 # vermin output
-Minimum required versions: 3.4
+Minimum required versions: 3.6
 Incompatible versions:     2
 ```
 
-According to Vermin (`--backport typing`), Python 3.4 is needed for pathlib.
-
-Always check if your Python version works with `Nasse` before using it in production
+Always check if your Python version works with `Nasse` before using it in production.
 
 ## Installing
 
 ### Option 1: From PyPI
 
 ```bash
-pip install nasse
+pip install --upgrade nasse
 ```
+
+> This will install the latest stable version from PyPI
 
 ### Option 2: From Git
 
 ```bash
-pip install git+https://github.com/Animenosekai/nasse
+pip install --upgrade git+https://github.com/Animenosekai/nasse
 ```
+
+> This will install the latest development version from the git repository
 
 You can check if you successfully installed it by printing out its version:
 
 ```bash
-$ python -c "import nasse; print(nasse.__version__)"
+$ nasse --version
 # output:
-Nasse v1.1
+Nasse v2.0(beta)
 ```
 
 ## Purpose
 
 This web server framework aims to bring a powerful tool to make your web application development easier.
 
-It will bring type safety, along with automatic documentation to force you write clean and safe code along with avoiding unnecessary checks and data validation.
+It brings type safety, along with automatic documentation to force you write clean and safe code while avoiding unnecessary checks and data validation.
+
+### Comparison
+
+#### Before
+
+```python
+# my_project/api/v1/accounts.py
+
+import json
+
+from flask import Flask, request
+from flask_compress import Compress
+from flask_cors import CORS
+from flask_security import Talisman
+
+app = Flask(__name__)
+Compress(app)
+CORS(app)
+Talisman(app)
+
+# after a quick StackOverflow search
+EMAIL_REGEX = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b')
+
+@app.route("/api/v1/accounts/profile", methods=["GET", "POST"])
+def v1_accounts_profile():
+    username = request.params.get("username", None)
+    if not username:
+        return 400, json.dumps({"error": "MISSING_ARG", "message": "The `username` argument is missing from the request"})
+    password = request.params.get("password", None)
+    if not password:
+        return 400, json.dumps({"error": "MISSING_ARG", "message": "The `password` argument is missing from the request"})
+
+    [...]
+    # ...password validation an all...
+
+    if str(request.method).upper() == "POST":
+        email = request.params.get("email", None)
+        if email and not EMAIL_REGEX.fullmatch(email):
+            return 400, json.dumps({"error": "WRONG_EMAIL", "message": "The `email` argument doesn't seem to be a valid email address"})
+        [...]
+        return 200, json.dumps({"error": None, "message": "Account successfully created"})
+
+    return 200, json.dumps({"error": None, "message": "Welcome back!"})
+```
+
+```markdown
+<!-- my_project/docs/accounts.md -->
+
+# Accounts
+
+This file documents the correct way of using the accounts management endpoints for my project.
+
+## v1/accounts
+
+Here is an explanation...
+```
+
+#### After
+
+```python
+# my_project/api/v1/accounts.py
+
+import re
+from nasse import Nasse, Endpoint, Param, Login
+from nasse.utils.types import Email
+from nasse.utils.types import LimitedString
+
+class Username(LimitedString):
+    LIMIT = 200 # only allowing 200 characters
+
+class Password(LimitedString):
+    LIMIT = 100
+    REGEX = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$")
+    THROW = True
+
+ACCOUNTS_MANAGEMENT = Endpoint(section="Accounts Management", login=Login(required=True))
+
+@app.route(Endpoint(
+    endpoint=ACCOUNTS_MANAGEMENT, # this will take ACCOUNTS_MANAGEMENT as the base
+    methods=["GET", "POST"],
+    login=Login(no_login=True),
+    params=[
+        Param("username", {
+            "GET": "The username of the user to check the authentication",
+            "POST": "A new username"
+        }, type=Username),
+        Param("email", "The user's email address", methods="POST", required=False, type=Email),
+        Param("password", "The user's password", type=Password),
+    ]
+))
+def profile(method: str, username: str, password: str, email: str = None): # all of this comes from the request params and are type safe/validated
+    if method == "POST":
+        return 200, "Account created successfully"
+    return 200, "Welcome back"
+
+# This will actually generate all of the docs for you !
+app.make_docs()
+app.run()
+```
+
+> **Note**  
+> Tip: You can also use `nasse my_project/api/v1/accounts.py` to run without calling `app.run()`!
 
 ## Usage
 
@@ -85,12 +232,18 @@ This is the bare minimum but you should of course configure it.
 You should at least give it a name and configure the CORS domains.
 
 ```python
->>> app = Nasse(name="My App", cors_headers=["https://myapp.com"])
+>>> app = Nasse("My App", cors="https://myapp.com")
 ```
 
-In this case, the server ID will be generated automatically, by removing the spaces, etc. but you can also specify one directly `Nasse(name="My App", id="coolapp")`.
+Lots of things will be initialised with their default configuration.
 
-The `account_managemenet` parameter should be of instance `models.AccountManagement` and is used to manage the user accounts (login, etc.).
+If you want to customize them, you might want to take a look at the `nasse.config.NasseConfig` object, which has all of the Nasse configuration.
+
+> **Note**  
+> Some strings support the [Nasse string formatting](#string-formatting).
+> For example: `NasseConfig.server_header` supports it, and the default value is : `Nasse/{version} ({name})`. The `{version}` and `{name}` parts will be filled automatically.
+
+The `account_management` parameter should be of instance `models.AccountManagement` and is used to manage the users authentications.
 
 > Example
 
@@ -111,19 +264,92 @@ The `account_managemenet` parameter should be of instance `models.AccountManagem
 ...         except Exception:
 ...             return False
 ...
->>> app = Nasse(name="My App", cors_headers=["https://myapp.com"], account_management=NewAccountManagement())
+>>> app = Nasse(account_management=NewAccountManagement())
 ```
 
-There is also some self explanatory parameters:
+You can also specify specific Flask parameters using the `flask_options` parameter if needed.
 
-- `max_request_size`: limits the size of the request body.
-- `compress`: if we need to compress the response
+### Flask integration
 
-Other parameters will be passed to Flask when creating the instance.
+Nasse being built on top of Flask, it is fully compatible with its ecosystem.
+
+As said before, lots of Flask settings are available and exposed to you.
+
+#### Flask Configuration
+
+You can configure the Flask app using the `flask_options` parameter when instanciating a new Nasse instance.
+
+But you can also use the `Nasse.flask` attribute, which exposes the underlying Flask app to use your favorite plugins !
+
+##### Example
+
+If for whatever reason you need to add a Flask plugin :
+
+```python
+from nasse import Nasse
+from flask_cool_plugin_yay import CoolPlugin
+
+app = Nasse()
+CoolPlugin(app.flask)
+```
+
+or if a service expect a flask app, you can trick it to expose the Flask app :
+
+```python
+from nasse import Nasse
+
+nasse_app = Nasse()
+app = nasse_app.flask # this is the Flask app
+```
+
+#### In the routes
+
+Most of your Flask compatible code should probably already be compatible with Nasse.
+
+For example, the `route` and `methods` parts of the `app.route` function work the same way as Flask.
+
+##### Example
+
+With ***Flask***
+
+This is a very basic way of using Flask.
+
+```python
+from flask import Flask, request
+app = Flask(__name__)
+
+@app.route("/hello", methods=["GET", "POST"])
+def hello():
+    return 200, "Hello {}".format(request.params.get("name", "world"))
+```
+
+With ***Nasse***
+
+Well this already works with Nasse !
+
+```python
+from nasse import Nasse, request
+app = Nasse(__name__)
+
+@app.route("/hello", methods=["GET", "POST"])
+def hello():
+    return 200, "Hello {}".format(request.params.get("name", "world"))
+```
+
+But can also be changed like this :
+
+```python
+from nasse import Nasse, Param
+app = Nasse()
+
+@app.route(methods=["GET", "POST"], params=Param("name", required=False))
+def hello(name: str = "World"):
+    return 200, "Hello {}".format(name)
+```
 
 ### Registering new endpoints
 
-You can register new endpoints using the `route` decorator, just like with Flask!
+You can register new endpoints using the `route` decorator, just like Flask!
 
 ```python
 >>> @app.route("/hello")
@@ -143,21 +369,21 @@ Where's the `"/hello"` part?
 
 > If you don't specify it, it will be automatically generated from the function name.
 
-There is a specific syntax for your functions name:
+You can follow a specific syntax for your functions name to create rich routes:
 
-To create a hyphen "-", use an upper case letter, kinda like when you use camelCase.
+- To create a hyphen "-", use an upper case letter, kinda like when you use camelCase.
 
 > `def myRoute():` --> /my-route
 
-To create a new slash "/", use an underscore "_".
+- To create a new slash "/", use an underscore "_".
 
 > `def my_route():` --> /my/route
 
-To create a new dynamic parameter, use a double underscore "__".
+- To create a new dynamic parameter, use a double underscore "__".
 
 > `def my__route__(route):` --> /my/\<route>/
 
-You can mix everything up as you wish.
+- You can mix everything up as you wish.
 
 > `def my_helloWorld_route__name__(name):` --> /my/hello-world/\<name>/
 
@@ -168,64 +394,6 @@ You can then use parameters to configure and document the endpoint.
 ### Documenting your endpoints
 
 You can configure the endpoint by passint it a `nasse.models.Endpoint` instance.
-
-It accepts a lot of parameters:
-
-- `path`: str = Default("")
-
-> The path of the endpoint, overwriting the function name as defined before
-
-- `methods`: list[str] = Default("GET")
-
-> The HTTP methods that can be used to access the endpoint
-
-- `json`: bool = Default(True)
-
-> If the response should be JSON
-
-- `name`: str = Default("")
-
-> The name of the endpoint, used for documentation purposes
-
-- `description`: str | dict[method\<str>:str] = Default("")
-
-> The description of the endpoint, used for documentation purposes
-
-- `section`: str = Default("Other")
-
-> The section/category of the endpoint, used for documentation purposes
-
-- `returning`: models.Return | list[models.Return] = Default([])
-
-> What the endpoint returns, used for documentation purposes
-
-- `login`: models.Login | dict[method\<str>:models.Login] = Default(models.Login(required=False))
-
-> The login which can be used to access the endpoint
-
-- `headers`: models.Header | list[models.Header] = Default([])
-
-> The headers which can be used to access the endpoint
-
-- `cookies`: models.Cookie | list[models.Cookie] = Default([])
-
-> The cookies which can be used to access the endpoint
-
-- `params`: models.Param | list[models.Param] = Default([])
-
-> The parameters which can be used to access the endpoint
-
-- `dynamics`: models.Dynamic | list[models.Dynamic] = Default([])
-
-> The dynamic route parameters which can be used to access the endpoint
-
-- `errors`: models.Error | list[models.Error] = Default([])
-
-> The errors which can be returned by the endpoint
-
-- `base_dir`: str = Default(None)
-
-> The base directory of the endpoint, used to determine the route
 
 Everything is meant to be reusable to write less and more readble code.
 
@@ -340,20 +508,23 @@ You can ask whatever you want from their.
 Here is a list of the parameters you can ask for:
 
 - `app`: The current Nasse app instance
-- `nasse`: An alias for `app`
 - `endpoint`: The current Nasse endpoint
-- `nasse_endpoint`: An alias for `endpoint`
 - `request`: The current request context
 - `method`: The HTTP method of the request
 - `values`: The URL/form values of the request
-- `params`: An alias for `values`
 - `args`: The URL arguments of the request
 - `form`: The form values of the request
 - `headers`: The headers of the request
 - `account`: The authenticated account for the request
 - `dynamics`: The dynamic route parameters of the request
 
-Any other requested parameter will be either a dynamic route parameter or a URL/form parameter.
+***And the aliases***
+
+- `nasse`: An alias for `app`
+- `nasse_endpoint`: An alias for `endpoint`
+- `params`: An alias for `values`
+
+Any other requested parameter will be either a **dynamic route parameter** or a **URL/form parameter**.
 
 ### Returned Values
 
@@ -405,17 +576,18 @@ The dictionary will be automatically passed to `response.Response`
 ... return ("Hello World", 200)
 ```
 
-On debug mode, a set of timing header headers will be returned.
+> **Note**  
+> On debug mode, a set of timing header headers will automatically be returned.
 
 ### Error handling
 
-Even if your application encounters an error/exception, it will be automatically catched by Nasse and correctly formatted to be returned to the client.
+Even if your application encounters an error/exception, it will be automatically catched by Nasse and correctly formatted to be safely returned to the client.
 
-You should use the `nasse.exceptions.NasseException` class to inherit your own exceptions.
+> **Note**  
+> Tip: You should use the `nasse.exceptions.NasseException` class to create your own exceptions.
+> This way, you will be able to fully customize the error response.
 
-This way, you will be able to fully customize the error response.
-
-But even with regular `Exception` exceptions, Nasse will try to generate an error name and a description without leaking too much information.
+But even with regular `Exception` exceptions, Nasse will attempt to generate an error name and a description without leaking too much information.
 
 ### JSON
 
@@ -430,33 +602,125 @@ If the endpoint is configured as a JSON endpoint, it will be formatted using the
 }
 ```
 
-Also, on debug mode, the response will have an additional `debug` field containing the debug information.
+Nasse uses a custom JSON encoder to fully customise it and avoiding bugs.
 
-If the `format` parameter is set to `xml` or `html` when making the request, the response will be automatically converted to an XML format.
+> **Note**  
+> Also, on debug mode, the response will have an additional `debug` field containing the debug information.
+
+> **Note**  
+> If the `format` parameter is set to `xml` or `html` when making the request, the response will be automatically converted to an *XML* format.
+> Example: `/hello?format=xml` will produce an `XML` formatted output.
 
 ### Utilities
 
 Nasse is shipped with a set of utilities that you can use inside your application.
 
-These are some helpful ones:
-
-- `nasse.logging.log`: To log messages to the console using Nasse's logging system
-
-- `nasse.utils.ip.get_ip`: To get the client's IP address
-
-- `nasse.utils.regex.is_email`: To check if a string is an email
-
-- `nasse.timer.Timer`: To measure the time taken by a block of code
-
-...and so on.
-
 They are mostly located inside the `utils` module.
+
+#### Logging
+
+You should use Nasse's logging system to log stuff on your console to avoid any issue with `rich`.
+
+You can access the logging instance as a global variable :
+
+```python
+from nasse.utils.logging import logger
+
+logger.log("Hello")
+logger.debug("Hello")
+logger.warn("Hello")
+...
+```
+
+Or use the one on your Nasse instance :
+
+```python
+from nasse import Nasse
+
+app = Nasse()
+app.log("Hello")
+app.logger.info("Hello")
+app.logger.error("Hello")
+```
+
+You can actually decide to only include the message to the log file and not print it on the console by using the `HIDDEN` logging level :
+
+```python
+logger.hidden("Hello") # this will add the hello message to the log file but not STDOUT
+```
+
+The logger supports [Nasse's string formatting](#string-formatting).
+
+#### String Formatting
+
+String formatting is a way of making template strings which will dynamically change its value with variables.
+
+In python, the `format` function allows strings to use variables to create strings :
+
+```python
+name = "world"
+
+# are all equivalent
+"Hello {}".format(name)
+"Hello {name}".format(name=name)
+f"Hello {name}"
+```
+
+With Nasse, you can use this string formatting syntax, but with default values which can be automatically filled :
+
+```python
+from nasse.utils import formatter
+
+formatter.format("Hello {name} from process {pid}", name="world")
+```
+
+Most of the time, this is used when logging stuff to the console :
+
+```python
+logger.print("Hello {user} from process {pid}", user="world")
+```
+
+<details>
+    <summary>Here is a list of default variables you can use with Nasse's string formatting</summary>
+    <li>normal</li>
+    <li>grey</li>
+    <li>gray</li>
+    <li>red</li>
+    <li>green</li>
+    <li>blue</li>
+    <li>cyan</li>
+    <li>turquoise</li>
+    <li>white</li>
+    <li>yellow</li>
+    <li>purple</li>
+    <li>pink</li>
+    <li>magenta</li>
+    <li>name</li>
+    <li>app</li>
+    <li>id</li>
+    <li>host</li>
+    <li>port</li>
+    <li>debug</li>
+    <li>version</li>
+    <li>base_dir</li>
+    <li>time</li>
+    <li>caller</li>
+    <li>thread</li>
+    <li>pid</li>
+    <li>cwd</li>
+</details>
 
 ### Running the server
 
-Gunicorn is used to run the server, which is a production-ready WSGI server.
+Running the server is as easy as calling
 
-To run the server, simply call `app.run()`.
+```python
+app.run()
+```
+
+Where `app` is your Nasse instance.
+
+You can specify the backend you want to use to run the server using one of the already defined `nasse.servers...` objects are a custom made one, following the `nasse.servers.ServerBackend` class.
 
 You can here specify the host and port to run the server on.
 
@@ -464,11 +728,8 @@ If not specified, the port and host specified in the program arguments/flags `--
 
 On debug mode, Nasse will reload on any file change.
 
-You can use the `include` and `exclude` parameters to specify which files to watch for.
-
-By default, Nasse will watch all files in the current directory and subdirectories.
-
-The other keyword arguments will be passed to the Gunicorn configuration.
+> **Note**  
+> Tip: You can use the `include` and `exclude` parameters to specify which files to watch for.
 
 ### Generate documentation
 
@@ -482,21 +743,43 @@ Use the `make_docs` method inside your application to generate the documentation
 
 It will generate the examples, usage and explanation for each endpoint, along with an index of the endpoints and a general explanation at the top.
 
+The Postamn documentation is a set of JSON files, one for each category, that you can import inside Postman to test your API.
+
 It will create a `docs` directory in the current directory to put both documentations.
 
-The Postamn documentation is a set of JSON files, one for each category, that you can import inside Postman to test your API.
+#### Localization
+
+You can now use the docs localization feature which lets you use a different language for your docs !
+
+```python
+from nasse import Nasse
+from nasse.docs.localization import JapaneseLocalization
+
+app = Nasse()
+app.make_docs("./docs/jpa", localization=JapaneseLocalization, javascript=False)
+```
+
+Here are the built-in languages :
+
+- English
+- French
+- Japanese
+
+But you can create your own translation by subclassing `nasse.docs.localization.Localization`
 
 ## Deployment
 
 This module is currently in development and might contain bugs.
 
-Feel free to use it in production if you feel like it is suitable for your production even if you may encounter issues.
+Please verify and test your endpoints thoroughly before releasing anything at a production stage.
+
+Feel free to report any issue you might encounter on Nasse's GitHub page.
 
 ## Contributing
 
 Pull requests are welcome. For major changes, please open a discussion first to discuss what you would like to change.
 
-Please make sure to update the tests as appropriate.
+<!-- Please make sure to update the tests accordingly. -->
 
 ## Built With
 
@@ -504,7 +787,7 @@ Please make sure to update the tests as appropriate.
 - [watchdog](https://github.com/gorakhargosh/watchdog) - To watch for file changes
 - [Werkzeug](https://github.com/pallets/werkzeug/) - Flask's core
 - [bleach](https://github.com/mozilla/bleach) - To sanitize inputs
-- [gunicorn](https://github.com/benoitc/gunicorn) - To run the server
+- [rich](https://github.com/Textualize/rich) - To provide good looking console outputs
 - [Flask-Compress](https://github.com/colour-science/flask-compress) - To compress the responses
 
 ## Authors
@@ -517,7 +800,7 @@ Thanks to *CherryPieWithPoison* for the Statue of the Seven model.
 > [© 2021 - 2022 CherryPieWithPoison](https://www.deviantart.com/cherrypiewithpoison/art/MMD-Genshin-Impact-Statues-of-the-Seven-DL-871695397)
 
 The Dictionary to XML conversion is heavily inspired by dict2xml by delfick.
-> Licensed under the MIT License. More info in the head of the [xml.py](./nasse/utils/xml.py) file.
+> Licensed under the MIT License. More information in the header of the [xml.py](./nasse/utils/xml.py) file.
 
 ## License
 

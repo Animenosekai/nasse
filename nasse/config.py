@@ -41,7 +41,7 @@ class NasseConfig:
 
         # self.VERSION = __version_string__()
 
-        self.VERSION = "2.0(alpha)"
+        self.VERSION = "2.0(beta)"
 
         if isinstance(self.id, Default):
             self.id = _alphabetic(self.name).lower()

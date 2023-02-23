@@ -10,12 +10,19 @@ import re
 class LimitedString(str):
     """A string with conditions"""
     UPPER = False
+    """If the string should be converted to all upper case"""
     LOWER = False
+    """If the string should be converted to all lower case"""
     SPACES = True
+    """If we should allow spaces in the string"""
     THROW = False
+    """It we should raise an error when there is an error"""
     REGEX: re.Pattern = None
+    """A Regex pattern we need to follow for this string"""
     DEFAULT = ""
+    """A default value if the regex pattern is not followed"""
     LIMIT = 3000
+    """A number of characters limit"""
 
     def __new__(self, value: str, **kw):
         value = str(value)
@@ -32,7 +39,7 @@ class LimitedString(str):
                 value = self.DEFAULT
         if len(value) > self.LIMIT:
             if self.THROW:
-                raise ValueError("the given value exceeds the {limit} characters limit".format(limit=self.LIMIT))
+                raise ValueError("The given value exceeds the {limit} characters limit".format(limit=self.LIMIT))
             value = value[:self.LIMIT]
         return str.__new__(self, value, **kw)
 

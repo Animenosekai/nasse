@@ -12,11 +12,14 @@ import enum
 import linecache
 import typing
 
-from nasse.utils import formatter
 import rich.console
+from nasse.utils import formatter
 
 
 class LoggingLevel(enum.Enum):
+    """
+    A logging level
+    """
     ERROR = 1
     WARNING = 2
     INFO = 3
@@ -26,6 +29,10 @@ class LoggingLevel(enum.Enum):
 
 @dataclasses.dataclass
 class Record:
+    """
+    Represents a record in the log stack
+    """
+
     def __post_init__(self):
         self.time = datetime.datetime.now()
 
@@ -34,6 +41,10 @@ class Record:
 
 
 class Logger:
+    """
+    A Nasse logging object, the logger used thoughout your app
+    """
+
     TIME_FORMAT: typing.Union[str, typing.Callable[[datetime.datetime], typing.Any]] = "%Y/%m/%d, %H:%M:%S"
     # TIME_FORMAT = lambda time: int(time.timestamp())
     """
@@ -74,7 +85,7 @@ class Logger:
                 padding = WIDTH - len(MESSAGE) // 2
                 f.write(("=" * padding) + MESSAGE + ("=" * padding) + "\n")
 
-    def log(self, *msg, level: LoggingLevel = LoggingLevel.INFO, end: str = "\n", sep: str = " "):
+    def log(self, *msg, level: LoggingLevel = LoggingLevel.INFO, end: str = "\n", sep: str = " ", **kwargs):
         """
         Logging the given message to the console.
         """
@@ -85,7 +96,8 @@ class Logger:
             str(sep).join(str(m) for m in msg),
             time_format=self.TIME_FORMAT,
             config=self.config,
-            level=level.name
+            level=level.name,
+            **kwargs
         )
 
         record_output = result
@@ -97,24 +109,27 @@ class Logger:
             self.record.append(Record(level=level, msg=record_output))
 
         if self.config.log_file:
-            self.write_to_file(msg=record_output, level=level)
+            self.write_to_file(msg=record_output, level=level, **kwargs)
 
         template = self.TEMPLATES.get(level, "{message}")
-        result = formatter.format(template, time_format=self.TIME_FORMAT, config=self.config, level=level.name, message=result)
+        result = formatter.format(template, time_format=self.TIME_FORMAT, config=self.config, level=level.name, message=result, **kwargs)
 
         print(result, end=str(end))
 
     __call__ = log
 
-    def write_to_file(self, msg: str, level: LoggingLevel = LoggingLevel.INFO):
+    def write_to_file(self, msg: str, level: LoggingLevel = LoggingLevel.INFO, **kwargs):
+        """
+        Internal function called to write to the log file
+        """
         self.config.log_file.parent.mkdir(parents=True, exist_ok=True)
         with open(self.config.log_file, "a") as f:
             f.write(formatter.format("[{level}] ({name}) - {time} - {msg}\n",
                                      time_format=lambda time: int(time.timestamp()),
                                      level=level.name,
                                      name=self.config.name,
-                                     msg=msg
-                                     ))
+                                     msg=msg,
+                                     **kwargs))
 
     def info(self, *msg, **kwargs):
         """
@@ -188,6 +203,10 @@ CALL_STACK = []
 
 
 class StackFrame():
+    """
+    A call stack frame
+    """
+
     def __init__(self, frame) -> None:
         # print(dir(frame))
         # print(dir(frame.f_code))
@@ -224,6 +243,10 @@ class StackFrame():
 
 
 class CallStackRecorder:
+    """
+    A call stack recorder
+    """
+
     def __enter__(self):
         """
         Begins recording the calls

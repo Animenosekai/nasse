@@ -19,6 +19,7 @@ This version provides general improvements over the whole project, brining more 
 - Switch to a local variables based system (more stable)
 - Using [`rich`](https://github.com/Textualize/rich) to output things to the console, which improves the UI a lot
 - Adding a CLI to easily run Nasse apps
+- Introducing a new server backend based system to run the server, which allows the user to actually specify if they want to use *Gunicorn* or any other WSGI compatible server backend. (this fixes a pretty big bug where people on Windows couldn't really run their server)
 
 ## Fixes
 

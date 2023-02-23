@@ -142,6 +142,8 @@ def format(string: str, time_format: typing.Union[str, typing.Callable[[datetime
     if "{cwd}" in string:  # current working directory
         formatting["cwd"] = os.getcwd()
 
+    # Might optionally add stuff from psutil
+
     return SilentFormatter().format(string, *args, **{
         **formatting,
         **kwargs
