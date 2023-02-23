@@ -17,7 +17,6 @@ A web framework built on top of Flask
 [![GitHub - License](https://img.shields.io/github/license/Animenosekai/Nasse)](https://github.com/Animenosekai/nasse/blob/master/LICENSE)
 [![GitHub top language](https://img.shields.io/github/languages/top/Animenosekai/Nasse)](https://github.com/Animenosekai/nasse)
 [![CodeQL Checks Badge](https://github.com/Animenosekai/nasse/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Animenosekai/nasse/actions/workflows/codeql-analysis.yml)
-[![Pytest](https://github.com/Animenosekai/nasse/actions/workflows/pytest.yml/badge.svg)](https://github.com/Animenosekai/nasse/actions/workflows/pytest.yml)
 ![Code Size](https://img.shields.io/github/languages/code-size/Animenosekai/nasse)
 ![Repo Size](https://img.shields.io/github/repo-size/Animenosekai/nasse)
 ![Issues](https://img.shields.io/github/issues/Animenosekai/nasse)
