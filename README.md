@@ -10,6 +10,7 @@ A web framework built on top of Flask
 <br>
 
 [![PyPI version](https://badge.fury.io/py/Nasse.svg)](https://pypi.org/project/nasse/)
+[![Downloads](https://static.pepy.tech/personalized-badge/nasse?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Total%20Downloads)](https://pepy.tech/project/nasse)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/Nasse)](https://pypistats.org/packages/nasse)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/Nasse)](https://pypi.org/project/nasse/)
 [![PyPI - Status](https://img.shields.io/pypi/status/Nasse)](https://pypi.org/project/nasse/)
