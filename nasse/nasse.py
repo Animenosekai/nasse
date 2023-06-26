@@ -10,6 +10,7 @@ import sys
 import threading
 import typing
 import urllib.parse
+import dataclasses
 
 import flask
 import rich.progress
@@ -174,12 +175,22 @@ class Nasse():
             return new_endpoint
         return decorator
 
-    def run(self, host: str = None, port: typing.Union[int, str] = None, server: typing.Type[ServerBackend] = Flask, watch: typing.List[str] = ["**/*.py"], ignore: typing.List[str] = [], status: bool = True, *args, **kwargs):
+    def run(self,
+            host: typing.Optional[str] = None,
+            port: typing.Optional[int] = None,
+            server: typing.Type[ServerBackend] = Flask,
+            watch: typing.List[str] = ["**/*.py"],
+            ignore: typing.Optional[typing.List[str]] = None,
+            status: bool = True,
+            *args, **kwargs):
         """
         Runs the application by binding to an address and answering to clients.
         """
         class MockProgress:
-            def __overwrite__(self, *args, **kwargs): return self
+            """Replaces the logger"""
+
+            def __overwrite__(self, *args, **kwargs):
+                return self
 
             add_task = __overwrite__
             update = __overwrite__
@@ -196,12 +207,13 @@ class Nasse():
             if "debug" in kwargs:
                 self.config.debug = kwargs["debug"]
 
-            try:
-                if self.config.debug:
-                    self.config.logger.warn("DEBUG MODE IS ENABLED")
+            if self.config.debug:
+                self.config.logger.warn("DEBUG MODE IS ENABLED")
+                # Configuring auto-restart
+                try:
                     watching = []
                     ignoring = []
-                    for storage, data in [(watching, watch), (ignoring, ignore)]:
+                    for storage, data in [(watching, watch), (ignoring, ignore or [])]:
                         for file in data:
                             file = str(file)
                             path = pathlib.Path(file)
@@ -215,21 +227,27 @@ class Nasse():
                     self._observer.schedule(FileEventHandler(callback=self.restart, watch=watching,
                                             ignore=ignoring, config=self.config), ".", recursive=True)
                     self._observer.start()
-            except Exception as err:
-                self.config.logger.warn("Couldn't set up the file changes watcher ({err_type}: {err_msg})".format(
-                    err_type=err.__class__.__name__, err_msg=err))
+                except Exception as err:
+                    self.config.logger.warn(f"Couldn't set up the file changes watcher ({err.__class__.__name__}: {err})")
+                # Configuring debug endpoints
+                try:
+                    def endpoints():
+                        """Returns back all of the defined endpoints"""
+                        return 200, {"endpoints": [dataclasses.asdict(end) for end in self.endpoints.values()]}
+                    self.route("/_nasse/endpoints", name="Endpoints", category="Nasse Debug")(endpoints)
+                except Exception:
+                    self.config.logger.warn(f"Couldn't set up the debug endpoints ({err.__class__.__name__}: {err})")
 
             self.instance = server(app=self, config=self.config)
+
+        # Main Loop
         with (rich.progress.Progress(*(rich.progress.TextColumn("[progress.description]{task.description}"),
                                        rich.progress.TextColumn("—"),
                                        rich.progress.TimeElapsedColumn()),
                                      transient=True) if status else MockProgress()) as progress:
-            progress.add_task(description='🍡 {name} is running on {host}:{port}'.format(
-                name=self.config.name, host=self.config.host, port=self.config.port))
+            progress.add_task(description=f'🍡 {self.config.name} is running on http://{self.config.host}:{self.config.port}')
             self.config.logger.log("🎏 Press {cyan}Ctrl+C{normal} to quit")
-            self.config.logger.log("🌍 Binding to {{magenta}}{host}:{port}{{normal}}"
-                                   .format(host=self.config.host,
-                                           port=self.config.port))
+            self.config.logger.log(f"🌍 Binding to {{magenta}}{self.config.host}:{self.config.port}{{normal}}")
             # spinner = rich.progress.SpinnerColumn(spinner_name="simpleDotsScrolling", style="gray")
             # spinner.spinner.frames = ["・　　", "・・　", "・・・", "　・・", "　　・", "　　　"]
             self.instance.run(*args, **kwargs)
@@ -304,8 +322,8 @@ class Nasse():
             # Allowing the right methods
             try:
                 if flask.request.method.upper() == "OPTIONS":
-                    current_endpoint = self.endpoints.get(
-                        flask.request.url_rule.rule, None)
+                    current_endpoint = self.endpoints.get(flask.request.url_rule.rule,
+                                                          None)
                     if current_endpoint is not None:
                         try:
                             response.headers["Access-Control-Allow-Methods"] = ",".join(current_endpoint.methods)
@@ -459,4 +477,5 @@ class Nasse():
                 result = docs.postman.create_postman_data(self, section, sections_registry[section], localization=localization)
                 with open(postman_path / "{section}.postman_collection.utils.json".format(section=section), "w", encoding="utf-8") as out:
                     out.write(utils.json.minified_encoder.encode(result))
+
             progress.advance(main_task)

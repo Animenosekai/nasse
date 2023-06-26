@@ -2,6 +2,7 @@
 This is where the responses and errors are partly processed
 """
 import datetime
+import dataclasses
 import typing
 
 import werkzeug.http
@@ -43,7 +44,7 @@ def exception_to_response(value: Exception, config: typing.Optional[config.Nasse
     return data, error, code
 
 
-def _cookie_validation(value):
+def cookie_validation(value):
     """
     Internal function to validate a value that needs to be a `ResponseCookie` instance
     """
@@ -66,46 +67,23 @@ def _cookie_validation(value):
             "Nasse cannot convert value of type <{t}> to Nasse.response.ResponseCookie".format(t=value.__class__.__name__))
 
 
-class ResponseCookie():
-    def __init__(self,
-                 key,
-                 value: str = "",
-                 max_age: typing.Union[float, datetime.timedelta] = None,
-                 expires: typing.Union[float, datetime.datetime] = datetime.datetime.now() +
-                 datetime.timedelta(days=30),
-                 path: typing.Union[str, tuple, bytes] = "/",
-                 domain: typing.Union[str, bytes] = None,
-                 secure: bool = False,
-                 httponly: bool = False,
-                 samesite=None,
-                 charset: str = "utf-8",
-                 max_size: int = 4093) -> None:
-        self.key = str(key)
-        self.value = str(value)
-        self.max_age = max_age
-        self.expires = expires
-        self.path = path
-        self.domain = domain
-        self.secure = bool(secure)
-        self.httponly = bool(httponly)
-        self.samesite = samesite
-        self.charset = str(charset)
-        self.max_size = int(max_size)
+@dataclasses.dataclass
+class ResponseCookie:
+    """Represents a cookie to send back"""
+    key: str
+    value: str = ""
+    max_age: typing.Optional[typing.Union[float, datetime.timedelta]] = None
+    expires: typing.Optional[typing.Union[float, datetime.datetime]] = None
+    path: typing.Union[str, tuple, bytes] = "/"
+    domain: typing.Optional[typing.Union[str, bytes]] = None
+    secure: bool = False
+    httponly: bool = False
+    samesite = None
+    charset: str = "utf-8"
+    max_size: int = 4093
 
-    def __copy__(self):
-        return ResponseCookie(
-            key=self.key,
-            value=self.value,
-            max_age=self.max_age,
-            expires=self.expires,
-            path=self.path,
-            domain=self.domain,
-            secure=self.secure,
-            httponly=self.httponly,
-            samesite=self.samesite,
-            charset=self.charset,
-            max_size=self.max_size
-        )
+    def __post_init__(self):
+        self.expires = self.expires or datetime.datetime.now() + datetime.timedelta(days=30)
 
     def dumps(self) -> str:
         """
@@ -113,45 +91,44 @@ class ResponseCookie():
 
         Returns
         -------
-            str
-                the cookie value
+        str
+            The cookie value
         """
-        return werkzeug.http.dump_cookie(
-            key=self.key,
-            value=self.value,
-            max_age=self.max_age,
-            expires=self.expires,
-            path=self.path,
-            domain=self.domain,
-            secure=self.secure,
-            httponly=self.httponly,
-            samesite=self.samesite,
-            charset=self.charset,
-            max_size=self.max_size
-        )
+        return werkzeug.http.dump_cookie(**dataclasses.asdict(self))
 
 
-class Response():
-    def __init__(self, data: typing.Any = None, message: str = None, error: str = None, code: int = Default(200), headers: typing.Dict[str, str] = None, cookies: typing.List[ResponseCookie] = [], content_type: str = None) -> None:
+class Response:
+    """Represents a response"""
+
+    def __init__(self,
+                 data: typing.Any = None,
+                 message: str = None,
+                 error: str = None,
+                 code: int = Default(200),
+                 headers: typing.Dict[str, str] = None,
+                 cookies: typing.List[ResponseCookie] = None,
+                 content_type: typing.Optional[str] = None) -> None:
         """
         A Response object given to Nasse to format the response
 
         Parameters
         ----------
-            data: typing.Any, default = None
-                The data returned to the client
-                if 'data' is None, nothing extra is returned to the client
-            message: str, default = None
-                The message returned to the client
-            error: str, default = None
-                If an error occured, the error name (i.e the client is not correctly authenticated, you might want to set this as "AUTH_ERROR"
-            code: int, default = 200
-                The status code to return
-            headers: dict[str, str], default = None
-                The extra headers to send back (i.e headers=[{"X-NASSE-AUTH": "nasse+1very12897,cool1212798,128129token"}])
-            cookies: dict[str, str], default = None
-                The cookies to send back
+        data: typing.Any, default = None
+            The data returned to the client
+            if 'data' is None, nothing extra is returned to the client
+        message: str, default = None
+            The message returned to the client
+        error: str, default = None
+            If an error occured, the error name (i.e the client is not correctly authenticated, you might want to set this as "AUTH_ERROR"
+        code: int, default = 200
+            The status code to return
+        headers: dict[str, str], default = None
+            The extra headers to send back (i.e headers=[{"X-NASSE-AUTH": "nasse+1very12897,cool1212798,128129token"}])
+        cookies: dict[str, str], default = None
+            The cookies to send back
         """
+        cookies = cookies or []
+
         self.data = data
 
         if isinstance(error, Exception):
@@ -190,12 +167,12 @@ class Response():
                 for key, val in dict(cookies).items():
                     item = {"key": str(key)}
                     item.update(val)
-                    self.cookies.append(_cookie_validation(item))
+                    self.cookies.append(cookie_validation(item))
             elif isinstance(cookies, typing.Iterable):
                 for item in cookies:
-                    self.cookies.append(_cookie_validation(item))
+                    self.cookies.append(cookie_validation(item))
             else:
-                self.cookies.append(_cookie_validation(cookies))
+                self.cookies.append(cookie_validation(cookies))
                 raise exceptions.validate.CookieConversionError(
                     "Nasse cannot convert value of type <{t}> to Nasse.response.ResponseCookie".format(t=cookies.__class__.__name__))
 

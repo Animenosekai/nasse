@@ -88,9 +88,9 @@ def create_postman_docs(endpoint: models.Endpoint, localization: Localization = 
                         "value": header.description or header.name,
                         "type": "text"
                     }
-                    for header in endpoint.headers if header.all_methods or method in header.methods],
+                    for header in models.get_method_variant(method, endpoint.headers)],
                 "url": {
-                    "raw": "{{DOMAIN}}" + endpoint.path.replace("<", "{{").replace(">", "}}") + "?=" + '&'.join([param.name for param in endpoint.params if param.all_methods or method in param.methods]),
+                    "raw": "{{DOMAIN}}" + endpoint.path.replace("<", "{{").replace(">", "}}") + "?=" + '&'.join([param.name for param in models.get_method_variant(method, endpoint.parameters)]),
                     "host": [
                         "{{DOMAIN}}"
                     ],
@@ -101,7 +101,7 @@ def create_postman_docs(endpoint: models.Endpoint, localization: Localization = 
                             "value": "<{param}:{type}>".format(param=param.name, type=param.type.__name__ if hasattr(param.type, "__name__") else str(param.type) if param.type is not None else "str"),
                             "description": param.description or param.name
                         }
-                        for param in endpoint.params if param.all_methods or method in param.methods]
+                        for param in models.get_method_variant(method, endpoint.parameters)]
                 },
                 "description": docs.markdown.make_docs_for_method(endpoint=endpoint, method=method, postman=True, localization=localization)
             },
@@ -117,13 +117,14 @@ def create_postman_docs(endpoint: models.Endpoint, localization: Localization = 
         result["response"][0]["body"] = docs.example.generate_example(
             endpoint=endpoint, method=method)
 
-        login_rules = endpoint.login.get(method, endpoint.login.get("*", None))
+        login_rules = endpoint.login.get(method, endpoint.login["*"])
 
-        if login_rules is None or login_rules.no_login:
-            result["request"]["auth"] = {
-                "type": "noauth"
-            }
-
+        for rule in login_rules:
+            if rule.skip:
+                result["request"]["auth"] = {
+                    "type": "noauth"
+                }
+                break
         results.append(result)
 
     return results

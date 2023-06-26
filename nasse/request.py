@@ -14,8 +14,9 @@ _overwritten = {"nasse", "app", "nasse_endpoint",
 
 
 class Request(object):
+    """Represents the current request"""
 
-    def __init__(self, app, endpoint: models.Endpoint, dynamics: dict = {}) -> None:
+    def __init__(self, app, endpoint: models.Endpoint, dynamics: dict = None) -> None:
         """
         A request object looking like the flask.Request one, but with the current endpoint in it and verification
 
@@ -33,8 +34,11 @@ class Request(object):
             endpoint: Nasse.models.Endpoint
                 The request's endpoint
         """
+        dynamics = dynamics or {}
+
         if not isinstance(endpoint, models.Endpoint):
             raise exceptions.request.MissingEndpoint("The current request does not have any Nasse endpoint")
+
         self.nasse = app
         self.app = self.nasse
         self.nasse_endpoint = endpoint
@@ -47,10 +51,9 @@ class Request(object):
         if self.app.config.sanitize_user_input:
             self.values = werkzeug.datastructures.MultiDict((key, utils.sanitize.sanitize_text(value))
                                                             for key, value in flask.request.values.items(multi=True))
-            #values.append((key, value.replace("<", "&lt").replace(">", "&gt")))
+            # values.append((key, value.replace("<", "&lt").replace(">", "&gt")))
         else:
-            self.values = werkzeug.datastructures.MultiDict(
-                flask.request.values.items(multi=True))
+            self.values = werkzeug.datastructures.MultiDict(flask.request.values.items(multi=True))
         self.params = self.values
 
         if self.app.config.sanitize_user_input:
@@ -77,19 +80,23 @@ class Request(object):
         self.cookies = werkzeug.datastructures.MultiDict(flask.request.cookies)
 
         # verify if missing
-        for attr, exception, current_values in [("params", exceptions.request.MissingParam, self.values), ("headers", exceptions.request.MissingHeader, self.headers), ("cookies", exceptions.request.MissingCookie, self.cookies), ("dynamics", exceptions.request.MissingDynamic, self.dynamics)]:
-            for value in self.nasse_endpoint[attr]:
-                if value.all_methods or self.method in value.methods:
-                    if value.name not in current_values:
-                        if value.required:
-                            raise exception(name=value.name)
-                    else:
-                        if value.type is not None:
-                            results = []
-                            for key, val in current_values.items(multi=True):
-                                if key == value.name:
-                                    results.append(value.type(val))
-                            current_values.setlist(value.name, results)
+        for attr, exception, current_values in [("parameters", exceptions.request.MissingParam, self.values),
+                                                ("headers", exceptions.request.MissingHeader, self.headers),
+                                                ("cookies", exceptions.request.MissingCookie, self.cookies),
+                                                ("dynamics", exceptions.request.MissingDynamic, self.dynamics)]:
+            # data: models.FinalMethodVariant[models.FinalIterable[models.UserSent]] = self.nasse_endpoint[attr]
+
+            for value in models.get_method_variant(self.method, self.nasse_endpoint[attr]):
+                if value.name not in current_values:
+                    if value.required:
+                        raise exception(name=value.name)
+                else:
+                    if value.type:
+                        results = []
+                        for key, val in current_values.items(multi=True):
+                            if key == value.name:
+                                results.append(value.type(val))
+                        current_values.setlist(value.name, results)
 
     def __setattr__(self, name: str, value: typing.Any) -> None:
         if name in _overwritten:

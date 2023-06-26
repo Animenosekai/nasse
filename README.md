@@ -74,7 +74,7 @@ You will need Python 3 to use this module
 
 ```bash
 # vermin output
-Minimum required versions: 3.6
+Minimum required versions: 3.8
 Incompatible versions:     2
 ```
 
@@ -177,6 +177,8 @@ import re
 from nasse import Nasse, Endpoint, Param, Login
 from nasse.utils.types import Email
 from nasse.utils.types import LimitedString
+
+app = Nasse()
 
 class Username(LimitedString):
     LIMIT = 200 # only allowing 200 characters

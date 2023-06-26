@@ -10,6 +10,7 @@ from .config import NasseConfig
 from .request import Request
 from .response import Response
 from .models import *
+from .utils.logging import Logger, LoggingLevel, logger
 
 
 class RequestProxy(FlaskRequest, Request):

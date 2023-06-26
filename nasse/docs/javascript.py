@@ -24,15 +24,12 @@ def create_javascript_example_for_method(endpoint: models.Endpoint, method: str)
     str
         A JavaScript example on how to use the endpoint for the given method
     """
-    params = [param for param in endpoint.params
-              if param.required and (param.all_methods or method in param.methods)]
-
+    params = (param for param in models.get_method_variant(method, endpoint.parameters) if param.required)
     headers = {header.name: (header.description or header.name)
-               for header in endpoint.headers
-               if header.required and (header.all_methods or method in header.methods)}
+               for header in models.get_method_variant(method, endpoint.headers)
+               if header.required}
 
-    include_cookies = len([cookie for cookie in endpoint.cookies
-                           if cookie.all_methods or method in cookie.methods]) > 0
+    include_cookies = len(models.get_method_variant(method, endpoint.cookies)) > 0
 
     url = '"{path}"'.format(path=endpoint.path)
 
@@ -77,6 +74,6 @@ def create_javascript_example(endpoint: models.Endpoint) -> typing.Dict[str, str
     """
     results = {}
     for method in endpoint.methods:
-        results[method] = create_javascript_example_for_method(
-            endpoint=endpoint, method=method)
+        results[method] = create_javascript_example_for_method(endpoint=endpoint,
+                                                               method=method)
     return results
