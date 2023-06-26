@@ -9,16 +9,6 @@ import typing
 
 from nasse import utils
 
-# Validations
-
-
-def method_validation(method: typing.Any):
-    """Validates the given method"""
-    result = str(method).upper()
-    if result not in typing.get_args(StandardMethod):
-        utils.logging.logger.warn(f"Defining non standard HTTP method {result}")
-    return result
-
 
 # Type Aliases
 T = typing.TypeVar("T")
@@ -35,6 +25,69 @@ FinalIterable = typing.Set[T]
 
 MethodVariant = typing.Optional[typing.Union[FinalMethodVariant, T]]
 OptionalIterable = typing.Optional[typing.Union[typing.Iterable[T], T]]
+
+
+# Validations
+
+
+def method_validation(method: typing.Any):
+    """Validates the given method"""
+    result = str(method).upper().strip()
+    if result not in typing.get_args(StandardMethod) and result != "*":
+        utils.logging.logger.warn(f"Defining non standard HTTP method {result}")
+    return result
+
+
+def path_to_name(path: str):
+    """Turns a path into an endpoint name"""
+    return " > ".join(elem
+                      .title()
+                      .replace("-", " ")
+                      .replace("_", " ")
+                      for elem in str(path).split("/"))
+
+
+def get_method_variant(method: str,
+                       value: FinalMethodVariant[FinalIterable[T]]) -> FinalIterable[T]:
+    """Returns the variant defined for the given method"""
+    return value.get("*", set()).union(value.get(method, set()))
+
+
+def complete_cast(value: typing.Any, cast: typing.Type[T], iter: bool = False) -> T:
+    """Casts the given value with the given type"""
+    if iter:
+        return validates_optional_iterable(value, cast)
+    try:
+        if isinstance(value, cast):
+            return value
+    except TypeError:
+        pass
+    if dataclasses.is_dataclass(cast):
+        return cast(**value)
+    return cast(value)
+
+
+def validates_method_variant(value: MethodVariant[T],
+                             cast: typing.Type[T],
+                             iter: bool = False) -> typing.Dict[Method, T]:
+    """Validates a value which might vary with the method"""
+    if not value:
+        return {"*": set()}
+    try:
+        return {method_validation(key): complete_cast(value, cast, iter)
+                for key, value in {**value}.items()}
+    except TypeError:
+        return {"*": complete_cast(value, cast, iter)}
+
+
+def validates_optional_iterable(value: OptionalIterable[T], cast: typing.Type[T]) -> typing.Set[T]:
+    """Validates an iterable which might be None"""
+    if not value:
+        return set()
+    if isinstance(value, str) or not isinstance(value, typing.Iterable):
+        return {complete_cast(value, cast, iter=False)}
+    return {complete_cast(val, cast, iter=False) for val in value}
+
 
 # Endpoint Shaping Models
 
@@ -62,6 +115,8 @@ def init_class(cls: typing.Type[T], instance: T, **kwargs):
         for attr in cls.__annotations__:
             if attr in kwargs:
                 setattr(instance, attr, kwargs[attr])
+            # else:
+            #     setattr(instance, attr, None)
 
 
 @dataclasses.dataclass
@@ -141,57 +196,6 @@ class Error:
     code: int = 500
 
 
-def path_to_name(path: str):
-    """Turns a path into an endpoint name"""
-    return " > ".join(elem
-                      .title()
-                      .replace("-", " ")
-                      .replace("_", " ")
-                      for elem in str(path).split("/"))
-
-
-def get_method_variant(method: str,
-                       value: FinalMethodVariant[FinalIterable[T]]) -> FinalIterable[T]:
-    """Returns the variant defined for the given method"""
-    return value.get("*", set()).union(value.get(method, set()))
-
-
-def complete_cast(value: typing.Any, cast: typing.Type[T], iter: bool = False) -> T:
-    """Casts the given value with the given type"""
-    if iter:
-        return validates_optional_iterable(value, cast)
-    try:
-        if isinstance(value, cast):
-            return value
-    except TypeError:
-        pass
-    if dataclasses.is_dataclass(cast):
-        return cast(**value)
-    return cast(value)
-
-
-def validates_method_variant(value: MethodVariant[T],
-                             cast: typing.Type[T],
-                             iter: bool = False) -> typing.Dict[Method, T]:
-    """Validates a value which might vary with the method"""
-    if not value:
-        return {"*": set()}
-    try:
-        return {method_validation(key): complete_cast(value, cast, iter)
-                for key, value in {**value}.items()}
-    except TypeError:
-        return {"*": complete_cast(value, cast, iter)}
-
-
-def validates_optional_iterable(value: OptionalIterable[T], cast: typing.Type[T]) -> typing.Set[T]:
-    """Validates an iterable which might be None"""
-    if not value:
-        return set()
-    if isinstance(value, str) or not isinstance(value, typing.Iterable):
-        return {complete_cast(value, cast, iter=False)}
-    return {complete_cast(val, cast, iter=False) for val in value}
-
-
 def non_implemented():
     """This represents a non implemented endpoint"""
     return NotImplementedError("Unitialized Endpoint")
@@ -206,6 +210,8 @@ class Endpoint:
     """The name of the endpoint"""
     category: str
     """The category the endpoint is in"""
+    sub_category: str
+    """The sub category the endpoint is in"""
     description: FinalMethodVariant[str]
     """A description of what the endpoint does"""
     base_dir: pathlib.Path
@@ -249,6 +255,7 @@ class Endpoint:
                  handler: typing.Callable[..., HandlerOutput] = non_implemented,
                  name: str = "Untitled",
                  category: str = "",
+                 sub_category: str = "",
                  description: MethodVariant[str] = None,
                  base_dir: typing.Union[pathlib.Path, str, None] = None,
                  endpoint: typing.Union["Endpoint", typing.Mapping, None] = None,
@@ -275,6 +282,7 @@ class Endpoint:
             "handler": handler,
             "name": name,
             "category": category,
+            "sub_category": sub_category,
             "description": description,
             "base_dir": base_dir,
             # "endpoint": endpoint,

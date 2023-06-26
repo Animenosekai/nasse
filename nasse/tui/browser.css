@@ -1,0 +1,30 @@
+/**
+Nasse Endpoints Browser styling sheet
+*/
+
+Screen {
+    background: $surface-darken-1;
+}
+
+#welcome-button {
+    margin:1 1;
+    width: 100%;
+    height: 100%;
+    background: $panel;
+    border: tall $primary;
+    content-align: center middle;
+}
+
+#tree-view {
+    display: none;
+    scrollbar-gutter: stable;
+    overflow: auto;
+    width: auto;
+    height: 100%;
+    dock: left;
+}
+
+EndpointsBrowser.-show-tree #tree-view {
+    display: block;
+    max-width: 50%;
+}
