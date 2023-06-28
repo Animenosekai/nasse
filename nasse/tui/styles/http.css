@@ -1,0 +1,108 @@
+/* Stylesheet for the http.nasse app */
+
+#screen {
+    background: $panel-darken-1;
+}
+
+#history {
+    display: block;
+    max-width: 35;
+    border-right: vkey rgba(128, 128, 128, 0.5);
+    background: $panel;
+}
+
+#history.unload {
+    display: none;
+}
+
+#history-ping {
+    dock: bottom;
+    width: auto;
+}
+
+#history-ping>Sparkline>.sparkline--max-color {
+    color: rgb(252, 160, 173);
+
+}
+
+#history-ping>Sparkline>.sparkline--min-color {
+    color: rgb(24, 228, 72);
+}
+
+
+#main {}
+
+#request {
+    height: 50h;
+    padding: 0 1 0 1;
+}
+
+#request.mini {
+    height: 25h;
+}
+
+#request.maxi {
+    height: 75h;
+}
+
+#request.full {
+    height: 100h;
+}
+
+#request-path-container {
+    height: auto;
+}
+
+#request-method {
+    width: 15%;
+}
+
+#request-path {
+    width: 85%;
+}
+
+#result {
+    display: block;
+    height: 50h;
+    padding: 0 1 0 1;
+    border-top: hkey rgba(128, 128, 128, 0.5);
+}
+
+#result.mini {
+    height: 25h;
+}
+
+#result.maxi {
+    height: 75h;
+}
+
+#result.full {
+    height: 100h;
+}
+
+#result.unload {
+    display: none;
+}
+
+#empty-result-label {
+    margin: 1 1;
+    width: 100%;
+    height: 80%;
+    content-align: center middle;
+    background: $panel;
+    border: tall $primary;
+}
+
+#result-title {
+    height: auto;
+}
+
+#result-subtitle {
+    height: auto;
+    opacity: 0.75;
+}
+
+#result-content {
+    border: round gray;
+    background: $panel;
+}

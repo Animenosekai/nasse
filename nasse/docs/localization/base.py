@@ -171,3 +171,9 @@ The "call_stack" attribute is enabled only when an error occurs or the `call_sta
 
 This file lists and explains the different endpoints available in the {name} section.
 '''
+
+    # TUI
+
+    tui_theme = "Theme"
+    tui_explorer = "Endpoints Explorer"
+    tui_quit = "Quit"

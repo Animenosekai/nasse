@@ -178,3 +178,7 @@ Le champ "call_stack" est activé seulement quand il y a le paramètre `call_sta
 
 Ce fichier liste et explique les différents *endpoints* disponible sous la section {name}
 '''
+
+    tui_theme = "Thème"
+    tui_explorer = "Explorateur"
+    tui_quit = "Quitter"

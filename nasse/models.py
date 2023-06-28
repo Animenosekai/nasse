@@ -63,7 +63,10 @@ def complete_cast(value: typing.Any, cast: typing.Type[T], iter: bool = False) -
     except TypeError:
         pass
     if dataclasses.is_dataclass(cast):
-        return cast(**value)
+        if dataclasses.is_dataclass(value):
+            return cast(**dataclasses.asdict(value))
+        else:
+            return cast(**value)
     return cast(value)
 
 
@@ -72,7 +75,10 @@ def validates_method_variant(value: MethodVariant[T],
                              iter: bool = False) -> typing.Dict[Method, T]:
     """Validates a value which might vary with the method"""
     if not value:
-        return {"*": set()}
+        if iter:
+            return {"*": set()}
+        else:
+            return {"*": None}
     try:
         return {method_validation(key): complete_cast(value, cast, iter)
                 for key, value in {**value}.items()}
@@ -92,7 +98,7 @@ def validates_optional_iterable(value: OptionalIterable[T], cast: typing.Type[T]
 # Endpoint Shaping Models
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=True, frozen=True)
 class Return:
     """A return value"""
     name: str
@@ -119,7 +125,7 @@ def init_class(cls: typing.Type[T], instance: T, **kwargs):
             #     setattr(instance, attr, None)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=True, frozen=True)
 class Login:
     """Defines the rules for the login methods"""
     required: bool = False
@@ -155,7 +161,7 @@ class Login:
             self.types = set(self.types)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=True, frozen=True)
 class UserSent:
     """A value sent by the user"""
     name: str
@@ -164,31 +170,39 @@ class UserSent:
     type: Type = str
 
 
-@dataclasses.dataclass
-class Dynamic(UserSent):
-    """A dynamic path component"""
+Dynamic = UserSent
+"""A dynamic path component"""
+Header = UserSent
+"""A header"""
+Parameter = UserSent
+"""A query parameter"""
+Cookie = UserSent
+"""A cookie"""
+
+# @dataclasses.dataclass
+# class Dynamic(UserSent):
+#     """A dynamic path component"""
 
 
-@dataclasses.dataclass
-class Header(UserSent):
-    """A header"""
+# @dataclasses.dataclass
+# class Header(UserSent):
+#     """A header"""
 
 
-@dataclasses.dataclass
-class Parameter(UserSent):
-    """A query parameter"""
+# @dataclasses.dataclass
+# class Parameter(UserSent):
+#     """A query parameter"""
 
+
+# @dataclasses.dataclass
+# class Cookie(UserSent):
+#     """A cookie"""
 
 # Backward compatibility
 Param = Parameter
 
 
-@dataclasses.dataclass
-class Cookie(UserSent):
-    """A cookie"""
-
-
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=True, frozen=True)
 class Error:
     """An error to be raised when something goes wrong"""
     name: str

@@ -2,4 +2,4 @@ Werkzeug==2.2.2
 bleach==3.3.0
 Flask_Compress==1.10.1
 watchdog==2.1.6
-rich==13.0.0
+rich>=13.0.0

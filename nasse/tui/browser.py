@@ -1,56 +1,142 @@
 """The Nasse Endpoints Browser TUI"""
 
-import sys
+import hashlib
 import typing
 from typing import Type
-from rich.console import RenderableType
 
 from rich.syntax import Syntax
-from rich.traceback import Traceback
 from textual import events
-from textual._path import CSSPathType
 from textual.app import App, ComposeResult, CSSPathType
-from textual.containers import Container, VerticalScroll
+from textual.binding import _Bindings
+from textual.containers import Horizontal, VerticalScroll
 from textual.driver import Driver
-from textual.reactive import var, reactive, Reactive
-from textual.widgets import (Button, Checkbox, DirectoryTree, Footer, Header,
-                             Input, LoadingIndicator, Placeholder, Pretty,
-                             Select, Sparkline, Static, TabbedContent, Tabs,
-                             Tree, Label)
+from textual.reactive import reactive, var
 from textual.widget import Widget
+from textual.widgets import (Button, ContentSwitcher, Footer, Header, Input,
+                             Label, Select, Static, TabbedContent, Tree)
 
-from nasse import Endpoint
+from nasse import Endpoint, UserSent, models
+from nasse.docs import curl, javascript, python
+from nasse.docs.localization import (EnglishLocalization, JapaneseLocalization,
+                                     Localization)
+
+
+def hash_endpoint(endpoint: Endpoint):
+    """Hashes the given endpoint"""
+    digest = hashlib.sha256(endpoint.path.encode() + endpoint.name.encode() + endpoint.category.encode() + endpoint.sub_category.encode()).hexdigest()
+    while digest[0].isdigit():
+        digest = digest[1:]
+    return digest
+
+
+class Section(Widget):
+    pass
+
+
+class UserSentInput(Widget):
+    """The input component for a user sent value"""
+    value: reactive[typing.Optional[UserSent]] = reactive(None)
+
+    def __init__(self, value: typing.Optional[UserSent] = None, values: typing.Optional[typing.Set[UserSent]] = None, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.value = value
+        self.values = values or set()
+
+    def compose(self) -> ComposeResult:
+        with Horizontal() as container:
+            container.styles.height = "auto"
+            if not self.value:
+                non_required = [(element.name, element) for element in self.values if not element.required]
+                if non_required:
+                    yield Select(non_required)
+                    yield Input(disabled=True)
+                return
+            yield Select([(element.name, element) for element in self.values], value=self.value, disabled=self.value.required)
+            yield Input(placeholder=self.value.type.__name__ if hasattr(self.value.type, "__name__") else str(self.value.type))
+        label = Label(self.value.description)
+        label.styles.text_opacity = "50%"
+        yield label
+
+
+class UserSentForm(Widget):
+    """A form with all of the user sent values"""
+
+    def __init__(self, inputs: typing.Set[UserSent], *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.inputs = inputs
+
+    def compose(self) -> ComposeResult:
+        for element in self.inputs:
+            if element.required:
+                yield UserSentInput(element, values=self.inputs)
+
+        yield UserSentInput(None, self.inputs)
+
+        with Horizontal() as container:
+            container.styles.align_horizontal = "right"
+            container.styles.height = "auto"
+            button = Button("Add")
+            button.styles.background = "blue"
+            button.styles.color = "white"
+            yield button
+            yield Button("Remove")
 
 
 class EndpointWindow(Widget):
     """An endpoint details window"""
+    endpoint: typing.Optional[Endpoint] = None
+    method: models.Method = "*"
 
-    # endpoint: reactive[Endpoint] = reactive(None)
-
-    def compose_endpoint(self, endpoint: Endpoint):
-        """Creates the details view"""
-        yield Label(endpoint.name)
-        yield Label(endpoint.category)
-        yield Button(endpoint.category, id="test1")
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "test1":
-            self.load_endpoint()
+    def __init__(self, endpoints: typing.List[Endpoint], localization: Localization = EnglishLocalization, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.localization = localization
+        self.endpoints = endpoints
 
     def load_endpoint(self, endpoint: typing.Optional[Endpoint] = None):
         """Loads the given endpoint"""
-
-        # Cleaning up
-        self.remove_children()
-
-        if not endpoint:
-            return self.mount(Button("Start by selecting an endpoint", id="welcome-button"))
-
-        # Mounting the endpoint view
-        self.mount_all(self.compose_endpoint(endpoint))
+        self.query().first(ContentSwitcher).current = hash_endpoint(endpoint)
 
     def compose(self) -> ComposeResult:
-        yield Button("Start by selecting an endpoint", id="welcome-button")
+        with ContentSwitcher(initial="welcome-button"):
+            yield Button("Start by selecting an endpoint", id="welcome-button")
+            for endpoint in self.endpoints:
+                with VerticalScroll(id=hash_endpoint(endpoint)):
+                    description = endpoint.description.get(self.method, endpoint.description.get("*"))
+                    if description is None:
+                        description = self.localization.no_description
+                    yield Label(f"[bold]{description}[/bold]", classes="blockquote")
+
+                    with Horizontal() as container:
+                        container.styles.height = "auto"
+                        if self.method == "*":
+                            yield Select([(arg, arg) for arg in typing.get_args(models.StandardMethod)], prompt="Method", allow_blank=False, value="GET")
+                        else:
+                            yield Select([(self.method, self.method)], value=self.method, disabled=True)
+                        yield Input(endpoint.path, disabled=True)
+
+                    for title, element in [(self.localization.parameters, endpoint.parameters),
+                                           (self.localization.headers, endpoint.headers),
+                                           (self.localization.cookies, endpoint.cookies),
+                                           (self.localization.dynamic_url, endpoint.dynamics)]:
+                        values = models.get_method_variant(self.method, element)
+                        if values:
+                            yield Label(f"[underline]{title}[/underline]")
+                            yield UserSentForm(values)
+
+                    yield Label(f"[underline]{self.localization.example}[/underline]")
+                    with TabbedContent("Python", "JavaScript", "cURL"):
+                        yield Static(Syntax(python.create_python_example_for_method(endpoint, self.method),
+                                            "python",
+                                            line_numbers=True,
+                                            indent_guides=True))
+                        yield Static(Syntax(javascript.create_javascript_example_for_method(endpoint, self.method),
+                                            "javascript",
+                                            line_numbers=True,
+                                            indent_guides=True))
+                        yield Static(Syntax(curl.create_curl_example_for_method(endpoint, self.method),
+                                            "bash",
+                                            line_numbers=True,
+                                            indent_guides=True))
 
 
 class EndpointsBrowser(App):
@@ -58,38 +144,24 @@ class EndpointsBrowser(App):
 
     TITLE = "Nasse"
     CSS_PATH = "browser.css"
-    BINDINGS = [
-        ("t", "toggle_dark", "Theme"),
-        ("e", "toggle_endpoints", "Endpoints Explorer"),
-        ("q", "quit", "Quit"),
-    ]
 
     show_tree = var(True)
 
-    def __init__(self, endpoints: typing.List[Endpoint], driver_class: Type[Driver] | None = None, css_path: CSSPathType | None = None, watch_css: bool = False):
+    def __init__(self, endpoints: typing.List[Endpoint],
+                 localization: Localization = EnglishLocalization,
+                 driver_class: Type[Driver] | None = None,
+                 css_path: CSSPathType | None = None,
+                 watch_css: bool = False):
+
         super().__init__(driver_class, css_path, watch_css)
-
         self.endpoints = endpoints
-
-    @property
-    def categories(self) -> typing.Dict[str, typing.Dict[str, typing.List[Endpoint]]]:
-        """Returns the category separated endpoints"""
-        mid_results: typing.Dict[str, typing.List[Endpoint]] = {}
-        for endpoint in self.endpoints:
-            try:
-                mid_results[endpoint.category].append(endpoint)
-            except Exception:
-                mid_results[endpoint.category] = [endpoint]
-
-        results = {}
-        for category, endpoints in mid_results.items():
-            results[category] = {}
-            for endpoint in endpoints:
-                try:
-                    results[category][endpoint.sub_category or "@TopLevelEndpoint"].append(endpoint)
-                except Exception:
-                    results[category][endpoint.sub_category or "@TopLevelEndpoint"] = [endpoint]
-        return results
+        self._bindings = _Bindings([
+            # Binding(key="t", action="toggle_dark", description="Toggles the theme"),
+            ("t", "toggle_dark", localization.tui_theme),
+            ("e", "toggle_endpoints", localization.tui_explorer),
+            ("q", "quit", localization.tui_quit),
+        ])
+        self.localization = localization
 
     def watch_show_tree(self, show_tree: bool) -> None:
         """Called when show_tree is modified."""
@@ -98,8 +170,8 @@ class EndpointsBrowser(App):
     def compose(self) -> ComposeResult:
         """Compose our UI."""
         yield Header(show_clock=True)
-        with Container():
-            with Container(id="tree-view"):
+        with Horizontal():
+            with VerticalScroll(id="tree-view"):
                 for category, sub_categories in self.categories.items():
                     tree: Tree[Endpoint] = Tree(category)
                     # tree.root.expand()
@@ -112,20 +184,28 @@ class EndpointsBrowser(App):
                             sub_tree.add_leaf(endpoint.name, endpoint)
                     yield tree
             with VerticalScroll():
-                yield EndpointWindow(id="endpoint-view")
+                yield EndpointWindow(id="endpoint-view", endpoints=self.endpoints, localization=self.localization)
         yield Footer()
 
-    # def on_mount(self, event: events.Mount) -> None:
-    #     self.query_one("#tree-view").focus()
+    def focus_on_tree(self):
+        children = self.query_one("#tree-view").focusable_children
+        if children:
+            children[0].focus()
+
+    def on_mount(self, event: events.Mount) -> None:
+        """When mounted"""
+        self.focus_on_tree()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """When a button is pressed"""
         if event.button.id == "welcome-button":
             self.show_tree = True
-            self.query_one("#tree-view").focus()
+            self.focus_on_tree()
 
     def on_tree_node_selected(
             self, event: Tree.NodeSelected
     ) -> None:
+        """When an element in the endpoints tree is selected"""
         event.stop()
         if not event.node.data:
             return
@@ -145,5 +225,15 @@ if __name__ == "__main__":
     EndpointsBrowser([Endpoint(
         name="Test",
         category="Hello",
+        parameters=[UserSent("param_test1", "This is a test"), UserSent("param_test2", "This is a test", required=False), ],
+        headers=[UserSent("header_test1", "This is a test")],
         # sub_category="Hi"
-    )]).run()
+    ),
+        Endpoint(
+        name="Test2",
+        path="/hi",
+        category="Hello",
+        parameters=[UserSent("param_test2", "This is a test"), UserSent("param_test2", "This is a test", required=False), ],
+        headers=[UserSent("header_test2", "This is a test")],
+        # sub_category="Hi"
+    )], localization=JapaneseLocalization).run()

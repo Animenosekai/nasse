@@ -7,12 +7,12 @@ Screen {
 }
 
 #welcome-button {
-    margin:1 1;
+    margin: 1 1;
     width: 100%;
     height: 100%;
+    content-align: center middle;
     background: $panel;
     border: tall $primary;
-    content-align: center middle;
 }
 
 #tree-view {
@@ -20,11 +20,35 @@ Screen {
     scrollbar-gutter: stable;
     overflow: auto;
     width: auto;
-    height: 100%;
+    height: 100vh;
     dock: left;
 }
 
 EndpointsBrowser.-show-tree #tree-view {
     display: block;
-    max-width: 50%;
+    max-width: 30vw;
+}
+
+Select {
+    max-width: 30vw;
+    min-width: 10vw;
+    margin-right: 2;
+}
+
+
+/* Horizontal {
+    padding: 0 1 0 1;
+} */
+
+.blockquote {
+    background: $boost;
+    border-left: outer $success;
+    margin: 1 0;
+    padding: 0 1;
+    height: auto;
+}
+
+.blockquote>BlockQuote {
+    margin-left: 2;
+    margin-top: 1;
 }

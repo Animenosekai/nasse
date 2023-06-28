@@ -180,3 +180,7 @@ class JapaneseLocalization(Localization):
 
 このファイルは「{name}」セクションの全てのエンドポイントを説明します。
 '''
+
+    tui_theme = "テーマ"
+    tui_explorer = "エクスプローラ"
+    tui_quit = "終了"
