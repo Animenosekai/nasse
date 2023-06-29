@@ -161,7 +161,8 @@ class UserSentForm(Widget):
         results = {}
         # pylint: disable=not-an-iterable
         for element in self.query(UserSentInput):
-            if element.input_name and element.input_value:
+            # if element.input_name and element.input_value:
+            if element.input_name:
                 if self.multiple:
                     try:
                         results[element.input_name].append(element.input_value)

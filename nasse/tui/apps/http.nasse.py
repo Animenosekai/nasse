@@ -6,14 +6,16 @@ import urllib.parse as url
 
 import requests
 from rich.traceback import Traceback
-from textual import events
+from textual import events, work
 from textual.containers import Container, Horizontal, VerticalScroll
 from textual.reactive import reactive, var
 from textual.screen import ModalScreen
 from textual.suggester import Suggester
 from textual.validation import Number
-from textual.widgets import (Button, Footer, Header, Input, Label, Pretty,
-                             Select, Switch, _header, Static)
+from textual.widgets import (Button, Footer, Header, Input, Label,
+                             LoadingIndicator, Pretty, Select, Static, Switch,
+                             _header)
+from textual.worker import get_current_worker
 
 from nasse.docs.localization import EnglishLocalization, Localization
 from nasse.models import StandardMethod
@@ -38,6 +40,12 @@ class Options:
     # cert
     # stream
     # hooks
+
+
+@dataclasses.dataclass
+class Loading:
+    """The request loading state"""
+    url: str
 
 
 class OptionsScreen(ModalScreen[Options]):
@@ -84,7 +92,7 @@ class OptionsScreen(ModalScreen[Options]):
     """
 
     def __init__(self,
-                 options: Options = None,
+                 options: typing.Optional[Options] = None,
                  name: typing.Optional[str] = None,
                  id: typing.Optional[str] = None,
                  classes: typing.Optional[str] = None) -> None:
@@ -137,14 +145,18 @@ class HTTP(App):
 
     CSS_PATH = "../styles/http.css"
 
-    history: reactive[typing.List[requests.Response]] = reactive(list)
+    history: reactive[typing.List[typing.Union[requests.Response, Error]]] = reactive(list)
     toggle_history = var(True)
     toggle_results = var(False)
-    result: reactive[typing.Optional[requests.Response]] = reactive(None)
+    result: reactive[typing.Optional[typing.Union[requests.Response, Error, Loading]]] = reactive(None)
 
     BINDINGS = [("h", "toggle_history", "History"), ("r", "toggle_results", "Result"), ("s", "submit", "Submit"), ("o", "open_options", "Options")]
 
-    def __init__(self, link: str, localization: Localization = EnglishLocalization, options: typing.Optional[Options] = None, **kwargs):
+    def __init__(self,
+                 link: str,
+                 localization: typing.Union[Localization, typing.Type[Localization]] = EnglishLocalization,
+                 options: typing.Optional[Options] = None,
+                 **kwargs):
         super().__init__(**kwargs)
         self.link = url.urlparse(link)
         self.localization = localization
@@ -236,6 +248,19 @@ class HTTP(App):
 
         cookies = self.query_one("#request-cookies", UserSentForm).values
 
+        self.result = Loading(url=final_path)
+
+        self.request_worker(method, final_path, params, headers, cookies)
+
+    @work(exclusive=True)
+    def request_worker(self,
+                       method: str,
+                       final_path: str,
+                       params: typing.Dict[str, typing.List[str]],
+                       headers: typing.Dict[str, str],
+                       cookies: typing.Dict[str, str]):
+        """The worker thread which actually makes the request"""
+        worker = get_current_worker()
         try:
             response = requests.request(method,
                                         final_path,
@@ -252,6 +277,12 @@ class HTTP(App):
                              params=params,
                              headers=headers,
                              cookies=cookies)
+
+        if not worker.is_cancelled:
+            self.call_from_thread(self.add_result, response)
+
+    def add_result(self, response: typing.Union[requests.Response, Error]):
+        """Adds the given response to the results"""
         self.history = [*self.history, response]
         self.result = response
 
@@ -335,15 +366,36 @@ class HTTP(App):
         yield SectionTitle("Content")
         yield Pretty(content, id="result-content")
 
+    def compose_start(self):
+        """Creates the start view"""
+        yield Label("Start by making a request", id="empty-result-label")
+
+    def compose_loading(self, result: Loading):
+        """Creates loading view"""
+        yield Container(
+            Horizontal(
+                Label("🧑‍💻"),
+                LoadingIndicator(),
+                Label("🌐"),
+                id="loading-container"
+            ),
+            Label(f"Contacting {url.urlparse(result.url).netloc}"),
+            id="loading-view"
+        )
+
     def watch_result(self, result: typing.Optional[requests.Response]):
         """Called when `result` is modified"""
         container = self.query_one("#result", VerticalScroll)
         container.remove_children()
         container.mount(StickyHeader("Result"))
+
         if result is None:
-            return container.mount(Label("Start by making a request", id="empty-result-label"))
+            return container.mount_all(self.compose_start())
+        if isinstance(result, Loading):
+            return container.mount_all(self.compose_loading(result))
         if isinstance(result, Error):
             return container.mount_all(self.compose_result_error(result))
+
         return container.mount_all(self.compose_result(result))
 
 
@@ -372,5 +424,5 @@ class PathSuggestion(Suggester):
 
 if __name__ == "__main__":
     # HTTP("https://google.com").run()
-    HTTP("https://eosqyydyun9tw26.m.pipedream.net").run()
-    # HTTP("http://httpbin.org/get").run()
+    # HTTP("https://eosqyydyun9tw26.m.pipedream.net").run()
+    HTTP("http://httpbin.org/get").run()

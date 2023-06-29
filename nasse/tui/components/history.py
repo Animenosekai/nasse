@@ -55,9 +55,11 @@ class HistoryResponse(Button):
         yield Label(f"[bold]{url.path}[/bold]", classes="history-response-path")
 
         if isinstance(self.response, Error):
-            message = f"[yellow]{self.response.exception.__class__.__name__}[/yellow]"
+            message = f"{self.response.method}・[yellow]{self.response.exception.__class__.__name__}[/yellow]"
+        elif not self.response.ok:
+            message = f"{self.response.request.method}・[red]{self.response.status_code}[/red] ({series.transform_time(self.response.elapsed.total_seconds() * 1000)})"
         else:
-            message = f"{self.response.status_code} ({series.transform_time(self.response.elapsed.total_seconds() * 1000)})"
+            message = f"{self.response.request.method}・{self.response.status_code} ({series.transform_time(self.response.elapsed.total_seconds() * 1000)})"
 
         yield Label(message, classes="history-response-status")
 

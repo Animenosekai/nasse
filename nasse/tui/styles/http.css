@@ -85,11 +85,11 @@
 }
 
 #empty-result-label {
-    margin: 1 1;
     width: 100%;
+    padding: 0 3;
     height: 80%;
-    content-align: center middle;
     background: $panel;
+    content-align: center middle;
     border: tall $primary;
 }
 
@@ -105,4 +105,23 @@
 #result-content {
     border: round gray;
     background: $panel;
+}
+
+#loading-view {
+    padding: 0 3;
+    height: 80%;
+    background: $panel;
+    border: tall $primary;
+}
+
+#loading-container {
+    align: center middle;
+}
+
+
+#loading-container>LoadingIndicator {
+    content-align: center middle;
+    height: auto;
+    width: auto;
+    margin: 0 2;
 }
