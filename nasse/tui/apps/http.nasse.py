@@ -1,6 +1,7 @@
 """Makes HTTP requests"""
 import dataclasses
 import json
+import pathlib
 import typing
 import urllib.parse as url
 
@@ -21,6 +22,7 @@ from nasse.docs.localization import EnglishLocalization, Localization
 from nasse.models import StandardMethod
 from nasse.tui.app import App
 from nasse.tui.components import series
+from nasse.tui.components.file import FileBrowser
 from nasse.tui.components.forms import UserSentForm
 from nasse.tui.components.headers import StickyHeader
 from nasse.tui.components.history import HistoryResponse
@@ -196,6 +198,9 @@ class HTTP(App):
                     yield UserSentForm("Headers", id="request-headers")
                     yield UserSentForm("Cookies", id="request-cookies")
 
+                    yield SectionTitle("File")
+                    yield Button("Add file", id="add-file-button")
+
                     # data
                     # files
                 with VerticalScroll(id="result"):
@@ -213,6 +218,12 @@ class HTTP(App):
         """When a button is pressed"""
         if isinstance(event.button, HistoryResponse):
             self.result = event.button.response
+        if event.button.id == "add-file-button":
+            self.push_screen(FileBrowser(), )
+
+    def add_file(self, file: typing.Optional[pathlib.Path()] = None):
+        """Adds a file to the request"""
+        pass
 
     # def action_test(self):
     #     """Testing URL"""
