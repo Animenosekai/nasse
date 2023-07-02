@@ -1,5 +1,7 @@
 """Redefines the base app"""
+import json
 import typing
+
 from textual.app import App as TextualApp
 from textual.binding import Binding, _Bindings
 

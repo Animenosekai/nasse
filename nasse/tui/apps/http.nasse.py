@@ -1,115 +1,147 @@
-"""Makes HTTP requests"""
+"""Makes HTTP requests
+
+TODO
+----
+- Profiles
+- Click to expand
+- Add data to HTTP requests
+"""
 import dataclasses
-import json
 import pathlib
 import typing
 import urllib.parse as url
 
 import requests
 from rich.traceback import Traceback
-from textual import events, work
+from textual import work
 from textual.containers import Container, Horizontal, VerticalScroll
 from textual.reactive import reactive, var
-from textual.screen import ModalScreen
 from textual.suggester import Suggester
-from textual.validation import Number
+from textual.validation import Number, Integer
 from textual.widgets import (Button, Footer, Header, Input, Label,
                              LoadingIndicator, Pretty, Select, Static, Switch,
                              _header)
 from textual.worker import get_current_worker
 
 from nasse.docs.localization import EnglishLocalization, Localization
-from nasse.models import StandardMethod
+from nasse.models import StandardMethod, UserSent
 from nasse.tui.app import App
 from nasse.tui.components import series
-from nasse.tui.components.file import FileBrowser
 from nasse.tui.components.forms import UserSentForm
 from nasse.tui.components.headers import StickyHeader
 from nasse.tui.components.history import HistoryResponse
 from nasse.tui.components.texts import SectionTitle
 from nasse.tui.error import Error
+from nasse.tui.screens import FileBrowser, OptionsScreen
+from nasse.tui.widget import Widget
 
-HISTORY_LIMIT = 10
+
+# @dataclasses.dataclass
+# class Profile:
+#     """A profile"""
+#     name: str
+#     parameters: typing.Dict[str, typing.List[str]] = dataclasses.field(default_factory=dict)
+#     headers: typing.Dict[str, str] = dataclasses.field(default_factory=dict)
+#     cookies: typing.Dict[str, str] = dataclasses.field(default_factory=dict)
+
+class FileInput(Widget):
+    """Represents a file"""
+
+    DEFAULT_CSS = """
+    FileInput {
+        width: auto;
+        height: auto;
+    }
+
+    .file-input-container {
+        height: auto;
+    }
+
+    .file-name {
+        height: auto;
+        width: 40w;
+    }
+
+    .file-input {
+        height: auto;
+        width: 40w;
+    }
+
+    .file-input-full {
+        width: 80w;
+    }
+
+    .file-delete {
+        height: auto;
+        width: 10w;
+    }
+    """
+
+    def __init__(self,
+                 file: pathlib.Path,
+                 on_delete: typing.Optional[typing.Callable[[Widget, pathlib.Path], typing.Any]] = None,
+                 prompt_name: bool = True,
+                 **kwargs):
+        self.file = pathlib.Path(file)
+        self.on_delete = on_delete
+        self.prompt_name = prompt_name
+        super().__init__(**kwargs)
+
+    def compose(self):
+        elements = []
+        if self.prompt_name:
+            elements.append(Input(placeholder="Name", classes="file-name"))
+        file_input = Input(str(self.file.resolve()), disabled=True, classes="file-input")
+        if self.prompt_name:
+            file_input.add_class("file-input-full")
+        elements.append(file_input)
+        elements.append(Button("Delete", "error", classes="file-delete"))
+        yield Horizontal(*elements, classes="file-input-container")
+
+    @property
+    def input_name(self):
+        """The file input name"""
+        return self.query_one(".file-name", Input).value
+
+    def on_button_pressed(self, event):
+        """When a button is pressed"""
+        if self.on_delete:
+            self.on_delete(self, self.file)
 
 
 @dataclasses.dataclass
-class Options:
+class HTTPOptions:
     """App options"""
     timeout: float = 10
     allow_redirects: bool = True
     proxies: typing.Dict[str, str] = dataclasses.field(default_factory=dict)
     verify: bool = True
-    # cert
+    cert: typing.List[str] = dataclasses.field(default_factory=list)
+    history_limit: int = 10
+    # profiles: typing.List[Profile] = dataclasses.field(default_factory=list)
     # stream
     # hooks
 
 
-@dataclasses.dataclass
-class Loading:
-    """The request loading state"""
-    url: str
+class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
+    """The HTTP app options screen"""
 
+    def compose_options(self):
+        """Composes the inner options view"""
+        with VerticalScroll(id="options-inner-container"):
+            yield SectionTitle("History Limit")
+            yield Input(str(self.options.history_limit),
+                        placeholder="maximum number of requests in the history",
+                        validators=[Integer(minimum=0, failure_description="The limit must be a positive integer")],
+                        id="options-history-limit")
 
-class OptionsScreen(ModalScreen[Options]):
-    """The options managing screen"""
-
-    DEFAULT_CSS = """
-    OptionsScreen {
-        align: center middle;
-        background: rgba(30, 30, 30, 0.75);
-    }
-
-    #options-timeout {
-        margin-bottom: 1;
-    }
-
-    .options-switch-title {
-        content-align: center middle;
-        height: 3;
-        content-align: center middle;
-        width: 20;
-    }
-
-    .options-switch-container {
-        align-vertical: middle;
-        margin-bottom: 1;
-        height: auto;
-        width: auto;
-    }
-
-    #options-container {
-        height: auto;
-        width: 25w;
-        padding: 2 10;
-        border: round gray
-    }
-
-
-    #modal-confirmation-container {
-        width: auto;
-        height: auto;
-        dock: bottom;
-        align-horizontal: right;
-    }
-    """
-
-    def __init__(self,
-                 options: typing.Optional[Options] = None,
-                 name: typing.Optional[str] = None,
-                 id: typing.Optional[str] = None,
-                 classes: typing.Optional[str] = None) -> None:
-        super().__init__(name, id, classes)
-        self.options = options or Options()
-
-    def compose(self):
-        yield StickyHeader("Options")
-        with VerticalScroll(id="options-container"):
             yield SectionTitle("Timeout")
             yield Input(str(self.options.timeout),
                         placeholder="timeout (sec.)",
-                        validators=[Number(minimum=0.0)],
+                        validators=[Number(minimum=0.0, failure_description="The timeout must be a positive number")],
                         id="options-timeout")
 
+            yield SectionTitle("Redirects")
             yield Horizontal(
                 Label("Allow Redirects", id="options-redirects-title", classes="options-switch-title"),
                 Switch(value=self.options.allow_redirects, id="options-redirects-switch"),
@@ -117,29 +149,53 @@ class OptionsScreen(ModalScreen[Options]):
                 classes="options-switch-container"
             )
 
+            yield UserSentForm("Proxies", id="options-proxies", initial_values=[(UserSent(name=key), value) for key, value in self.options.proxies.items()])
+
+            yield SectionTitle("Security")
             yield Horizontal(
                 Label("Verify Request", id="options-verify-title", classes="options-switch-title"),
-                Switch(value=self.options.allow_redirects, id="options-verify-switch"),
+                Switch(value=self.options.verify, id="options-verify-switch"),
                 id="options-verify-container",
                 classes="options-switch-container"
             )
 
-        with Horizontal(id="modal-confirmation-container"):
-            yield Button("Ok")
+            with Container(id="certificate-files", classes="files-input-container"):
+                with Container(id="certificate-files-container", classes="files-container"):
+                    for file in self.options.cert:
+                        yield FileInput(pathlib.Path(file), self.delete_cert_file, prompt_name=False)
+                yield Button("Add certificate", id="add-certificate-button", classes="add-file-button")
+
+    def collect_values(self) -> typing.Dict[str, typing.Any]:
+        """Collect the different options value"""
+        return {
+            "history_limit": int(self.query_one("#options-history-limit", Input).value),
+            "timeout": float(self.query_one("#options-timeout", Input).value),
+            "allow_redirects": self.query_one("#options-redirects-switch", Switch).value,
+            "proxies": self.query_one("#options-proxies", UserSentForm).values,
+            "verify": self.query_one("#options-verify-switch", Switch).value,
+            "cert": [inp.file for inp in self.query(FileInput)]  # pylint: disable=not-an-iterable
+        }
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """When a button is pressed"""
-        options = dataclasses.asdict(self.options)
-        options.update({
-            "timeout": float(self.query_one("#options-timeout", Input).value),
-            "allow_redirects": self.query_one("#options-redirects-switch", Switch).value,
-            "verify": self.query_one("#options-verify-switch", Switch).value,
-        })
-        return self.dismiss(Options(**options))
+        event.stop()
+        if event.button.has_class("add-file-button"):
+            self.app.push_screen(FileBrowser(), self.add_cert_file)
 
-    def on_key(self, event: events.Key) -> None:
-        if event.key == "escape":
-            return self.dismiss(self.options)
+    def add_cert_file(self, file: typing.Optional[pathlib.Path] = None):
+        """Adds a cert file"""
+        if file:
+            self.query_one("#certificate-files-container", Container).mount(FileInput(file, self.delete_cert_file, prompt_name=False))
+
+    def delete_cert_file(self, file_input: FileInput, file: pathlib.Path):
+        """When a file is removed from the files list"""
+        file_input.remove()
+
+
+@dataclasses.dataclass
+class Loading:
+    """The request loading state"""
+    url: str
 
 
 class HTTP(App):
@@ -151,25 +207,20 @@ class HTTP(App):
     toggle_history = var(True)
     toggle_results = var(False)
     result: reactive[typing.Optional[typing.Union[requests.Response, Error, Loading]]] = reactive(None)
+    # profile: reactive[str] = reactive("Default")
 
     BINDINGS = [("h", "toggle_history", "History"), ("r", "toggle_results", "Result"), ("s", "submit", "Submit"), ("o", "open_options", "Options")]
 
     def __init__(self,
                  link: str,
                  localization: typing.Union[Localization, typing.Type[Localization]] = EnglishLocalization,
-                 options: typing.Optional[Options] = None,
+                 options: typing.Optional[HTTPOptions] = None,
                  **kwargs):
         super().__init__(**kwargs)
         self.link = url.urlparse(link)
         self.localization = localization
 
-        try:
-            with open(".http.nasse.config", "r") as f:
-                saved_options = Options(**json.loads(f.read()))
-        except Exception:
-            saved_options = Options()
-
-        self.options = options or saved_options
+        self.options = options or HTTPOptionsScreen.loads("http", HTTPOptions)
 
     def compose(self):
         yield Header(show_clock=True)
@@ -186,12 +237,13 @@ class HTTP(App):
                 yield series.TimeSeries([], id="history-ping")
             with Container(id="main"):
                 # Main Page
-                with VerticalScroll(id="request"):
-                    # Requests Options
-                    yield StickyHeader("Request")
+                # Requests Options
+                yield StickyHeader("Request", id="request-title")
 
+                with VerticalScroll(id="request"):
                     with Horizontal(id="request-path-container"):
-                        yield Select([(method, method) for method in typing.get_args(StandardMethod)], allow_blank=False, value="GET", id="request-method")
+                        yield Select([(method, method) for method in typing.get_args(StandardMethod)],
+                                     allow_blank=False, value="GET", id="request-method")
                         yield Input("/", placeholder="path", suggester=PathSuggestion(self), id="request-path")
 
                     yield UserSentForm("Parameters", multiple=True, id="request-parameters")
@@ -199,10 +251,11 @@ class HTTP(App):
                     yield UserSentForm("Cookies", id="request-cookies")
 
                     yield SectionTitle("File")
-                    yield Button("Add file", id="add-file-button")
-
+                    with Container(classes="files-input-container"):
+                        with Container(id="request-files-container", classes="files-container"):
+                            pass
+                        yield Button("Add file", classes="add-file-button")
                     # data
-                    # files
                 with VerticalScroll(id="result"):
                     # Request Result
                     yield StickyHeader("Result")
@@ -218,16 +271,26 @@ class HTTP(App):
         """When a button is pressed"""
         if isinstance(event.button, HistoryResponse):
             self.result = event.button.response
-        if event.button.id == "add-file-button":
-            self.push_screen(FileBrowser(), )
+        if event.button.has_class("add-file-button"):
+            self.push_screen(FileBrowser(), self.add_file)
 
-    def add_file(self, file: typing.Optional[pathlib.Path()] = None):
+    def add_file(self, file: typing.Optional[pathlib.Path] = None):
         """Adds a file to the request"""
-        pass
+        if file:
+            self.query_one("#request-files-container", Container).mount(FileInput(file, self.delete_file))
 
-    # def action_test(self):
-    #     """Testing URL"""
-    #     self.history = [*self.history, requests.get(self.url, timeout=100)]
+    def delete_file(self, file_input: FileInput, file: pathlib.Path):
+        """When a file is removed from the files list"""
+        file_input.remove()
+
+    def action_open_options(self):
+        """When the user wants to see the options screen"""
+        self.push_screen(HTTPOptionsScreen(self.options, id="options-screen"), self.replace_options)
+
+    def replace_options(self, options: HTTPOptions):
+        """To replace the current options"""
+        self.options = options
+        HTTPOptionsScreen.dumps("http", options)
 
     def action_toggle_history(self):
         """Called when the user fires the `toggle_history` action"""
@@ -261,7 +324,11 @@ class HTTP(App):
 
         self.result = Loading(url=final_path)
 
-        self.request_worker(method, final_path, params, headers, cookies)
+        files = []
+        for file_input in self.query_one("#request-files-container", Container).query(FileInput):
+            files.append((file_input.input_name or "file", (file_input.file.name, file_input.file.open("rb"))))
+
+        self.request_worker(method, final_path, params, headers, cookies, files)
 
     @work(exclusive=True)
     def request_worker(self,
@@ -269,10 +336,17 @@ class HTTP(App):
                        final_path: str,
                        params: typing.Dict[str, typing.List[str]],
                        headers: typing.Dict[str, str],
-                       cookies: typing.Dict[str, str]):
+                       cookies: typing.Dict[str, str],
+                       files: typing.List[typing.Tuple[str, typing.Tuple[str, typing.BinaryIO]]]):
         """The worker thread which actually makes the request"""
         worker = get_current_worker()
         try:
+            if not self.options.cert:
+                cert = None
+            elif len(self.options.cert) == 1:
+                cert = self.options.cert[0]
+            else:
+                cert = (self.options.cert[0], self.options.cert[1])
             response = requests.request(method,
                                         final_path,
                                         params=params,
@@ -280,7 +354,10 @@ class HTTP(App):
                                         cookies=cookies,
                                         timeout=self.options.timeout,
                                         allow_redirects=self.options.allow_redirects,
-                                        verify=self.options.verify)
+                                        verify=self.options.verify,
+                                        proxies=self.options.proxies,
+                                        files=files,
+                                        cert=cert)
         except Exception as exc:
             response = Error(method=method,
                              url=final_path,
@@ -297,16 +374,6 @@ class HTTP(App):
         self.history = [*self.history, response]
         self.result = response
 
-    def action_open_options(self):
-        """When the user wants to see the options screen"""
-        self.push_screen(OptionsScreen(self.options), self.replace_options)
-
-    def replace_options(self, options: Options):
-        """To replace the current options"""
-        self.options = options
-        with open(".http.nasse.config", "w", encoding="utf-8") as f:
-            f.write(json.dumps(dataclasses.asdict(options), ensure_ascii=False, separators=(",", ":")))
-
     def watch_toggle_history(self, toggle_history: bool) -> None:
         """Called when `toggle_history` is modified"""
         self.query_one("#history", Container).set_class(not toggle_history, "unload")
@@ -318,7 +385,7 @@ class HTTP(App):
 
     def watch_history(self, history: typing.List[requests.Response]) -> None:
         """Called when `history` is modified"""
-        self.history = history[-HISTORY_LIMIT:]
+        self.history = history[-(self.options.history_limit - 1):]
         try:
             self.query_one(series.TimeSeries).series = [resp.elapsed.total_seconds() * 1000
                                                         for resp in history if isinstance(resp, requests.Response)]

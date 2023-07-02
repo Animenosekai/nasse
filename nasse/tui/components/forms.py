@@ -42,39 +42,41 @@ class UserSentInput(Widget):
     input_value: reactive[str] = reactive(None)
 
     def __init__(self,
-                 value: typing.Optional[UserSent] = None,
+                 user_sent: typing.Optional[UserSent] = None,
                  inputs: typing.Optional[typing.Set[UserSent]] = None,
-                 on_change: typing.Optional[typing.Callable[["UserSentInput", typing.Optional[str], typing.Optional[str]], typing.Any]] = None, **kwargs) -> None:
+                 on_change: typing.Optional[typing.Callable[["UserSentInput", typing.Optional[str], typing.Optional[str]], typing.Any]] = None,
+                 initial_value: typing.Optional[str] = None,
+                 **kwargs) -> None:
+
         super().__init__(**kwargs)
-        self.value = value
+        self.user_sent = user_sent
         self.inputs = inputs or set()
         self.on_change = on_change
+
+        self.initial_value = initial_value
 
     def compose(self):
         if not self.inputs:
             with Horizontal(classes="form-input-container"):
-                yield Input(placeholder="name", classes="form-input-name", name="input-name")
-                yield Input(placeholder="value", classes="form-input-value", name="input-value")
+                yield Input(value=self.user_sent.name if self.user_sent else None, placeholder="name", classes="form-input-name", name="input-name")
+                yield Input(value=self.initial_value, placeholder="value", classes="form-input-value", name="input-value")
             return
 
         with Horizontal(classes="form-input-container"):
-            if not self.value:
-                non_required = [(element.name, element)
-                                for element in self.inputs if not element.required]
-                if non_required:
-                    yield Select(non_required, classes="form-input-name", name="input-name")
-                    yield Input(disabled=True, classes="form-input-value", name="input-value")
+            if not self.user_sent:
+                yield Select([(element.name, element) for element in self.inputs], classes="form-input-name", value=self.user_sent.name if self.user_sent else None, name="input-name")
+                yield Input(disabled=True, classes="form-input-value", value=self.initial_value, name="input-value")
                 return
             yield Select([(element.name, element) for element in self.inputs],
-                         value=self.value,
-                         disabled=self.value.required,
+                         value=self.user_sent,
+                         disabled=self.user_sent.required,
                          classes="form-input-name",
                          name="input-name")
-            yield Input(placeholder=self.value.type.__name__
-                        if hasattr(self.value.type, "__name__") else str(self.value.type),
+            yield Input(placeholder=self.user_sent.type.__name__
+                        if hasattr(self.user_sent.type, "__name__") else str(self.user_sent.type),
                         classes="form-input-value",
                         name="input-value")
-        yield Label(self.value.description, classes="form-input-description")
+        yield Label(self.user_sent.description or "" if self.user_sent else "", classes="form-input-description")
 
     def on_input_changed(self, event: Input.Changed) -> None:
         """When an input changed"""
@@ -124,18 +126,36 @@ class UserSentForm(Widget):
     }
     """
 
-    def __init__(self, title: str, inputs: typing.Optional[typing.Set[UserSent]] = None, multiple: bool = False, **kwargs) -> None:
+    def __init__(self,
+                 title: str,
+                 inputs: typing.Optional[typing.Set[UserSent]] = None,
+                 multiple: bool = False,
+                 initial_values: typing.Optional[typing.List[typing.Tuple[UserSent, str]]] = None,
+                 **kwargs) -> None:
         super().__init__(**kwargs)
         self.title = title
         self.inputs = inputs or set()
         self.multiple = multiple
 
+        self.initial_values = initial_values or []
+
     def compose(self):
         yield SectionTitle(self.title)
 
+        initial_values = self.initial_values.copy()
+
         for element in self.inputs:
             if element.required:
-                yield UserSentInput(element, inputs=self.inputs)
+                for user_sent, value in initial_values.copy():
+                    if user_sent == element:
+                        yield UserSentInput(element, inputs=self.inputs, initial_value=value)
+                        initial_values.remove((user_sent, value))
+                        break
+                else:
+                    yield UserSentInput(element, inputs=self.inputs)
+
+        for user_sent, value in initial_values:
+            yield UserSentInput(user_sent, inputs=self.inputs, initial_value=value)
 
         with Container(classes="form-inputs-container"):
             yield UserSentInput(None, self.inputs, self.on_change)

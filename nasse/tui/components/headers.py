@@ -1,5 +1,6 @@
 """Defines custom headers"""
 from textual.widgets import Label
+from textual.reactive import reactive
 
 from nasse.tui.widget import Widget
 
@@ -14,6 +15,7 @@ class StickyHeader(Widget):
         height: auto;
     }
     """
+    title: reactive[str] = reactive("Header")
 
     def __init__(self, title: str, **kwargs) -> None:
         super().__init__(**kwargs)
