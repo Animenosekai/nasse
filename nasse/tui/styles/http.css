@@ -117,6 +117,10 @@
     margin-bottom: 3;
 }
 
+.result-error-container {
+    margin-bottom: 3;
+}
+
 #loading-view {
     padding: 0 3;
     height: 80%;
@@ -145,7 +149,15 @@
 }
 
 .add-file-button {
-    margin-top: 1;
+    margin: 1;
+}
+
+#request-data-container {
     margin-bottom: 3;
-    margin-left: 1;
+    height: auto;
+}
+
+#request-data-button {
+    height: auto;
+    margin: 1;
 }

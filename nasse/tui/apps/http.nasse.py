@@ -3,7 +3,6 @@
 TODO
 ----
 - Profiles
-- Add data to HTTP requests
 """
 import dataclasses
 import pathlib
@@ -12,13 +11,13 @@ import urllib.parse as url
 
 import requests
 from rich.traceback import Traceback
-from textual.events import Click
 from textual import work
 from textual.containers import Container, Horizontal, VerticalScroll
+from textual.binding import Binding
+from textual.events import Click
 from textual.reactive import reactive, var
 from textual.suggester import Suggester
-from textual.validation import Number, Integer
-from textual.widget import Widget
+from textual.validation import Integer, Number
 from textual.widgets import (Button, Footer, Header, Input, Label,
                              LoadingIndicator, Pretty, Select, Static, Switch,
                              _header)
@@ -33,7 +32,7 @@ from nasse.tui.components.headers import StickyHeader
 from nasse.tui.components.history import HistoryResponse
 from nasse.tui.components.texts import SectionTitle
 from nasse.tui.error import Error
-from nasse.tui.screens import FileBrowser, OptionsScreen
+from nasse.tui.screens import FileBrowser, OptionsScreen, QuitScreen
 from nasse.tui.widget import Widget
 
 
@@ -44,6 +43,7 @@ from nasse.tui.widget import Widget
 #     parameters: typing.Dict[str, typing.List[str]] = dataclasses.field(default_factory=dict)
 #     headers: typing.Dict[str, str] = dataclasses.field(default_factory=dict)
 #     cookies: typing.Dict[str, str] = dataclasses.field(default_factory=dict)
+
 
 class FileInput(Widget):
     """Represents a file"""
@@ -93,7 +93,7 @@ class FileInput(Widget):
         if self.prompt_name:
             elements.append(Input(placeholder="Name", classes="file-name"))
         file_input = Input(str(self.file.resolve()), disabled=True, classes="file-input")
-        if self.prompt_name:
+        if not self.prompt_name:
             file_input.add_class("file-input-full")
         elements.append(file_input)
         elements.append(Button("Delete", "error", classes="file-delete"))
@@ -221,7 +221,8 @@ class HTTP(App):
     result: reactive[typing.Optional[typing.Union[requests.Response, Error, Loading]]] = reactive(None)
     # profile: reactive[str] = reactive("Default")
 
-    BINDINGS = [("h", "toggle_history", "History"), ("r", "toggle_results", "Result"), ("s", "submit", "Submit"), ("o", "open_options", "Options")]
+    BINDINGS = [("h", "toggle_history", "History"), ("r", "toggle_results", "Result"),
+                ("s", "submit", "Submit"), ("o", "open_options", "Options"), ("q", "request_quit", "Quit"), Binding("escape", "request_quit", "Quit", show=False)]
 
     def __init__(self,
                  link: str,
@@ -267,7 +268,10 @@ class HTTP(App):
                         with Container(id="request-files-container", classes="files-container"):
                             pass
                         yield Button("Add file", classes="add-file-button")
-                    # data
+
+                    yield SectionTitle("Data")
+                    with Container(id="request-data-container"):
+                        yield Button("Add data file", id="request-data-button")
                 with View(id="result", on_click=self.on_result_view_clicked):
                     # Request Result
                     yield StickyHeader("Result")
@@ -301,25 +305,43 @@ class HTTP(App):
         """When the request view is clicked"""
         self.on_view_clicked(minimizing="request", maximizing="result")
 
-    def on_button_pressed(self, event: HistoryResponse.Pressed) -> None:
+    def on_button_pressed(self, event: Button.Pressed) -> None:
         """When a button is pressed"""
         if isinstance(event.button, HistoryResponse):
             self.result = event.button.response
         if event.button.has_class("add-file-button"):
             self.push_screen(FileBrowser(), self.add_file)
+        if event.button.id == "request-data-button":
+            self.push_screen(FileBrowser(), self.add_data_file)
 
     def add_file(self, file: typing.Optional[pathlib.Path] = None):
         """Adds a file to the request"""
         if file:
             self.query_one("#request-files-container", Container).mount(FileInput(file, self.delete_file))
 
+    def add_data_file(self, file: typing.Optional[pathlib.Path] = None):
+        if file:
+            container = self.query_one("#request-data-container", Container)
+            container.remove_children()
+            container.mount(FileInput(file, self.delete_data_file, prompt_name=False, id="request-data-file"))
+
     def delete_file(self, file_input: FileInput, file: pathlib.Path):
         """When a file is removed from the files list"""
         file_input.remove()
 
+    def delete_data_file(self, file_input: FileInput, file: pathlib.Path):
+        """When the data file is removed"""
+        container = self.query_one("#request-data-container", Container)
+        container.remove_children()
+        container.mount(Button("Add data file", id="request-data-button"))
+
     def action_open_options(self):
         """When the user wants to see the options screen"""
         self.push_screen(HTTPOptionsScreen(self.options, id="options-screen"), self.replace_options)
+
+    def action_request_quit(self) -> None:
+        """Action to display the quit dialog."""
+        self.push_screen(QuitScreen())
 
     def replace_options(self, options: HTTPOptions):
         """To replace the current options"""
@@ -362,7 +384,12 @@ class HTTP(App):
         for file_input in self.query_one("#request-files-container", Container).query(FileInput):
             files.append((file_input.input_name or "file", (file_input.file.name, file_input.file.open("rb"))))
 
-        self.request_worker(method, final_path, params, headers, cookies, files)
+        try:
+            data = self.query_one("#request-data-file", FileInput).file.read_bytes()
+        except Exception:
+            data = None
+
+        self.request_worker(method, final_path, params, headers, cookies, files, data)
 
     @work(exclusive=True)
     def request_worker(self,
@@ -371,7 +398,8 @@ class HTTP(App):
                        params: typing.Dict[str, typing.List[str]],
                        headers: typing.Dict[str, str],
                        cookies: typing.Dict[str, str],
-                       files: typing.List[typing.Tuple[str, typing.Tuple[str, typing.BinaryIO]]]):
+                       files: typing.List[typing.Tuple[str, typing.Tuple[str, typing.BinaryIO]]],
+                       data: typing.Optional[bytes] = None):
         """The worker thread which actually makes the request"""
         worker = get_current_worker()
         try:
@@ -386,22 +414,31 @@ class HTTP(App):
                                         params=params,
                                         headers=headers,
                                         cookies=cookies,
+                                        files=files,
+                                        data=data,
                                         timeout=self.options.timeout,
                                         allow_redirects=self.options.allow_redirects,
                                         verify=self.options.verify,
                                         proxies=self.options.proxies,
-                                        files=files,
                                         cert=cert)
         except Exception as exc:
-            response = Error(method=method,
+            response = Error(exception=exc,
+                             method=method,
                              url=final_path,
-                             exception=exc,
                              params=params,
                              headers=headers,
-                             cookies=cookies)
+                             cookies=cookies,
+                             files=[(name, element[0]) for name, element in files],
+                             data=data,
+                             timeout=self.options.timeout,
+                             allow_redirects=self.options.allow_redirects,
+                             verify=self.options.verify,
+                             proxies=self.options.proxies,
+                             cert=self.options.cert)
 
         if not worker.is_cancelled:
             self.call_from_thread(self.add_result, response)
+            self.toggle_results = True
 
     def add_result(self, response: typing.Union[requests.Response, Error]):
         """Adds the given response to the results"""
@@ -435,16 +472,29 @@ class HTTP(App):
         yield Label(f"[bold]EXCEPTION[/bold] {result.exception.__class__.__name__}", id="result-subtitle")
 
         yield SectionTitle("Parameters")
-        yield Pretty(result.params)
+        yield Label('\n'.join(f'{name}: {file}' for name, file in result.params.items()))
+        # yield Pretty(result.params)
 
         yield SectionTitle("Headers")
-        yield Pretty(result.headers)
+        yield Label('\n'.join(f'{name}: {file}' for name, file in result.headers.items()))
+        # yield Pretty(result.headers)
 
         yield SectionTitle("Cookies")
-        yield Pretty(result.cookies)
+        yield Label('\n'.join(f'{name}: {file}' for name, file in result.cookies.items()))
+        # yield Pretty(result.cookies)
+
+        yield SectionTitle("Files")
+        yield Label('\n'.join(f'{name}: {file}' for name, file in result.files))
+
+        yield SectionTitle("Options")
+        yield Label(f"Timeout: {result.timeout} sec.")
+        yield Label(f"Allow Redirects: {result.allow_redirects}")
+        yield Label(f"Proxies: {', '.join(f'{prot}: {proxy}' for prot, proxy in result.proxies.items())}")
+        yield Label(f"Verify Request: {result.verify}")
+        yield Label(f"Certificate Files: {', '.join(result.cert)}")
 
         yield SectionTitle("Error")
-        yield Static(Traceback.from_exception(result.exception.__class__, result.exception, traceback=result.exception.__traceback__))
+        yield Static(Traceback.from_exception(result.exception.__class__, result.exception, traceback=result.exception.__traceback__), classes="result-error-container")
 
     def compose_result(self, result: requests.Response):
         """Creates the result view"""
