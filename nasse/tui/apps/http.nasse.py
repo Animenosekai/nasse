@@ -471,27 +471,33 @@ class HTTP(App):
         yield Label(f"{result.method} {result.url}", id="result-title")
         yield Label(f"[bold]EXCEPTION[/bold] {result.exception.__class__.__name__}", id="result-subtitle")
 
-        yield SectionTitle("Parameters")
-        yield Label('\n'.join(f'{name}: {file}' for name, file in result.params.items()))
+        if result.params:
+            yield SectionTitle("Parameters")
+            yield Label('\n'.join(f'{name}: {file}' for name, file in result.params.items()))
         # yield Pretty(result.params)
 
-        yield SectionTitle("Headers")
-        yield Label('\n'.join(f'{name}: {file}' for name, file in result.headers.items()))
+        if result.headers:
+            yield SectionTitle("Headers")
+            yield Label('\n'.join(f'{name}: {file}' for name, file in result.headers.items()))
         # yield Pretty(result.headers)
 
-        yield SectionTitle("Cookies")
-        yield Label('\n'.join(f'{name}: {file}' for name, file in result.cookies.items()))
+        if result.cookies:
+            yield SectionTitle("Cookies")
+            yield Label('\n'.join(f'{name}: {file}' for name, file in result.cookies.items()))
         # yield Pretty(result.cookies)
 
-        yield SectionTitle("Files")
-        yield Label('\n'.join(f'{name}: {file}' for name, file in result.files))
+        if result.files:
+            yield SectionTitle("Files")
+            yield Label('\n'.join(f'{name}: {file}' for name, file in result.files))
 
         yield SectionTitle("Options")
         yield Label(f"Timeout: {result.timeout} sec.")
         yield Label(f"Allow Redirects: {result.allow_redirects}")
-        yield Label(f"Proxies: {', '.join(f'{prot}: {proxy}' for prot, proxy in result.proxies.items())}")
+        if result.proxies:
+            yield Label(f"Proxies: {', '.join(f'{prot}: {proxy}' for prot, proxy in result.proxies.items())}")
         yield Label(f"Verify Request: {result.verify}")
-        yield Label(f"Certificate Files: {', '.join(result.cert)}")
+        if result.cert:
+            yield Label(f"Certificate Files: {', '.join(result.cert)}")
 
         yield SectionTitle("Error")
         yield Static(Traceback.from_exception(result.exception.__class__, result.exception, traceback=result.exception.__traceback__), classes="result-error-container")
@@ -501,11 +507,14 @@ class HTTP(App):
         yield Label(f"{result.request.method} {result.url}", id="result-title")
         yield Label(f"[bold]{result.status_code}[/bold] {result.reason} [grey]in {series.transform_time(result.elapsed.total_seconds() * 1000)}[/grey]", id="result-subtitle")
 
-        yield SectionTitle("Headers")
-        yield Pretty(result.headers)
+        if result.headers:
+            yield SectionTitle("Headers")
+            yield Label('\n'.join(f'{name}: {file}' for name, file in result.headers.items()))
+        # yield Pretty(result.headers)
 
-        yield SectionTitle("Cookies")
-        yield Pretty(result.cookies)
+        if result.cookies:
+            yield SectionTitle("Cookies")
+            yield Label('\n'.join(f'{name}: {file}' for name, file in result.cookies.items()))
 
         content = None
         try:
