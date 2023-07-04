@@ -3,7 +3,6 @@
 TODO
 ----
 - Profiles
-- Click to expand
 - Add data to HTTP requests
 """
 import dataclasses
@@ -13,11 +12,13 @@ import urllib.parse as url
 
 import requests
 from rich.traceback import Traceback
+from textual.events import Click
 from textual import work
 from textual.containers import Container, Horizontal, VerticalScroll
 from textual.reactive import reactive, var
 from textual.suggester import Suggester
 from textual.validation import Number, Integer
+from textual.widget import Widget
 from textual.widgets import (Button, Footer, Header, Input, Label,
                              LoadingIndicator, Pretty, Select, Static, Switch,
                              _header)
@@ -107,6 +108,17 @@ class FileInput(Widget):
         """When a button is pressed"""
         if self.on_delete:
             self.on_delete(self, self.file)
+
+
+class View(VerticalScroll):
+    """A view in the main screen"""
+
+    def __init__(self, on_click: typing.Callable[[Click], typing.Any], **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.when_clicked = on_click
+
+    def on_click(self, event: Click):
+        return self.when_clicked(event)
 
 
 @dataclasses.dataclass
@@ -240,7 +252,7 @@ class HTTP(App):
                 # Requests Options
                 yield StickyHeader("Request", id="request-title")
 
-                with VerticalScroll(id="request"):
+                with View(id="request", on_click=self.on_request_view_clicked):
                     with Horizontal(id="request-path-container"):
                         yield Select([(method, method) for method in typing.get_args(StandardMethod)],
                                      allow_blank=False, value="GET", id="request-method")
@@ -256,7 +268,7 @@ class HTTP(App):
                             pass
                         yield Button("Add file", classes="add-file-button")
                     # data
-                with VerticalScroll(id="result"):
+                with View(id="result", on_click=self.on_result_view_clicked):
                     # Request Result
                     yield StickyHeader("Result")
                     yield Label("Start by making a request", id="empty-result-label")
@@ -266,6 +278,28 @@ class HTTP(App):
     def on_mount(self):
         """When mounted"""
         self.query_one(Header).query_one(_header.HeaderIcon).icon = "🍡"
+
+    def on_view_clicked(self, minimizing: str, maximizing: str):
+        """When a view is clicked"""
+        minimizing_element = self.query_one(f"#{minimizing}", VerticalScroll)
+        maximizing_element = self.query_one(f"#{maximizing}", VerticalScroll)
+
+        if maximizing_element.has_class("mini"):
+            for element in (minimizing_element, maximizing_element):
+                element.remove_class("mini")
+                element.remove_class("maxi")
+        else:
+            maximizing_element.add_class("maxi")
+            minimizing_element.add_class("mini")
+            minimizing_element.remove_class("maxi")
+
+    def on_request_view_clicked(self, event: Click):
+        """When the request view is clicked"""
+        self.on_view_clicked(minimizing="result", maximizing="request")
+
+    def on_result_view_clicked(self, event: Click):
+        """When the request view is clicked"""
+        self.on_view_clicked(minimizing="request", maximizing="result")
 
     def on_button_pressed(self, event: HistoryResponse.Pressed) -> None:
         """When a button is pressed"""
