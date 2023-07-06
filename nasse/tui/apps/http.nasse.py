@@ -24,7 +24,7 @@ from textual.widgets import (Button, Footer, Header, Input, Label,
 from textual.worker import get_current_worker
 
 from nasse.docs.localization import EnglishLocalization, Localization
-from nasse.models import Types, UserSent, Endpoint
+from nasse.models import Types, UserSent, Endpoint, get_method_variant
 from nasse.tui.app import App
 from nasse.tui.components import series
 from nasse.tui.components.forms import UserSentForm
@@ -219,10 +219,12 @@ class HTTP(App):
     history: reactive[typing.List[typing.Union[requests.Response, Error]]] = reactive(list)
     toggle_history = var(True)
     toggle_results = var(False)
+    toggle_explorer = var(False)
     result: reactive[typing.Optional[typing.Union[requests.Response, Error, Loading]]] = reactive(None)
+    endpoint: reactive[typing.Optional[Endpoint]] = reactive(None)
     # profile: reactive[str] = reactive("Default")
 
-    BINDINGS = [("h", "toggle_history", "History"), ("r", "toggle_results", "Result"),
+    BINDINGS = [("h", "toggle_history", "History"), ("r", "toggle_results", "Result"), ("e", "toggle_explorer", "Explorer"),
                 ("s", "submit", "Submit"), ("o", "open_options", "Options"), ("q", "request_quit", "Quit"), Binding("escape", "request_quit", "Quit", show=False)]
 
     def __init__(self,
@@ -257,24 +259,8 @@ class HTTP(App):
                 yield StickyHeader("Request", id="request-title")
 
                 with View(id="request", on_click=self.on_request_view_clicked):
-                    with Horizontal(id="request-path-container"):
-                        yield Select([(method, method) for method in typing.get_args(Types.Method.Standard)],
-                                     allow_blank=False, value="GET", id="request-method")
-                        yield Input("/", placeholder="path", suggester=PathSuggestion(self), id="request-path")
+                    yield from self.compose_request_view()
 
-                    yield UserSentForm("Parameters", multiple=True, id="request-parameters")
-                    yield UserSentForm("Headers", id="request-headers")
-                    yield UserSentForm("Cookies", id="request-cookies")
-
-                    yield SectionTitle("File")
-                    with Container(classes="files-input-container"):
-                        with Container(id="request-files-container", classes="files-container"):
-                            pass
-                        yield Button("Add file", classes="add-file-button")
-
-                    yield SectionTitle("Data")
-                    with Container(id="request-data-container"):
-                        yield Button("Add data file", id="request-data-button")
                 with View(id="result", on_click=self.on_result_view_clicked):
                     # Request Result
                     yield StickyHeader("Result")
@@ -284,6 +270,7 @@ class HTTP(App):
                 # Endpoints explorer
                 # Only for servers running Nasse
                 yield StickyHeader("Explorer")
+                yield Button("Reset", id="explorer-reset")
                 with VerticalScroll(id="endpoints-explorer"):
                     with VerticalScroll(id="tree-view"):
                         for category, sub_categories in self.categories.items():
@@ -298,6 +285,46 @@ class HTTP(App):
                                     sub_tree.add_leaf(endpoint.name, endpoint)
                             yield tree
         yield Footer()
+
+    def compose_request_view(self):
+        """Creates the request view"""
+        if not self.endpoint or not self.endpoint.methods or "*" in self.endpoint.methods:
+            request_select = Select([(method, method) for method in typing.get_args(Types.Method.Standard)],
+                                    allow_blank=False, value="GET", id="request-method")
+        else:
+            request_select = Select([(method, method) for method in self.endpoint.methods],
+                                    allow_blank=False, value=list(self.endpoint.methods)[0], id="request-method")
+
+        if self.endpoint:
+            request_input = Input(self.endpoint.path, placeholder="path", suggester=PathSuggestion(self), id="request-path")
+        else:
+            request_input = Input("/", placeholder="path", suggester=PathSuggestion(self), id="request-path")
+
+        yield Horizontal(request_select, request_input, id="request-path-container")
+
+        yield Container(*self.compose_user_sent(), id="request-user-sent")
+
+        yield SectionTitle("File")
+        yield Container(Container(id="request-files-container", classes="files-container"),
+                        Button("Add file", classes="add-file-button"),
+                        classes="files-input-container")
+
+        yield SectionTitle("Data")
+        yield Container(Button("Add data file", id="request-data-button"), id="request-data-container")
+
+    def compose_user_sent(self):
+        """Compose user sent values"""
+        try:
+            default_method = next(iter(self.endpoint.methods))
+        except Exception:
+            default_method = "*"
+        try:
+            method = self.query_one("#request-method", Select).value or default_method
+        except Exception:
+            method = default_method
+        yield UserSentForm("Parameters", inputs=get_method_variant(method, self.endpoint.parameters) if self.endpoint else None, multiple=True, id="request-parameters")
+        yield UserSentForm("Headers", inputs=get_method_variant(method, self.endpoint.headers) if self.endpoint else None, id="request-headers")
+        yield UserSentForm("Cookies", inputs=get_method_variant(method, self.endpoint.cookies) if self.endpoint else None, id="request-cookies")
 
     @property
     def categories(self) -> typing.Dict[str, typing.Dict[str, typing.List[Endpoint]]]:
@@ -345,6 +372,13 @@ class HTTP(App):
         """When the request view is clicked"""
         self.on_view_clicked(minimizing="request", maximizing="result")
 
+    def reload_endpoint(self):
+        """Reloads the request view"""
+        request_view = self.query_one("#request", View)
+        request_view.remove_children()
+        request_view.mount_all(self.compose_request_view())
+        request_view.refresh(layout=True)
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """When a button is pressed"""
         if isinstance(event.button, HistoryResponse):
@@ -353,6 +387,15 @@ class HTTP(App):
             self.push_screen(FileBrowser(), self.add_file)
         if event.button.id == "request-data-button":
             self.push_screen(FileBrowser(), self.add_data_file)
+        if event.button.id == "explorer-reset":
+            self.endpoint = None
+            self.reload_endpoint()
+
+    def on_tree_node_selected(self, event: Tree.NodeSelected):
+        """When a node is selected in a tree"""
+        if isinstance(event.node.data, Endpoint):
+            self.endpoint = event.node.data
+            self.reload_endpoint()
 
     def add_file(self, file: typing.Optional[pathlib.Path] = None):
         """Adds a file to the request"""
@@ -393,12 +436,16 @@ class HTTP(App):
         self.toggle_history = not self.toggle_history
 
     def action_toggle_results(self):
-        """Called when the user fires the `toggle_history` action"""
+        """Called when the user fires the `toggle_results` action"""
         self.toggle_results = not self.toggle_results
+
+    def action_toggle_explorer(self):
+        """Called when the user fires the `toggle_explorer` action"""
+        self.toggle_explorer = not self.toggle_explorer
 
     def action_submit(self):
         """Called when the user submitted the request"""
-        method = self.query_one("#request-method", Select).value
+        method = self.query_one("#request-method", Select).value or "*"
         path = url.urlparse(self.query_one("#request-path", Input).value)
         final_path = url.urlunparse((
             path.scheme or self.link.scheme,
@@ -493,6 +540,10 @@ class HTTP(App):
         """Called when `toggle_results` is modified"""
         self.query_one("#result", VerticalScroll).set_class(not toggle_results, "unload")
         self.query_one("#request", VerticalScroll).set_class(not toggle_results, "full")
+
+    def watch_toggle_explorer(self, toggle_explorer: bool) -> None:
+        """Called when `toggle_explorer` is modified"""
+        self.query_one("#explorer", Container).set_class(not toggle_explorer, "unload")
 
     def watch_history(self, history: typing.List[requests.Response]) -> None:
         """Called when `history` is modified"""
@@ -636,4 +687,9 @@ class PathSuggestion(Suggester):
 if __name__ == "__main__":
     # HTTP("https://google.com").run()
     # HTTP("https://eosqyydyun9tw26.m.pipedream.net").run()
-    HTTP("http://httpbin.org/get").run()
+    HTTP("http://httpbin.org/get", endpoints=[
+        Endpoint(name="GET request", category="Method Requests", sub_category="GET", methods="GET",
+                 description="This is a GET request", headers=[UserSent("X-NASSE-TEST", description="This is a test")], path="/get"),
+        Endpoint(name="POST request", category="Method Requests", sub_category="POST", methods="POST",
+                 description="This is a POST request", headers=[UserSent("X-NASSE-TEST", description="This is a test")], parameters=UserSent("hello", description="world"), path="/post"),
+    ]).run()

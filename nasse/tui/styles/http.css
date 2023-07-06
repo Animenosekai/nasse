@@ -9,6 +9,25 @@
     background: $panel-darken-1;
 }
 
+
+#explorer {
+    display: block;
+    max-width: 35;
+    border-right: vkey rgba(128, 128, 128, 0.5);
+    background: $panel;
+}
+
+#explorer.unload {
+    display: none;
+}
+
+#explorer-reset {
+    margin: 1;
+    border: round white;
+    width: 100w;
+}
+
+
 #history {
     display: block;
     max-width: 35;
@@ -67,6 +86,10 @@
 
 #request-path {
     width: 85%;
+}
+
+#request-user-sent {
+    height: auto;
 }
 
 #result {

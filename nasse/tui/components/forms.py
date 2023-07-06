@@ -4,6 +4,7 @@ import typing
 from textual.containers import Horizontal, Container
 from textual.reactive import reactive
 from textual.widgets import Input, Label, Select
+from textual.css.query import NoMatches
 
 from nasse.models import UserSent
 from nasse.tui.widget import Widget
@@ -36,10 +37,11 @@ class UserSentInput(Widget):
 
     .form-input-description {
         text-opacity: 0.5;
+        margin-left: 1;
     }
     """
-    input_name: reactive[str] = reactive(None)
-    input_value: reactive[str] = reactive(None)
+    input_name: reactive[typing.Optional[str]] = reactive(None)
+    input_value: reactive[typing.Optional[str]] = reactive(None)
 
     def __init__(self,
                  user_sent: typing.Optional[UserSent] = None,
@@ -54,6 +56,8 @@ class UserSentInput(Widget):
         self.on_change = on_change
 
         self.initial_value = initial_value
+        if self.user_sent:
+            self.input_name = self.user_sent.name
 
     def compose(self):
         if not self.inputs:
@@ -64,8 +68,8 @@ class UserSentInput(Widget):
 
         with Horizontal(classes="form-input-container"):
             if not self.user_sent:
-                yield Select([(element.name, element) for element in self.inputs], classes="form-input-name", value=self.user_sent.name if self.user_sent else None, name="input-name")
-                yield Input(disabled=True, classes="form-input-value", value=self.initial_value, name="input-value")
+                yield Select([(element.name, element) for element in self.inputs], classes="form-input-name", value=None, name="input-name")
+                yield Input(disabled=False, classes="form-input-value", value=self.initial_value, name="input-value")
                 return
             yield Select([(element.name, element) for element in self.inputs],
                          value=self.user_sent,
@@ -90,8 +94,16 @@ class UserSentInput(Widget):
 
     def on_select_changed(self, event: Select.Changed) -> None:
         """When a Select object changed"""
-        if event.input.name == "input-name":
-            self.input_name = event.select.value
+        if event.select.name == "input-name":
+            val: typing.Optional[UserSent] = event.select.value
+            self.input_name = val.name if val else None
+            for inp in self.inputs:
+                if inp.name == self.input_name:
+                    try:
+                        self.query_one(".form-input-description", Label).update(inp.description)
+                    except NoMatches:
+                        self.mount(Label(inp.description or "", classes="form-input-description"))
+                    break
 
         if self.on_change:
             self.on_change(self, self.input_name, self.input_value)
