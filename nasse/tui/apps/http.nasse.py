@@ -34,6 +34,7 @@ from nasse.tui.components.texts import SectionTitle
 from nasse.tui.error import Error
 from nasse.tui.screens import FileBrowser, OptionsScreen, QuitScreen
 from nasse.tui.widget import Widget
+from nasse import __info__
 
 
 # @dataclasses.dataclass
@@ -185,7 +186,7 @@ class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
             "allow_redirects": self.query_one("#options-redirects-switch", Switch).value,
             "proxies": self.query_one("#options-proxies", UserSentForm).values,
             "verify": self.query_one("#options-verify-switch", Switch).value,
-            "cert": [inp.file for inp in self.query(FileInput)]  # pylint: disable=not-an-iterable
+            "cert": [str(inp.file) for inp in self.query(FileInput)]  # pylint: disable=not-an-iterable
         }
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -372,7 +373,7 @@ class HTTP(App):
         params = self.query_one("#request-parameters", UserSentForm).values
 
         headers = {
-            "User-Agent": "nasse-http/1.0.0"
+            "User-Agent": f"nasse-http/{__info__.__version_string__()}"
         }
         headers.update(self.query_one("#request-headers", UserSentForm).values)
 

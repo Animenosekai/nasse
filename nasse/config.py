@@ -7,6 +7,7 @@ import pathlib
 import typing
 import urllib.parse
 from nasse.utils import formatter
+from nasse import __info__
 
 from nasse.utils.annotations import Default
 
@@ -22,12 +23,34 @@ class NasseConfig:
     """
 
     def verify_logger(self):
+        """Verifies the logger"""
         from nasse.utils.logging import Logger
         if self.logger is None:
-            self.logger = Logger()
+            self.logger = Logger(self)
+            # self.logger = Logger()
+
+    def verify_logging_level(self):
+        """Verifies the given logging level"""
+        from nasse.utils.logging import LoggingLevel
+
+        if not self.logging_level:
+            self.logging_level = LoggingLevel.DEBUG if self.debug else LoggingLevel.INFO
+        elif self.logging_level == "ERROR":
+            self.logging_level = LoggingLevel.ERROR
+        elif self.logging_level == "WARNING":
+            self.logging_level = LoggingLevel.WARNING
+        elif self.logging_level == "INFO":
+            self.logging_level = LoggingLevel.INFO
+        elif self.logging_level == "DEBUG":
+            self.logging_level = LoggingLevel.DEBUG
+        elif self.logging_level == "HIDDEN":
+            self.logging_level = LoggingLevel.HIDDEN
+        else:
+            self.logger.warn(f"Couldn't understand the logging level {self.logging_level}. Defaulting to `INFO`")
+            self.logging_level = LoggingLevel.INFO
 
     def __setattr__(self, __name: str, __value: typing.Any) -> None:
-        if __name == "debug" and (isinstance(self.logging_level, Default) or self.logging_level.value < 4):
+        if __name == "debug" and (not isinstance(self.logging_level, str)) and (not self.logging_level or self.logging_level.value < 4):
             from nasse.utils.logging import LoggingLevel
             if __value:
                 self.logging_level = LoggingLevel.DEBUG
@@ -36,23 +59,16 @@ class NasseConfig:
         super().__setattr__(__name, __value)
 
     def __post_init__(self):
-        from nasse.utils.logging import LoggingLevel
-        # from nasse import __version_string__
+        # self.VERSION = __info__.__version__
 
-        # self.VERSION = __version_string__()
-
-        self.VERSION = "2.0(beta)"
-
-        if isinstance(self.id, Default):
+        if not self.id:
             self.id = _alphabetic(self.name).lower()
 
         self.verify_logger()
+        self.verify_logging_level()
 
-        if isinstance(self.logging_level, Default):
-            self.logging_level = LoggingLevel.DEBUG if self.debug else LoggingLevel.INFO
-
-        if isinstance(self.log_file, Default):
-            self.log_file = (pathlib.Path() / "NASSE_DEBUG" / "nasse.log") if self.debug else None
+        if not self.log_file:
+            self.log_file = (pathlib.Path() / ".nasse" / "debug" / "log") if self.debug else None
 
         if isinstance(self.cors, str):
             rule = str(self.cors).replace(" ", "")
@@ -60,11 +76,10 @@ class NasseConfig:
                 self.cors = ["*"]
             else:
                 parsed = urllib.parse.urlparse(rule)
-                netloc = parsed.netloc if parsed.netloc else parsed.path.split(
-                    "/")[0]
+                netloc = (parsed.netloc if parsed.netloc
+                          else parsed.path.split("/")[0])
                 scheme = parsed.scheme or "https"
-                rule = '{scheme}://{netloc}'.format(
-                    scheme=scheme, netloc=netloc)
+                rule = f'{scheme}://{netloc}'
                 self.cors = [rule]
         elif isinstance(self.cors, bool):
             self.cors = ["*"] if self.cors else []
@@ -79,23 +94,23 @@ class NasseConfig:
                     parsed = urllib.parse.urlparse(rule)
                     netloc = parsed.netloc if parsed.netloc else parsed.path.split("/")[0]
                     scheme = parsed.scheme or "https"
-                    rule = '{scheme}://{netloc}'.format(scheme=scheme, netloc=netloc)
+                    rule = f'{scheme}://{netloc}'
                     self.cors.append(rule)
 
         self.server_header = formatter.format(self.server_header, config=self)
 
     name: str = "Nasse"
-    id: str = Default(None)
+    id: typing.Optional[str] = None
     host: str = "127.0.0.1"
     port: int = 5005
     debug: bool = False
-    account_management: "AccountManagement" = None
+    account_management: typing.Optional["AccountManagement"] = None
     cors: typing.Union[str, bool, typing.Iterable] = True
-    max_request_size: int = 1e+9
+    max_request_size: int = int(1e+9)
     compress: bool = True
-    log_file: pathlib.Path = Default(None)
-    logging_level: "LoggingLevel" = Default("INFO")
-    logger: "Logger" = None
-    server_header: str = "Nasse/{version} ({name})"
+    log_file: typing.Optional[pathlib.Path] = None
+    logging_level: typing.Optional["LoggingLevel"] = "INFO"
+    logger: typing.Optional["Logger"] = None
+    server_header: str = "nasse/{version} ({name})"
     sanitize_user_input: bool = True
     base_dir: pathlib.Path = pathlib.Path().resolve().absolute()

@@ -76,7 +76,7 @@ class Nasse():
             config_kwargs = config.__dict__
             config_kwargs.update(kwargs)
             config_kwargs["name"] = name or config_kwargs.get("app", "Nasse")
-            config_kwargs.pop("VERSION", None)
+            # config_kwargs.pop("VERSION", None)
             self.config = NasseConfig(*args, **config_kwargs)
         else:
             self.config = NasseConfig(name=name or "Nasse", *args, **kwargs)

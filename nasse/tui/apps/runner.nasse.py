@@ -1,4 +1,12 @@
-"""Runs the Nasse instances directly from the command line"""
+"""
+Runs the Nasse instances directly from the command line
+
+TODO
+----
+- Running view
+- Configurations view
+- Statistical Monitoring
+"""
 
 from nasse import Nasse
 from nasse.tui.app import App

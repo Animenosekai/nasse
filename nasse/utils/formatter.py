@@ -13,6 +13,7 @@ import os
 import threading
 import typing
 from string import Formatter
+from nasse.__info__ import __version_string__
 
 
 class Colors(enum.Enum):
@@ -127,7 +128,7 @@ def format(string: str, time_format: typing.Union[str, typing.Callable[[datetime
             "host": config.host,
             "port": config.port,
             "debug": config.debug,
-            "version": config.VERSION,
+            "version": __version_string__(),
             "base_dir": config.base_dir
         })
     time = datetime.datetime.now()
