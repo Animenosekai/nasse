@@ -10,21 +10,26 @@ import typing
 from nasse import utils
 
 
-# Type Aliases
-T = typing.TypeVar("T")
-StandardMethod = typing.Literal["GET", "HEAD", "POST",
-                                "PUT", "DELETE", "CONNECT",
-                                "OPTIONS", "TRACE", "PATCH"]
-Method = typing.Union[StandardMethod, str]
-Type = typing.Union[typing.Callable[[str], typing.Any], typing.Type]
-HandlerOutput = typing.Union["response.Response", Exception, typing.Iterable, typing.Generator]
+class Types:
+    """Holds different types"""
+    # Type Aliases
+    T = typing.TypeVar("T")
 
+    class Method:
+        """HTTP method types"""
+        Standard = typing.Literal["GET", "HEAD", "POST",
+                                  "PUT", "DELETE", "CONNECT",
+                                  "OPTIONS", "TRACE", "PATCH"]
+        Any = typing.Union[Standard, str]
 
-FinalMethodVariant = typing.Dict[Method, T]
-FinalIterable = typing.Set[T]
+    Type = typing.Union[typing.Callable[[str], typing.Any], typing.Type]
+    HandlerOutput = typing.Union["response.Response", Exception, typing.Iterable, typing.Generator]
 
-MethodVariant = typing.Optional[typing.Union[FinalMethodVariant, T]]
-OptionalIterable = typing.Optional[typing.Union[typing.Iterable[T], T]]
+    FinalMethodVariant = typing.Dict[Method.Any, T]
+    FinalIterable = typing.Set[T]
+
+    MethodVariant = typing.Optional[typing.Union[FinalMethodVariant, T]]
+    OptionalIterable = typing.Optional[typing.Union[typing.Iterable[T], T]]
 
 
 # Validations
@@ -33,7 +38,7 @@ OptionalIterable = typing.Optional[typing.Union[typing.Iterable[T], T]]
 def method_validation(method: typing.Any):
     """Validates the given method"""
     result = str(method).upper().strip()
-    if result not in typing.get_args(StandardMethod) and result != "*":
+    if result not in typing.get_args(Types.Method.Standard) and result != "*":
         utils.logging.logger.warn(f"Defining non standard HTTP method {result}")
     return result
 
@@ -48,12 +53,12 @@ def path_to_name(path: str):
 
 
 def get_method_variant(method: str,
-                       value: FinalMethodVariant[FinalIterable[T]]) -> FinalIterable[T]:
+                       value: Types.FinalMethodVariant[Types.FinalIterable[Types.T]]) -> Types.FinalIterable[Types.T]:
     """Returns the variant defined for the given method"""
     return value.get("*", set()).union(value.get(method, set()))
 
 
-def complete_cast(value: typing.Any, cast: typing.Type[T], iter: bool = False) -> T:
+def complete_cast(value: typing.Any, cast: typing.Type[Types.T], iter: bool = False) -> Types.T:
     """Casts the given value with the given type"""
     if iter:
         return validates_optional_iterable(value, cast)
@@ -70,9 +75,9 @@ def complete_cast(value: typing.Any, cast: typing.Type[T], iter: bool = False) -
     return cast(value)
 
 
-def validates_method_variant(value: MethodVariant[T],
-                             cast: typing.Type[T],
-                             iter: bool = False) -> typing.Dict[Method, T]:
+def validates_method_variant(value: Types.MethodVariant[Types.T],
+                             cast: typing.Type[Types.T],
+                             iter: bool = False) -> typing.Dict[Types.Method.Any, Types.T]:
     """Validates a value which might vary with the method"""
     if not value:
         if iter:
@@ -86,7 +91,7 @@ def validates_method_variant(value: MethodVariant[T],
         return {"*": complete_cast(value, cast, iter)}
 
 
-def validates_optional_iterable(value: OptionalIterable[T], cast: typing.Type[T]) -> typing.Set[T]:
+def validates_optional_iterable(value: Types.OptionalIterable[Types.T], cast: typing.Type[Types.T]) -> typing.Set[Types.T]:
     """Validates an iterable which might be None"""
     if not value:
         return set()
@@ -107,7 +112,7 @@ class Return:
     """An example of returned value"""
     description: typing.Optional[str] = None
     """A description of the returned value"""
-    type: Type = str
+    type: Types.Type = str
     """The type of returned value"""
     children: typing.List["Return"] = dataclasses.field(default_factory=list)
     """The different children values"""
@@ -115,7 +120,7 @@ class Return:
     """If this value is can be null (None)"""
 
 
-def init_class(cls: typing.Type[T], instance: T, **kwargs):
+def init_class(cls: typing.Type[Types.T], instance: Types.T, **kwargs):
     """Initialize a class"""
     if hasattr(cls, "__annotations__"):
         for attr in cls.__annotations__:
@@ -167,7 +172,7 @@ class UserSent:
     name: str
     description: typing.Optional[str] = None
     required: bool = True
-    type: Type = str
+    type: Types.Type = str
 
 
 Dynamic = UserSent
@@ -218,7 +223,7 @@ def non_implemented():
 @dataclasses.dataclass
 class Endpoint:
     """Represents an endpoint"""
-    handler: typing.Callable[..., HandlerOutput]
+    handler: typing.Callable[..., Types.HandlerOutput]
     """The function which will handle the request"""
     name: str
     """The name of the endpoint"""
@@ -226,7 +231,7 @@ class Endpoint:
     """The category the endpoint is in"""
     sub_category: str
     """The sub category the endpoint is in"""
-    description: FinalMethodVariant[str]
+    description: Types.FinalMethodVariant[str]
     """A description of what the endpoint does"""
     base_dir: pathlib.Path
     """The base directory of the endpoints,
@@ -236,28 +241,28 @@ class Endpoint:
     # Request
     path: str
     """The path to the endpoint"""
-    methods: FinalIterable[Method]
+    methods: Types.FinalIterable[Types.Method.Any]
     """The methods allowed on this endpoint"""
-    login: FinalMethodVariant[FinalIterable[Login]]
+    login: Types.FinalMethodVariant[Types.FinalIterable[Login]]
     """The login rules for this endpoint.
     Defines who has access to this endpoint."""
 
     # User Sent
-    parameters: FinalMethodVariant[FinalIterable[Parameter]]
+    parameters: Types.FinalMethodVariant[Types.FinalIterable[Parameter]]
     """The required and accepted parameters for this endpoint"""
-    headers: FinalMethodVariant[FinalIterable[Header]]
+    headers: Types.FinalMethodVariant[Types.FinalIterable[Header]]
     """The required and accepted headers for this endpoint"""
-    cookies: FinalMethodVariant[FinalIterable[Cookie]]
+    cookies: Types.FinalMethodVariant[Types.FinalIterable[Cookie]]
     """The required and accepted cookies for this endpoint"""
-    dynamics: FinalMethodVariant[FinalIterable[Dynamic]]
+    dynamics: Types.FinalMethodVariant[Types.FinalIterable[Dynamic]]
     """The required and accepted dynamic parts of the URL for this endpoint"""
 
     # Response
     json: bool
     """Whether the returned response should be JSON formatted or not"""
-    returns: FinalMethodVariant[FinalIterable[Return]]
+    returns: Types.FinalMethodVariant[Types.FinalIterable[Return]]
     """The structure of the returned value"""
-    errors: FinalMethodVariant[FinalIterable[Error]]
+    errors: Types.FinalMethodVariant[Types.FinalIterable[Error]]
     """The errors which can be raised by the endpoint"""
 
     @property
@@ -266,29 +271,29 @@ class Endpoint:
         return self.parameters
 
     def __init__(self,
-                 handler: typing.Callable[..., HandlerOutput] = non_implemented,
+                 handler: typing.Callable[..., Types.HandlerOutput] = non_implemented,
                  name: str = "Untitled",
                  category: str = "",
                  sub_category: str = "",
-                 description: MethodVariant[str] = None,
+                 description: Types.MethodVariant[str] = None,
                  base_dir: typing.Union[pathlib.Path, str, None] = None,
                  endpoint: typing.Union["Endpoint", typing.Mapping, None] = None,
 
                  # Request,
                  path: typing.Optional[str] = None,
-                 methods: OptionalIterable[Method] = "*",
-                 login: MethodVariant[OptionalIterable[Login]] = None,
+                 methods: Types.OptionalIterable[Types.Method.Any] = "*",
+                 login: Types.MethodVariant[Types.OptionalIterable[Login]] = None,
 
                  # User Sent,
-                 parameters: MethodVariant[OptionalIterable[Parameter]] = None,
-                 headers: MethodVariant[OptionalIterable[Header]] = None,
-                 cookies: MethodVariant[OptionalIterable[Cookie]] = None,
-                 dynamics: MethodVariant[OptionalIterable[Dynamic]] = None,
+                 parameters: Types.MethodVariant[Types.OptionalIterable[Parameter]] = None,
+                 headers: Types.MethodVariant[Types.OptionalIterable[Header]] = None,
+                 cookies: Types.MethodVariant[Types.OptionalIterable[Cookie]] = None,
+                 dynamics: Types.MethodVariant[Types.OptionalIterable[Dynamic]] = None,
 
                  # Response,
                  json: bool = True,
-                 returns: MethodVariant[OptionalIterable[Return]] = None,
-                 errors: MethodVariant[OptionalIterable[Error]] = None):
+                 returns: Types.MethodVariant[Types.OptionalIterable[Return]] = None,
+                 errors: Types.MethodVariant[Types.OptionalIterable[Error]] = None):
 
         # Merging with `endpoint`
 

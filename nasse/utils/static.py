@@ -98,9 +98,9 @@ def endpoint_to_python(endpoint: Endpoint, explicit_path: bool = True, indent: s
     result += indent + "description = " + \
         json.dumps(endpoint.description, ensure_ascii=False) + ",\n"
 
-    if endpoint.section != "Other":
+    if endpoint.category != "Other":
         result += indent + "section = " + \
-            json.dumps(endpoint.section, ensure_ascii=False) + ",\n"
+            json.dumps(endpoint.category, ensure_ascii=False) + ",\n"
 
     if endpoint.returning:
         result += indent + "returning = [\n"

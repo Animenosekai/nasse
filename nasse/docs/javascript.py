@@ -24,7 +24,7 @@ def create_javascript_example_for_method(endpoint: models.Endpoint, method: str)
     str
         A JavaScript example on how to use the endpoint for the given method
     """
-    params = (param for param in models.get_method_variant(method, endpoint.parameters) if param.required)
+    params = [param for param in models.get_method_variant(method, endpoint.parameters) if param.required]
     headers = {header.name: (header.description or header.name)
                for header in models.get_method_variant(method, endpoint.headers)
                if header.required}

@@ -64,7 +64,7 @@ def make_docs(endpoint: models.Endpoint,
     if len(endpoint.methods) <= 1:
         result += """
 {}
-""".format(endpoint.description.get(endpoint.methods[0], endpoint.description.get("*", localization.no_description)))
+""".format(endpoint.description.get(list(endpoint.methods)[0], endpoint.description.get("*", localization.no_description)))
         result += make_docs_for_method(**kwargs)
     else:
         for method in sort_http_methods(endpoint.methods):

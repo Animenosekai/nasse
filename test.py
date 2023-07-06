@@ -7,4 +7,5 @@ def test():
     pass
 
 
+app.make_docs()
 app.run(debug=True)

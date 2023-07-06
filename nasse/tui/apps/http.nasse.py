@@ -19,12 +19,12 @@ from textual.reactive import reactive, var
 from textual.suggester import Suggester
 from textual.validation import Integer, Number
 from textual.widgets import (Button, Footer, Header, Input, Label,
-                             LoadingIndicator, Pretty, Select, Static, Switch,
+                             LoadingIndicator, Pretty, Select, Static, Switch, Tree,
                              _header)
 from textual.worker import get_current_worker
 
 from nasse.docs.localization import EnglishLocalization, Localization
-from nasse.models import StandardMethod, UserSent
+from nasse.models import Types, UserSent, Endpoint
 from nasse.tui.app import App
 from nasse.tui.components import series
 from nasse.tui.components.forms import UserSentForm
@@ -227,12 +227,14 @@ class HTTP(App):
 
     def __init__(self,
                  link: str,
+                 endpoints: typing.Optional[typing.List[Endpoint]] = None,
                  localization: typing.Union[Localization, typing.Type[Localization]] = EnglishLocalization,
                  options: typing.Optional[HTTPOptions] = None,
                  **kwargs):
         super().__init__(**kwargs)
         self.link = url.urlparse(link)
         self.localization = localization
+        self.endpoints = endpoints or []
 
         self.options = options or HTTPOptionsScreen.loads("http", HTTPOptions)
 
@@ -256,7 +258,7 @@ class HTTP(App):
 
                 with View(id="request", on_click=self.on_request_view_clicked):
                     with Horizontal(id="request-path-container"):
-                        yield Select([(method, method) for method in typing.get_args(StandardMethod)],
+                        yield Select([(method, method) for method in typing.get_args(Types.Method.Standard)],
                                      allow_blank=False, value="GET", id="request-method")
                         yield Input("/", placeholder="path", suggester=PathSuggestion(self), id="request-path")
 
@@ -278,7 +280,44 @@ class HTTP(App):
                     yield StickyHeader("Result")
                     yield Label("Start by making a request", id="empty-result-label")
 
+            with Container(id="explorer"):
+                # Endpoints explorer
+                # Only for servers running Nasse
+                yield StickyHeader("Explorer")
+                with VerticalScroll(id="endpoints-explorer"):
+                    with VerticalScroll(id="tree-view"):
+                        for category, sub_categories in self.categories.items():
+                            tree: Tree[Endpoint] = Tree(category)
+                            # tree.root.expand()
+                            for sub_category, endpoints in sub_categories.items():
+                                if sub_category == "@TopLevelEndpoint":
+                                    sub_tree = tree.root
+                                else:
+                                    sub_tree = tree.root.add(sub_category)
+                                for endpoint in endpoints:
+                                    sub_tree.add_leaf(endpoint.name, endpoint)
+                            yield tree
         yield Footer()
+
+    @property
+    def categories(self) -> typing.Dict[str, typing.Dict[str, typing.List[Endpoint]]]:
+        """Returns the category separated endpoints"""
+        mid_results: typing.Dict[str, typing.List[Endpoint]] = {}
+        for endpoint in self.endpoints:
+            try:
+                mid_results[endpoint.category].append(endpoint)
+            except KeyError:
+                mid_results[endpoint.category] = [endpoint]
+
+        results = {}
+        for category, endpoints in mid_results.items():
+            results[category] = {}
+            for endpoint in endpoints:
+                try:
+                    results[category][endpoint.sub_category or "@TopLevelEndpoint"].append(endpoint)
+                except KeyError:
+                    results[category][endpoint.sub_category or "@TopLevelEndpoint"] = [endpoint]
+        return results
 
     def on_mount(self):
         """When mounted"""

@@ -426,13 +426,13 @@ class Nasse():
             result += "## {localization__index}\n\n".format(localization__index=localization.index)
 
             # Sorting the sections alphabetically
-            sections = sorted({endpoint.section for endpoint in self.endpoints.values()})
+            sections = sorted({endpoint.category for endpoint in self.endpoints.values()})
 
             # Getting the endpoints for each section
             sections_registry = {}
             for section in sections:
                 for endpoint in self.endpoints.values():
-                    if endpoint.section == section:
+                    if endpoint.category == section:
                         try:
                             sections_registry[section].append(endpoint)
                         except Exception:
