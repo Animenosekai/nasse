@@ -76,6 +76,25 @@
     height: 100h;
 }
 
+#request-information {
+    height: auto;
+    margin: 1;
+}
+
+#request-information-title {
+    /* padding: 2; */
+    padding: 0 2;
+    border: round gray;
+    text-style: bold;
+}
+
+#request-information-description {
+    margin: 1 0;
+    padding: 0 1;
+    background: $boost;
+    border-left: outer $success;
+}
+
 #request-path-container {
     height: auto;
 }

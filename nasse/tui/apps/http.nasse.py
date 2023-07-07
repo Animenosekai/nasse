@@ -222,6 +222,7 @@ class HTTP(App):
     toggle_explorer = var(False)
     result: reactive[typing.Optional[typing.Union[requests.Response, Error, Loading]]] = reactive(None)
     endpoint: reactive[typing.Optional[Endpoint]] = reactive(None)
+    method: reactive[Types.Method.Any] = reactive("*")
     # profile: reactive[str] = reactive("Default")
 
     BINDINGS = [("h", "toggle_history", "History"), ("r", "toggle_results", "Result"), ("e", "toggle_explorer", "Explorer"),
@@ -288,12 +289,23 @@ class HTTP(App):
 
     def compose_request_view(self):
         """Creates the request view"""
+
+        method = self._method
+
+        if self.endpoint:
+            description = self.endpoint.description.get(method, self.endpoint.description.get("*", self.localization.no_description))
+            yield Container(
+                Label(self.endpoint.name, id="request-information-title"),
+                Label(description, id="request-information-description"),
+                id="request-information"
+            )
+
         if not self.endpoint or not self.endpoint.methods or "*" in self.endpoint.methods:
             request_select = Select([(method, method) for method in typing.get_args(Types.Method.Standard)],
-                                    allow_blank=False, value="GET", id="request-method")
+                                    allow_blank=False, value=method if method != "*" else "GET", id="request-method")
         else:
             request_select = Select([(method, method) for method in self.endpoint.methods],
-                                    allow_blank=False, value=list(self.endpoint.methods)[0], id="request-method")
+                                    allow_blank=False, value=method, id="request-method")
 
         if self.endpoint:
             request_input = Input(self.endpoint.path, placeholder="path", suggester=PathSuggestion(self), id="request-path")
@@ -302,7 +314,13 @@ class HTTP(App):
 
         yield Horizontal(request_select, request_input, id="request-path-container")
 
-        yield Container(*self.compose_user_sent(), id="request-user-sent")
+        yield Container(UserSentForm("Parameters", inputs=get_method_variant(method, self.endpoint.parameters)
+                                     if self.endpoint else None, multiple=True, id="request-parameters"),
+                        UserSentForm("Headers", inputs=get_method_variant(method, self.endpoint.headers)
+                                     if self.endpoint else None, id="request-headers"),
+                        UserSentForm("Cookies", inputs=get_method_variant(method, self.endpoint.cookies)
+                                     if self.endpoint else None, id="request-cookies"),
+                        id="request-user-sent")
 
         yield SectionTitle("File")
         yield Container(Container(id="request-files-container", classes="files-container"),
@@ -312,19 +330,16 @@ class HTTP(App):
         yield SectionTitle("Data")
         yield Container(Button("Add data file", id="request-data-button"), id="request-data-container")
 
-    def compose_user_sent(self):
-        """Compose user sent values"""
-        try:
-            default_method = next(iter(self.endpoint.methods))
-        except Exception:
-            default_method = "*"
-        try:
-            method = self.query_one("#request-method", Select).value or default_method
-        except Exception:
-            method = default_method
-        yield UserSentForm("Parameters", inputs=get_method_variant(method, self.endpoint.parameters) if self.endpoint else None, multiple=True, id="request-parameters")
-        yield UserSentForm("Headers", inputs=get_method_variant(method, self.endpoint.headers) if self.endpoint else None, id="request-headers")
-        yield UserSentForm("Cookies", inputs=get_method_variant(method, self.endpoint.cookies) if self.endpoint else None, id="request-cookies")
+    @property
+    def _method(self) -> str:
+        """Get the currently selected method"""
+        if self.method == "*":
+            try:
+                return next(iter(self.endpoint.methods))
+            except Exception:
+                return "*"
+        else:
+            return self.method
 
     @property
     def categories(self) -> typing.Dict[str, typing.Dict[str, typing.List[Endpoint]]]:
@@ -349,6 +364,12 @@ class HTTP(App):
     def on_mount(self):
         """When mounted"""
         self.query_one(Header).query_one(_header.HeaderIcon).icon = "🍡"
+
+    def on_select_changed(self, event: Select.Changed):
+        """When a selected element is changed"""
+        if event.select.id == "request-method":
+            self.method = event.select.value or "*"
+            self.reload_endpoint()
 
     def on_view_clicked(self, minimizing: str, maximizing: str):
         """When a view is clicked"""
@@ -375,8 +396,9 @@ class HTTP(App):
     def reload_endpoint(self):
         """Reloads the request view"""
         request_view = self.query_one("#request", View)
+        recompose = self.compose_request_view()
         request_view.remove_children()
-        request_view.mount_all(self.compose_request_view())
+        request_view.mount_all(recompose)
         request_view.refresh(layout=True)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -692,4 +714,6 @@ if __name__ == "__main__":
                  description="This is a GET request", headers=[UserSent("X-NASSE-TEST", description="This is a test")], path="/get"),
         Endpoint(name="POST request", category="Method Requests", sub_category="POST", methods="POST",
                  description="This is a POST request", headers=[UserSent("X-NASSE-TEST", description="This is a test")], parameters=UserSent("hello", description="world"), path="/post"),
+        Endpoint(name="Multiple request", category="Method Requests", methods="*",
+                 description={"GET": "This is a multiple methods request", "POST": "This is really cool", "*": "Yup as expected"}, headers=[UserSent("X-NASSE-TEST", description="This is a test")], parameters={"POST": UserSent("hello", description="world")}, path="/post"),
     ]).run()
