@@ -48,7 +48,6 @@ from nasse.tui.components.forms import UserSentForm
 from nasse.tui.components.headers import StickyHeader
 from nasse.tui.components.history import HistoryResponse
 from nasse.tui.components.texts import SectionTitle
-from nasse.tui.error import Error
 from nasse.tui.screens import FileBrowser, OptionsScreen, QuitScreen
 from nasse.tui.widget import Widget
 from nasse import __info__
@@ -58,6 +57,7 @@ from nasse import __info__
 ╭─────────────────────────────── Dataclasses ────────────────────────────────╮
 │ HTTPOptions                                                                │
 │ Loading                                                                    │
+│ Error                                                                      │
 ╰────────────────────────────────────────────────────────────────────────────╯
 """
 
@@ -89,6 +89,25 @@ class HTTPOptions:
 class Loading:
     """The request loading state"""
     url: str
+
+
+@dataclasses.dataclass
+class Error:
+    """An error"""
+    exception: Exception
+    method: str
+    url: str
+    params: typing.Dict[str, list] = dataclasses.field(default_factory=dict)
+    headers: typing.Dict[str, str] = dataclasses.field(default_factory=dict)
+    cookies: typing.Dict[str, str] = dataclasses.field(default_factory=dict)
+    files: typing.List[typing.Tuple[str, str]] = dataclasses.field(default_factory=list)
+    data: typing.Optional[bytes] = None
+
+    timeout: float = 10
+    allow_redirects: bool = True
+    verify: bool = True
+    proxies: typing.Dict[str, str] = dataclasses.field(default_factory=dict)
+    cert: typing.List[str] = dataclasses.field(default_factory=list)
 
 
 # pylint: disable=pointless-string-statement
