@@ -23,25 +23,27 @@ TODO
 """
 import dataclasses
 import pathlib
+import time
 import typing
 import urllib.parse as url
 
 import requests
 from rich.traceback import Traceback
 from textual import work
-from textual.containers import Container, Horizontal, VerticalScroll
 from textual.binding import Binding
+from textual.containers import Container, Horizontal, VerticalScroll
 from textual.events import Click
 from textual.reactive import reactive, var
 from textual.suggester import Suggester
 from textual.validation import Integer, Number
 from textual.widgets import (Button, Footer, Header, Input, Label,
-                             LoadingIndicator, Pretty, Select, Static, Switch, Tree,
-                             _header)
+                             LoadingIndicator, Pretty, Select, Static, Switch,
+                             Tree, _header)
 from textual.worker import get_current_worker
 
+from nasse import __info__
 from nasse.docs.localization import EnglishLocalization, Localization
-from nasse.models import Types, UserSent, Endpoint, get_method_variant
+from nasse.models import Endpoint, Types, UserSent, get_method_variant
 from nasse.tui.app import App
 from nasse.tui.components import series
 from nasse.tui.components.forms import UserSentForm
@@ -50,7 +52,6 @@ from nasse.tui.components.history import HistoryResponse
 from nasse.tui.components.texts import SectionTitle
 from nasse.tui.screens import FileBrowser, OptionsScreen, QuitScreen
 from nasse.tui.widget import Widget
-from nasse import __info__
 
 # pylint: disable=pointless-string-statement
 """
@@ -80,6 +81,7 @@ class HTTPOptions:
     verify: bool = True
     cert: typing.List[str] = dataclasses.field(default_factory=list)
     history_limit: int = 10
+    endpoints_update: int = 60
     # profiles: typing.List[Profile] = dataclasses.field(default_factory=list)
     # stream
     # hooks
@@ -202,6 +204,12 @@ class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
     def compose_options(self):
         """Composes the inner options view"""
         with VerticalScroll(id="options-inner-container"):
+            yield SectionTitle("Endpoints Update")
+            yield Input(str(self.options.endpoints_update),
+                        placeholder="time between each endpoints list update (in sec.)",
+                        validators=[Integer(minimum=0, failure_description="The time must be a positive integer")],
+                        id="options-endpoints-update")
+
             yield SectionTitle("History Limit")
             yield Input(str(self.options.history_limit),
                         placeholder="maximum number of requests in the history",
@@ -241,6 +249,7 @@ class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
     def collect_values(self) -> typing.Dict[str, typing.Any]:
         """Collect the different options value"""
         return {
+            "endpoints_update": int(self.query_one("#options-endpoints-update", Input).value),
             "history_limit": int(self.query_one("#options-history-limit", Input).value),
             "timeout": float(self.query_one("#options-timeout", Input).value),
             "allow_redirects": self.query_one("#options-redirects-switch", Switch).value,
@@ -288,6 +297,7 @@ class HTTP(App):
     history: reactive[typing.List[typing.Union[requests.Response, Error]]] = reactive(list)
     result: reactive[typing.Optional[typing.Union[requests.Response, Error, Loading]]] = reactive(None)
     endpoint: reactive[typing.Optional[Endpoint]] = reactive(None)
+    endpoints: reactive[typing.List[Endpoint]] = reactive(list)
     _method: reactive[Types.Method.Any] = reactive("*")
     # profile: reactive[str] = reactive("Default")
 
@@ -332,8 +342,52 @@ class HTTP(App):
         self.link = url.urlparse(link)
         self.localization = localization
         self.endpoints = endpoints or []
+        self.base_endpoints = self.endpoints.copy()
 
         self.options = options or HTTPOptionsScreen.loads("http", HTTPOptions)
+
+    @work(exclusive=True)
+    def update_endpoints(self, wait: int = 0):
+        """The worker thread which updates the endpoints list"""
+        worker = get_current_worker()
+        time.sleep(wait)
+        while True:
+            print("(worker) Checking out the new endpoints")
+            try:
+                final_path = url.urlunparse((
+                    # Defaulting to the registered base URL
+                    self.link.scheme,
+                    self.link.netloc,
+                    "/_nasse/endpoints",
+                    "",
+                    "",
+                    ""
+                ))
+                response = requests.get(final_path, timeout=60)
+                endpoints = [Endpoint(**end) for end in response.json()["data"]["endpoints"]]
+
+            except Exception as err:
+                print("(worker) Opps an error occured while checking for new endpoints", err)
+                endpoints = []
+
+            if not worker.is_cancelled:
+                self.call_from_thread(self.load_endpoints, endpoints)
+
+            print(f"(worker) Waiting {self.options.endpoints_update} seconds before checking again for new endpoints")
+
+            for _ in range(self.options.endpoints_update):
+                if worker.is_cancelled:
+                    break
+                time.sleep(1)
+
+            if worker.is_cancelled:
+                print("(worker) The endpoints checking got cancelled here")
+                break
+
+    def load_endpoints(self, endpoints: typing.List[Endpoint]):
+        """Loads the endpoints to the endpoints list"""
+        self.endpoints = [*self.base_endpoints, *endpoints]
+        print(f"Found {len(self.endpoints)} endpoints")
 
     # pylint: disable=pointless-string-statement
     """
@@ -344,6 +398,7 @@ class HTTP(App):
     │ compose_result_error                                                     │
     │ compose_result_loading                                                   │
     │ compose_result_response                                                  │
+    │ compose_explorer                                                         │
     ╰──────────────────────────────────────────────────────────────────────────╯
     """
 
@@ -425,23 +480,7 @@ class HTTP(App):
                 # The actual explorer
                 with VerticalScroll(id="endpoints-explorer"):
                     with VerticalScroll(id="tree-view"):
-                        for category, sub_categories in self.categories.items():
-                            # For each category, we are creating a tree, to
-                            # make a multi-rooted final tree.
-                            tree: Tree[Endpoint] = Tree(category)
-                            for sub_category, endpoints in sub_categories.items():
-                                # An endpoint could have a category without having any sub category
-                                # This would cause an issue if the developer decides to use
-                                # `@TopLevelEndpoint` as their sub category name, which is very unlikely
-                                if sub_category == "@TopLevelEndpoint":
-                                    sub_tree = tree.root
-                                else:
-                                    sub_tree = tree.root.add(sub_category)
-
-                                # For each endpoint, add a leaf, either to the tree root, or subtree
-                                for endpoint in endpoints:
-                                    sub_tree.add_leaf(endpoint.name, endpoint)
-                            yield tree
+                        yield from self.compose_explorer()
 
         # Add a footer, which automatically displays the different available bindings
         yield Footer()
@@ -676,6 +715,50 @@ class HTTP(App):
         # Making sure the request got refreshed
         request_view.refresh(layout=True)
 
+    def compose_explorer(self):
+        """
+        Creates the explorer content
+
+        Area
+        ----
+        ╭────────┬──────────────────────────────┬────────╮
+        │        |                              |▒▒▒▒▒▒▒▒│
+        │        |                              |▒▒▒▒▒▒▒▒│
+        │        |                              |▒▒▒▒▒▒▒▒│
+        │        |                              |▒▒▒▒▒▒▒▒│
+        │        |                              |▒▒▒▒▒▒▒▒│
+        │        |                              |▒▒▒▒▒▒▒▒│
+        │        ├──────────────────────────────┤▒▒▒▒▒▒▒▒│
+        │        |                              |▒▒▒▒▒▒▒▒│
+        │        |                              |▒▒▒▒▒▒▒▒│
+        ╰────────┴──────────────────────────────┴────────╯
+        """
+        for category, sub_categories in self.categories.items():
+            # For each category, we are creating a tree, to
+            # make a multi-rooted final tree.
+            tree: Tree[Endpoint] = Tree(category)
+            for sub_category, endpoints in sub_categories.items():
+                # An endpoint could have a category without having any sub category
+                # This would cause an issue if the developer decides to use
+                # `@TopLevelEndpoint` as their sub category name, which is very unlikely
+                if sub_category == "@TopLevelEndpoint":
+                    sub_tree = tree.root
+                else:
+                    sub_tree = tree.root.add(sub_category)
+
+                # For each endpoint, add a leaf, either to the tree root, or subtree
+                for endpoint in endpoints:
+                    sub_tree.add_leaf(endpoint.name, endpoint)
+            yield tree
+
+    def reload_explorer(self):
+        """Reloads the explorer view"""
+        explorer_view = self.query_one("#tree-view", VerticalScroll)
+        explorer_view.remove_children()
+        explorer_view.mount_all(self.compose_explorer())
+        # Making sure the explorer got refreshed
+        explorer_view.refresh(layout=True)
+
     # pylint: disable=pointless-string-statement
     """
     ╭────────────────────────── Event Handlers ────────────────────────────────╮
@@ -697,6 +780,16 @@ class HTTP(App):
         """When mounted"""
         # Yea it's a pain to change the Header Icon
         self.query_one(Header).query_one(_header.HeaderIcon).icon = "🍡"
+
+        # Start to update the endpoints list
+        self.update_endpoints()
+
+        # I thought I would have a problem with the mounting flow
+        # because the `on_mount` method would be called before
+        # drawing the DOM, thus creating a problem within `watch_endpoints`
+        # but it doesn't seem to be the case ?
+        # self.update_endpoints(wait=3)
+
 
     def on_select_changed(self, event: Select.Changed):
         """When a selected element is changed"""
@@ -925,6 +1018,13 @@ class HTTP(App):
     ╰───────────────────────────────────────────────────────────────────────╯
     """
 
+    def watch_endpoints(self, endpoints: typing.List[Endpoint]) -> None:
+        """Called when `endpoints` is modified"""
+        try:
+            self.reload_explorer()
+        except Exception:
+            print("Couldn't reload the explorer")
+
     def watch_toggle_history(self, toggle_history: bool) -> None:
         """Called when `toggle_history` is modified"""
         self.query_one("#history", Container).set_class(not toggle_history, "unload")
@@ -997,7 +1097,7 @@ class PathSuggestion(Suggester):
 
 if __name__ == "__main__":
     # HTTP("https://google.com").run()
-    HTTP("https://eosqyydyun9tw26.m.pipedream.net").run()
+    # HTTP("https://eosqyydyun9tw26.m.pipedream.net").run()
     # HTTP("http://httpbin.org/get", endpoints=[
     #     Endpoint(name="GET request", category="Method Requests", sub_category="GET", methods="GET",
     #              description="This is a GET request", headers=[UserSent("X-NASSE-TEST", description="This is a test")], path="/get"),
@@ -1005,4 +1105,6 @@ if __name__ == "__main__":
     #              description="This is a POST request", headers=[UserSent("X-NASSE-TEST", description="This is a test")], parameters=UserSent("hello", description="world"), path="/post"),
     #     Endpoint(name="Multiple request", category="Method Requests", methods="*",
     #              description={"GET": "This is a multiple methods request", "POST": "This is really cool", "*": "Yup as expected"}, headers=[UserSent("X-NASSE-TEST", description="This is a test")], parameters={"POST": UserSent("hello", description="world")}, path="/post"),
-    # ]).run()
+    # ] * 20).run()
+
+    HTTP("http://127.0.0.1:5005").run()
