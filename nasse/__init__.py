@@ -1,7 +1,7 @@
 """A web server framework written on top of Flask"""
 
 # autopep8: off
-from .__info__ import * # isort:skip
+from .__info__ import __version__, __version_tuple__, __license__, __author__, __copyright__ # isort:skip
 from . import docs # isort:skip
 from flask import g # isort:skip
 from flask.wrappers import Request as FlaskRequest # isort:skip
@@ -16,6 +16,7 @@ from .utils.logging import Logger, LoggingLevel, logger # isort:skip
 
 
 class RequestProxy(FlaskRequest, Request):
+    """Proxies the global `Request` object"""
     def __init__(self) -> None:
         return
 

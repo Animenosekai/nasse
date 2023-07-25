@@ -16,11 +16,10 @@ Makes HTTP requests
         │ 4 / 8 / 62 | 200 OK in 469ms                      |            │
         │▆▆█▁▁▄▄▆▆▁▁▁|                                      |            │
         ╰────────────┴──────────────────────────────────────┴────────────╯
-
-TODO
-----
-- Profiles
 """
+# TODO
+# - Profiles
+
 import dataclasses
 import pathlib
 import time
@@ -42,7 +41,7 @@ from textual.widgets import (Button, Footer, Header, Input, Label,
 from textual.worker import get_current_worker
 
 from nasse import __info__
-from nasse.docs.localization import EnglishLocalization, Localization
+from nasse.localization import EnglishLocalization, Localization
 from nasse.models import Endpoint, Types, UserSent, get_method_variant
 from nasse.tui.app import App
 from nasse.tui.components import series
@@ -201,9 +200,19 @@ class FileInput(Widget):
 class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
     """The HTTP app options screen"""
 
+    def __init__(self, base_url: str, on_url_change: typing.Callable[[str], typing.Any], **kwargs) -> None:
+        self.base_url = str(base_url)
+        self.on_url_change = on_url_change
+        super().__init__(**kwargs)
+
     def compose_options(self):
         """Composes the inner options view"""
         with VerticalScroll(id="options-inner-container"):
+            yield SectionTitle("Base URL")
+            yield Input(self.base_url,
+                        placeholder="the base url for the requests and the endpoints explorer",
+                        id="options-base-url")
+
             yield SectionTitle("Endpoints Update")
             yield Input(str(self.options.endpoints_update),
                         placeholder="time between each endpoints list update (in sec.)",
@@ -248,6 +257,10 @@ class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
 
     def collect_values(self) -> typing.Dict[str, typing.Any]:
         """Collect the different options value"""
+        new_url = self.query_one("#options-base-url", Input).value
+        if new_url != self.base_url:
+            self.on_url_change(new_url)
+
         return {
             "endpoints_update": int(self.query_one("#options-endpoints-update", Input).value),
             "history_limit": int(self.query_one("#options-history-limit", Input).value),
@@ -352,7 +365,7 @@ class HTTP(App):
         worker = get_current_worker()
         time.sleep(wait)
         while True:
-            print("(worker) Checking out the new endpoints")
+            # print("(worker) Checking out the new endpoints")
             try:
                 final_path = url.urlunparse((
                     # Defaulting to the registered base URL
@@ -367,13 +380,13 @@ class HTTP(App):
                 endpoints = [Endpoint(**end) for end in response.json()["data"]["endpoints"]]
 
             except Exception as err:
-                print("(worker) Opps an error occured while checking for new endpoints", err)
+                # print("(worker) Opps an error occured while checking for new endpoints", err)
                 endpoints = []
 
             if not worker.is_cancelled:
                 self.call_from_thread(self.load_endpoints, endpoints)
 
-            print(f"(worker) Waiting {self.options.endpoints_update} seconds before checking again for new endpoints")
+            # print(f"(worker) Waiting {self.options.endpoints_update} seconds before checking again for new endpoints")
 
             for _ in range(self.options.endpoints_update):
                 if worker.is_cancelled:
@@ -381,13 +394,13 @@ class HTTP(App):
                 time.sleep(1)
 
             if worker.is_cancelled:
-                print("(worker) The endpoints checking got cancelled here")
+                # print("(worker) The endpoints checking got cancelled here")
                 break
 
     def load_endpoints(self, endpoints: typing.List[Endpoint]):
         """Loads the endpoints to the endpoints list"""
         self.endpoints = [*self.base_endpoints, *endpoints]
-        print(f"Found {len(self.endpoints)} endpoints")
+        # print(f"Found {len(self.endpoints)} endpoints")
 
     # pylint: disable=pointless-string-statement
     """
@@ -790,7 +803,6 @@ class HTTP(App):
         # but it doesn't seem to be the case ?
         # self.update_endpoints(wait=3)
 
-
     def on_select_changed(self, event: Select.Changed):
         """When a selected element is changed"""
         if event.select.id == "request-method":
@@ -871,26 +883,32 @@ class HTTP(App):
         container.remove_children()
         container.mount(Button("Add data file", id="request-data-button"))
 
+    def on_url_change(self, link: str):
+        """When the base URL got changed in the settings"""
+        self.link = url.urlparse(str(link))
+
     # pylint: disable=pointless-string-statement
     """
     ╭────────────────────────── Binding actions ───────────────────────────────╮
-    │ on_mount                                                                 │
-    │ on_select_changed                                                        │
-    │ on_view_clicked                                                          │
-    │ on_request_view_clicked                                                  │
-    │ on_result_view_clicked                                                   │
-    │ on_button_pressed                                                        │
-    │ on_tree_node_selected                                                    │
-    │ add_file                                                                 │
-    │ add_data_file                                                            │
-    │ delete_file                                                              │
-    │ delete_data_file                                                         │
+    │ action_open_options                                                      │
+    │ replace_options                                                          │
+    │ action_request_quit                                                      │
+    │ action_toggle_history                                                    │
+    │ action_toggle_results                                                    │
+    │ action_toggle_explorer                                                   │
+    │ action_submit                                                            │
+    │ request_worker                                                           │
+    │ add_result                                                               │
     ╰──────────────────────────────────────────────────────────────────────────╯
     """
 
     def action_open_options(self):
         """When the user wants to see the options screen"""
-        self.push_screen(HTTPOptionsScreen(self.options, id="options-screen"), self.replace_options)
+        self.push_screen(HTTPOptionsScreen(base_url=url.urlunparse(self.link),
+                                           on_url_change=self.on_url_change,
+                                           options=self.options,
+                                           id="options-screen"),
+                         self.replace_options)
 
     def replace_options(self, options: HTTPOptions):
         """To replace the current options"""
@@ -1023,7 +1041,8 @@ class HTTP(App):
         try:
             self.reload_explorer()
         except Exception:
-            print("Couldn't reload the explorer")
+            # print("Couldn't reload the explorer")
+            pass
 
     def watch_toggle_history(self, toggle_history: bool) -> None:
         """Called when `toggle_history` is modified"""

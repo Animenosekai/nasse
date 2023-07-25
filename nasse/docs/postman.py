@@ -7,7 +7,7 @@ from copy import deepcopy
 # from uuid import uuid4
 
 from nasse import docs, models
-from nasse.docs.localization.base import Localization
+from nasse.localization.base import Localization
 from nasse.utils.sanitize import sort_http_methods
 
 

@@ -20,7 +20,7 @@ import watchdog.observers
 
 from nasse import config, docs, models, receive, request, utils
 from nasse.config import NasseConfig
-from nasse.docs.localization.base import Localization
+from nasse.localization.base import Localization
 from nasse.response import exception_to_response
 from nasse.servers import ServerBackend
 from nasse.servers.flask import Flask

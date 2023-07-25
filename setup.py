@@ -33,7 +33,7 @@ setup(
     python_requires='>=3.6, <4',
     entry_points={
         'console_scripts': [
-            'nasse = nasse.__main__:main'
+            'nasse = nasse.__main__:entry'
         ]
     },
     package_data={

@@ -174,6 +174,50 @@ This file lists and explains the different endpoints available in the {name} sec
 
     # TUI
 
-    tui_theme = "Theme"
-    tui_explorer = "Endpoints Explorer"
+    # Footer
+    tui_history = "History"
+    tui_result = "Result"
+    tui_explorer = "Explorer"
+    tui_submit = "Submit"
+    tui_options = "Options"
     tui_quit = "Quit"
+
+    # History
+    tui_min = "Min"
+    tui_average = "Avg"
+    tui_max = "Max"
+
+    # Explorer
+    tui_reset = "Reset"
+
+    # Request
+    tui_request = "Request"
+    tui_name = "name"
+    tui_value = "value"
+    tui_parameters = "Parameters"
+    tui_headers = "Headers"
+    tui_cookies = "Cookies"
+    tui_file = "File"
+    tui_add_file = "Add File"
+    tui_data = "Data"
+    tui_add_data_file = "Add Data File"
+
+    # Options
+    tui_base_url = "Base URL"
+    tui_endpoints_update = "Endpoints Update"
+    tui_history_limit = "History Limit"
+    tui_timeout = "Timeout"
+    tui_redirects = "Redirects"
+    tui_allow_redirects = "Allow Redirects"
+    tui_proxies = "Proxies"
+    tui_security = "Security"
+    tui_verify_request = "Verify Request"
+    tui_add_certificate = "Add Certificate"
+
+    # Result
+    tui_no_result_prompt = "Start by making a request"
+    tui_content = "Content"
+
+    # Quit
+    tui_quit_confirmation = "Are you sure you want to quit?"
+    tui_cancel = "Cancel"

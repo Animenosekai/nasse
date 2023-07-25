@@ -1,7 +1,7 @@
 
-# Nasse API Reference
+# test API Reference
 
-Welcome to the Nasse API Reference.
+Welcome to the test API Reference.
 
 ## Globals
 
@@ -33,7 +33,7 @@ Specific errors are documented in each endpoint, but these are the general error
 
 | Exception                   | Description                                                                                                     | Code  |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------- | ----- |
-| `SERVER_ERROR`              | When an error occurs on Nasse while processing a request                                                       | 500   |
+| `SERVER_ERROR`              | When an error occurs on test while processing a request                                                       | 500   |
 | `MISSING_CONTEXT`           | When you are trying to access something which is only available in a Nasse context, and you aren't in one       | 500   |
 | `INTERNAL_SERVER_ERROR`     | When a critical error occurs on the system                                                                      | 500   |
 | `METHOD_NOT_ALLOWED`        | When you made a request with the wrong method                                                                   | 405   |
@@ -49,7 +49,7 @@ Specific errors are documented in each endpoint, but these are the general error
 
 When a user needs to be logged in, the "Authorization" header needs to be set to the login token provided when logging in.
 
-Alternatively, the "nasse_token" parameter and "__nasse_token" cookie can be used, but these won't be prioritized.
+Alternatively, the "test_token" parameter and "__test_token" cookie can be used, but these won't be prioritized.
 
 If the endpoint is flagged for a "verified only" login, the account won't be fetched from any database, but the token will be checked.
 
@@ -79,7 +79,7 @@ The "call_stack" attribute is enabled only when an error occurs or the `call_sta
         },
         "ip": "127.0.0.1",
         "headers": {
-            "Host": "api.nasse.com",
+            "Host": "api.test.com",
             "Connection": "close",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "fr-fr",
@@ -87,7 +87,7 @@ The "call_stack" attribute is enabled only when an error occurs or the `call_sta
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15"
         },
         "values": {},
-        "domain": "api.nasse.com",
+        "domain": "api.test.com",
         "logs": [
             "1636562693.036563｜[INFO] [nasse.receive.Receive.__call__] → Incoming GET request to /account/name from 127.0.0.1",
             "1636562693.070008｜[ERROR] [nasse.exceptions.base.MissingToken.__init__] An authentication token is missing from the request"

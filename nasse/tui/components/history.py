@@ -7,7 +7,6 @@ from textual.reactive import reactive
 from textual.widgets import Button, Label
 
 from nasse.tui.components import series
-from nasse.tui.error import Error
 
 
 class HistoryResponse(Button):
@@ -43,13 +42,14 @@ class HistoryResponse(Button):
     }
     """
 
-    response: reactive[typing.Union[requests.Response, Error]]
+    response: reactive[typing.Union[requests.Response, "Error"]]
 
-    def __init__(self, response: typing.Union[requests.Response, Error], **kwargs) -> None:
+    def __init__(self, response: typing.Union[requests.Response, "Error"], **kwargs) -> None:
         super().__init__(**kwargs)
         self.response = response
 
     def compose(self):
+        from nasse.tui.apps.http_app import Error
 
         url = urlparse(self.response.url)
         yield Label(f"[bold]{url.path}[/bold]", classes="history-response-path")

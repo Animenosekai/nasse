@@ -755,7 +755,7 @@ You can now use the docs localization feature which lets you use a different lan
 
 ```python
 from nasse import Nasse
-from nasse.docs.localization import JapaneseLocalization
+from nasse.localization import JapaneseLocalization
 
 app = Nasse()
 app.make_docs("./docs/jpa", localization=JapaneseLocalization, javascript=False)
@@ -767,7 +767,7 @@ Here are the built-in languages :
 - French
 - Japanese
 
-But you can create your own translation by subclassing `nasse.docs.localization.Localization`
+But you can create your own translation by subclassing `nasse.localization.Localization`
 
 ## Deployment
 

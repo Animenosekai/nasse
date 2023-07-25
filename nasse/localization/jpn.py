@@ -7,7 +7,7 @@ Animenosekai
     Original Author, MIT License
 """
 
-from nasse.docs.localization.base import Localization
+from nasse.localization.base import Localization
 
 
 class JapaneseLocalization(Localization):
