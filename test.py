@@ -5,7 +5,7 @@ app = Nasse("test")
 
 
 @app.route(category="Testing")
-def test(testing: int):
+def test(testing: int, testing2: float = 2.3):
     """
     This is a cool testing endpoint
 
@@ -13,6 +13,8 @@ def test(testing: int):
     ----------
     testing
         Testing an argument description
+    testing2
+        Testing another argument description
     """
     print(testing)
 
@@ -23,4 +25,4 @@ def hey(a: int, b: float = 2.3):
     return "Yay!"
 
 # app.make_docs()
-app.run(debug=True)
+# app.run(debug=True)

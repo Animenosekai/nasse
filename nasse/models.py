@@ -360,7 +360,11 @@ class Endpoint:
                 base_len = len(base)
 
                 # Getting the file where the function got defined
-                filepath = pathlib.Path(inspect.getmodule(self.handler).__file__)
+                # module = inspect.getmodule(self.handler)
+                # if module:
+                #     filepath = pathlib.Path(module.__file__)
+                # else:
+                filepath = pathlib.Path(inspect.getfile(self.handler))
 
                 # A fail-safe version of pathlib.Path.relative_to
                 result = ""

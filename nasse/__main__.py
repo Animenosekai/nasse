@@ -50,7 +50,7 @@ def postman_to_endpoints(data: dict):
 
 def get_nasse_instance(file: pathlib.Path):
     """Retrieves a Nasse instance from the given file"""
-    file = file.resolve().absolute()
+    file = pathlib.Path(file).resolve().absolute()
     with add_to_path(file):
         spec = importlib.util.spec_from_file_location(file.stem, str(file))
         module = importlib.util.module_from_spec(spec)

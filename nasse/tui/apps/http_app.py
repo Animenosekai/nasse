@@ -405,13 +405,17 @@ class HTTP(App):
                     # Defaulting to the registered base URL
                     self.link.scheme,
                     self.link.netloc,
-                    "/_nasse/endpoints",
+                    "/@nasse/endpoints",
                     "",
                     "",
                     ""
                 ))
                 response = requests.get(final_path, timeout=60)
-                endpoints = [Endpoint(**end) for end in response.json()["data"]["endpoints"]]
+                endpoints = []
+                for endpoint in response.json()["data"]["endpoints"]:
+                    # print(endpoint)
+                    endpoint.pop("handler", None)
+                    endpoints.append(Endpoint(**endpoint))
 
             except Exception as err:
                 # print("(worker) Opps an error occured while checking for new endpoints", err)
@@ -422,6 +426,8 @@ class HTTP(App):
 
             # print(f"(worker) Waiting {self.options.endpoints_update} seconds before checking again for new endpoints")
 
+            # This is a big approximate way of doing this but it's fine because
+            # this is not very important
             for _ in range(self.options.endpoints_update):
                 if worker.is_cancelled:
                     break
@@ -563,7 +569,7 @@ class HTTP(App):
             # with the `mount` and `mount_all` functions
             yield Container(
                 Label(self.endpoint.name, id="request-information-title"),  # A box with the endpoint name
-                Markdown(description, id="request-information-description"),  # A blockquote with the endpoint description (*)
+                Markdown(description.strip(), id="request-information-description"),  # A blockquote with the endpoint description (*)
                 id="request-information"
             )
 
@@ -1080,14 +1086,13 @@ class HTTP(App):
         # self.refresh(repaint=True, layout=True)
         self.app.exit()
         self.app.run()
-        print("")
 
     def watch_endpoints(self, endpoints: typing.List[Endpoint]) -> None:
         """Called when `endpoints` is modified"""
         try:
             self.reload_explorer()
         except Exception:
-            print("Couldn't reload the explorer")
+            # print("Couldn't reload the explorer")
             pass
 
     def watch_toggle_history(self, toggle_history: bool) -> None:

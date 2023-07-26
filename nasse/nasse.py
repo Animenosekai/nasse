@@ -130,7 +130,7 @@ class Nasse():
               path: typing.Optional[typing.Union[typing.Callable, str]] = None,
 
               name: str = "Untitled",
-              category: str = "",
+              category: str = "Main",
               sub_category: str = "",
               description: models.Types.MethodVariant[str] = None,
               base_dir: typing.Union[pathlib.Path, str, None] = None,
@@ -271,8 +271,30 @@ class Nasse():
                 try:
                     def endpoints():
                         """Returns back all of the defined endpoints"""
-                        return 200, {"endpoints": [dataclasses.asdict(end) for end in self.endpoints.values()]}
-                    self.route("/@nasse/endpoints", name="Endpoints", category="@Nasse Debug")(endpoints)
+                        results = {"endpoints": []}
+                        for endpoint in self.endpoints.values():
+                            # endpoint: models.Endpoint
+                            result = {
+                                "handler": endpoint.handler.__name__,
+                                "name": endpoint.name,
+                                "category": endpoint.category,
+                                "sub_category": endpoint.sub_category,
+                                "description": endpoint.description,
+                                "base_dir": endpoint.base_dir,
+                                "path": endpoint.path,
+                                "methods": endpoint.methods,
+                                "json": endpoint.json
+                            }
+                            for element in ("login", "parameters", "headers", "cookies", "dynamics", "returns", "errors"):
+                                result[element] = {key: [dataclasses.asdict(val) for val in value]
+                                                   for key, value in getattr(endpoint, element).items()}
+
+                            results["endpoints"].append(result)
+                        return 200, results
+
+                    self.route("/@nasse/endpoints",
+                               name="Endpoints",
+                               category="@Nasse Debug")(endpoints)
                 except Exception as err:
                     if self.config.logger:
                         self.config.logger.warn(f"Couldn't set up the debug endpoints ({err.__class__.__name__}: {err})")
