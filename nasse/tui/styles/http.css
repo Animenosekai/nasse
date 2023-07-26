@@ -58,6 +58,10 @@
     height: 100vh;
 }
 
+#options-language-notice {
+    margin-left: 1;
+    opacity: 0.75;
+}
 
 #request {
     height: 50h;

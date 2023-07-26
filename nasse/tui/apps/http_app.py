@@ -41,7 +41,7 @@ from textual.widgets import (Button, Footer, Header, Input, Label,
 from textual.worker import get_current_worker
 
 from nasse import __info__
-from nasse.localization import EnglishLocalization, Localization
+from nasse.localization import EnglishLocalization, Localization, FrenchLocalization, JapaneseLocalization
 from nasse.models import Endpoint, Types, UserSent, get_method_variant
 from nasse.tui.app import App
 from nasse.tui.components import series
@@ -62,6 +62,14 @@ from nasse.tui.widget import Widget
 """
 
 
+def language_to_localization(lang: str = "eng"):
+    """Returns the correct localization from the given language string"""
+    if lang == JapaneseLocalization.__id__:
+        return JapaneseLocalization
+    elif lang == FrenchLocalization.__id__:
+        return FrenchLocalization
+    return EnglishLocalization
+
 # @dataclasses.dataclass
 # class Profile:
 #     """A profile"""
@@ -74,6 +82,7 @@ from nasse.tui.widget import Widget
 @dataclasses.dataclass
 class HTTPOptions:
     """App options"""
+    language: str = "eng"
     timeout: float = 10
     allow_redirects: bool = True
     proxies: typing.Dict[str, str] = dataclasses.field(default_factory=dict)
@@ -215,6 +224,14 @@ class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
     def compose_options(self):
         """Composes the inner options view"""
         with VerticalScroll(id="options-inner-container"):
+            yield SectionTitle(self.localization.tui_language)
+            yield Select([(local.__native__, local.__id__) for local in (EnglishLocalization, FrenchLocalization, JapaneseLocalization)],
+                         prompt=self.localization.tui_language,
+                         allow_blank=False,
+                         value=self.localization.__id__,
+                         id="options-language")
+            yield Label(self.localization.tui_language_notice, id="options-language-notice")
+
             yield SectionTitle(self.localization.tui_base_url)
             yield Input(self.base_url,
                         placeholder=self.localization.tui_base_url_placeholder,
@@ -269,6 +286,7 @@ class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
             self.on_url_change(new_url)
 
         return {
+            "language": self.query_one("#options-language", Select).value,
             "endpoints_update": int(self.query_one("#options-endpoints-update", Input).value),
             "history_limit": int(self.query_one("#options-history-limit", Input).value),
             "timeout": float(self.query_one("#options-timeout", Input).value),
@@ -360,17 +378,20 @@ class HTTP(App):
     def __init__(self,
                  link: str,  # The base link
                  endpoints: typing.Optional[typing.List[Endpoint]] = None,  # Endpoints for the endpoints explorer
-                 localization: typing.Union[Localization, typing.Type[Localization]] = EnglishLocalization,  # The UI language
+                 #  localization: typing.Union[Localization, typing.Type[Localization]] = EnglishLocalization,  # The UI language
                  options: typing.Optional[HTTPOptions] = None,  # Options for the app
                  **kwargs):
         super().__init__(**kwargs)
         self.link = url.urlparse(link)
-        self.localization = localization
+
+        # self.localization = localization
         self.endpoints = endpoints or []
         self.base_endpoints = self.endpoints.copy()
 
-        self.set_bindings(define_bindings(self.localization))
         self.options = options or HTTPOptionsScreen.loads("http", HTTPOptions)
+        self.localization = language_to_localization(self.options.language)
+
+        self.set_bindings(define_bindings(self.localization))
 
     @work(exclusive=True)
     def update_endpoints(self, wait: int = 0):
@@ -932,6 +953,7 @@ class HTTP(App):
         """To replace the current options"""
         self.options = options
         HTTPOptionsScreen.dumps("http", options)
+        self.localization = language_to_localization(self.options.language)
 
     def action_request_quit(self) -> None:
         """Action to display the quit dialog."""
@@ -1046,6 +1068,8 @@ class HTTP(App):
     # pylint: disable=pointless-string-statement
     """
     ╭──────────────────────── Reactive handlers ────────────────────────────╮
+    │ watch_localization                                                    │
+    │ watch_endpoints                                                       │
     │ watch_toggle_history                                                  │
     │ watch_toggle_results                                                  │
     │ watch_toggle_explorer                                                 │
@@ -1053,6 +1077,13 @@ class HTTP(App):
     │ watch_result                                                          │
     ╰───────────────────────────────────────────────────────────────────────╯
     """
+
+    def watch_localization(self, localization: typing.Type[Localization]) -> None:
+        """Called when `localization` is modified"""
+        # self.refresh(repaint=True, layout=True)
+        self.app.exit()
+        self.app.run()
+        print("")
 
     def watch_endpoints(self, endpoints: typing.List[Endpoint]) -> None:
         """Called when `endpoints` is modified"""
@@ -1143,6 +1174,4 @@ if __name__ == "__main__":
     #     Endpoint(name="Multiple request", category="Method Requests", methods="*",
     #              description={"GET": "This is a multiple methods request", "POST": "This is really cool", "*": "Yup as expected"}, headers=[UserSent("X-NASSE-TEST", description="This is a test")], parameters={"POST": UserSent("hello", description="world")}, path="/post"),
     # ] * 20).run()
-
-    from nasse.localization import FrenchLocalization
-    HTTP("", localization=FrenchLocalization).run()
+    HTTP("").run()

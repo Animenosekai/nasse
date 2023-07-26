@@ -14,6 +14,8 @@ class JapaneseLocalization(Localization):
     """
     The japanese version of the docs generation
     """
+    __native__ = "日本語"
+
     sections = "セクション"
     getting_started = "はじめに"
 
@@ -214,6 +216,8 @@ class JapaneseLocalization(Localization):
     tui_add_data_file = "データファイルを追加"
 
     # Options
+    tui_language = "言語"
+    tui_language_notice = "言語変化を有効するには再起動して下さい"
     tui_base_url = "ベースURL"
     tui_base_url_placeholder = "リクエストとエクスプローラーのベースURL"
     tui_endpoints_update = "エンドポイントの更新度"

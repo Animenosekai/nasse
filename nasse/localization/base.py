@@ -1,12 +1,38 @@
 """
 The base strings
 """
+import pathlib
+import inspect
+
+
+# We are using a special `classproperty` because
+# the chaining of `@property` and `@classmethod`
+# got deprecated in 3.11
+class classproperty(property):
+    """A class property"""
+
+    def __get__(self, owner_self, owner_cls):
+        if self.fget:
+            return self.fget(owner_cls)
 
 
 class Localization:
     """
     Represents a Nasse documentation generation localization
     """
+    __native__ = "Base"
+    """The native name for the localization language"""
+
+    @classproperty
+    def __id__(cls):  # pylint: disable=no-self-argument
+        return pathlib.Path(inspect.getfile(cls)).stem
+
+    @classproperty
+    def __english__(cls):  # pylint: disable=no-self-argument
+        # Might change this later to support MultipleCaseNames
+        # pylint: disable=no-member
+        return cls.__name__.lower().removesuffix("localization").title()
+
     sections = "Sections"
     getting_started = "Getting Started"
 
@@ -205,6 +231,8 @@ This file lists and explains the different endpoints available in the {name} sec
     tui_add_data_file = "Add Data File"
 
     # Options
+    tui_language = "Language"
+    tui_language_notice = "You need to restart the app to apply the changes"
     tui_base_url = "Base URL"
     tui_base_url_placeholder = "the base url for the requests and the endpoints explorer"
     tui_endpoints_update = "Endpoints Update"

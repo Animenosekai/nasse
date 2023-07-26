@@ -14,6 +14,8 @@ class FrenchLocalization(Localization):
     """
     The french translation for the docs generation
     """
+    __native__ = "Français"
+
     sections = "Sections"
     getting_started = "Pour commencer"
 
@@ -212,6 +214,8 @@ Ce fichier liste et explique les différents *endpoints* disponible sous la sect
     tui_add_data_file = "Ajouter un fichier de données"
 
     # Options
+    tui_language = "Langue"
+    tui_language_notice = "Vous devez relancer l'application pour que les changements prennent effet"
     tui_base_url = "URL de base"
     tui_base_url_placeholder = "L'URL de base pour les requêtes et l'explorateur"
     tui_endpoints_update = "Mise à jour des endpoints"
