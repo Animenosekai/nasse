@@ -92,10 +92,17 @@ class Request(object):
                         raise exception(name=value.name)
                 else:
                     if value.type:
+                        if callable(value.type):
+                            cast = value.type
+                        else:
+                            cast = value.type.__class__
                         results = []
                         for key, val in current_values.items(multi=True):
                             if key == value.name:
-                                results.append(value.type(val))
+                                try:
+                                    results.append(cast(val))
+                                except (ValueError, TypeError) as err:
+                                    raise exceptions.request.InvalidType(name=key) from err
                         current_values.setlist(value.name, results)
 
     def __setattr__(self, name: str, value: typing.Any) -> None:

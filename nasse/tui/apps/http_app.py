@@ -800,11 +800,8 @@ class HTTP(App):
 
     def reload_explorer(self):
         """Reloads the explorer view"""
-        print("Yeaaaaaaaa 1")
         explorer_view = self.query_one("#tree-view", VerticalScroll)
-        print("Yeaaaaaaaa 2")
         explorer_view.remove_children()
-        print("Yeaaaaaaaa 3")
         explorer_view.mount_all(self.compose_explorer())
         # Making sure the explorer got refreshed
         explorer_view.refresh(layout=True)

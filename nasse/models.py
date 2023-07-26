@@ -6,7 +6,7 @@ import dataclasses
 import inspect
 import pathlib
 import typing
-
+import miko
 from nasse import utils
 
 
@@ -296,6 +296,7 @@ class Endpoint:
                  errors: Types.MethodVariant[Types.OptionalIterable[Error]] = None):
 
         # Merging with `endpoint`
+        # Could use **kwargs but it would lose the typings for type-checkers
 
         initial = {
             "handler": handler,
@@ -316,6 +317,13 @@ class Endpoint:
             "returns": returns,
             "errors": errors
         }
+
+        signature = inspect.signature(handler)
+        docs = miko.Docs(handler.__doc__ or "", signature)
+
+        # I might add custom parsers for each method
+        if not description:
+            initial["description"] = docs.description
 
         init_args = {k: v for k, v in initial.items() if v}
 
@@ -340,7 +348,7 @@ class Endpoint:
 
         # Type Validations
         self.description = validates_method_variant(self.description, str)
-        self.base_dir = pathlib.Path(self.base_dir) if self.base_dir else None
+        self.base_dir = pathlib.Path(self.base_dir) if self.base_dir else pathlib.Path()
 
         if not self.path:
             if self.base_dir:
@@ -356,7 +364,8 @@ class Endpoint:
 
                 # A fail-safe version of pathlib.Path.relative_to
                 result = ""
-                for index, letter in enumerate(filepath.stem):
+                # removing the suffix
+                for index, letter in enumerate(str(filepath.resolve().absolute()).rpartition(".")[0]):
                     # If we are still within the base path
                     # And the letter is in the base path
                     if index < base_len and letter == base[index]:
@@ -365,6 +374,8 @@ class Endpoint:
                 self.path = (utils.sanitize.to_path(result)
                              + utils.sanitize.to_path(self.handler.__name__))
             else:
+                # it should never come here (?)
+                # it was a part used before which shouldn't be ran because we never set `base_dir` to None
                 try:
                     self.path = (utils.sanitize.to_path(inspect.getfile(self.handler)) +
                                  utils.sanitize.to_path(self.handler.__name__))
@@ -384,6 +395,27 @@ class Endpoint:
         self.login = validates_method_variant(self.login, Login, iter=True)
 
         self.parameters = validates_method_variant(self.parameters, Parameter, iter=True)
+
+        # retrieving all of the already defined parameters
+        names = []
+        for parameters in self.parameters.values():
+            names.extend([param.name for param in parameters])
+
+        # checking the parameters defined at the function definition level
+        for parameter in docs.parameters.elements.values():
+            # from miko.parser.list import Parameter
+            # parameter: Parameter
+            if not parameter.name in names:
+                # adding the parameter if it is a function argument
+                element = Param(parameter.name,
+                                description=parameter.body,
+                                required=not parameter.optional,
+                                type=next(iter(parameter.types)) if parameter.types else None)
+                try:
+                    self.parameters["*"].add(element)
+                except KeyError:
+                    self.parameters["*"] = {element}
+
         self.headers = validates_method_variant(self.headers, Header, iter=True)
         self.cookies = validates_method_variant(self.cookies, Cookie, iter=True)
         self.dynamics = validates_method_variant(self.dynamics, Dynamic, iter=True)

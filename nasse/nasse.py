@@ -43,9 +43,11 @@ class FileEventHandler(watchdog.events.FileSystemEventHandler):
 
 
 class Nasse():
+    """The Nasse web server object"""
+
     def __init__(self, name: str = None, config: NasseConfig = None, flask_options: dict = None, *args, **kwargs) -> None:
         """
-        # A Nasse web server instance
+        # Nasse
 
         Examples
         ---------
@@ -125,11 +127,32 @@ class Nasse():
         return self.logger.log(*msg, **kwargs)
 
     def route(self,
-              path: str = utils.annotations.Default(""),
-              endpoint: typing.Optional[models.Endpoint] = None,
-              flask_options: typing.Optional[dict] = None, **kwargs):
+              path: typing.Optional[typing.Union[typing.Callable, str]] = None,
+
+              name: str = "Untitled",
+              category: str = "",
+              sub_category: str = "",
+              description: models.Types.MethodVariant[str] = None,
+              base_dir: typing.Union[pathlib.Path, str, None] = None,
+              endpoint: typing.Optional[typing.Union[models.Endpoint, typing.Mapping]] = None,
+
+              # Request,
+              methods: models.Types.OptionalIterable[models.Types.Method.Any] = "*",
+              login: models.Types.MethodVariant[models.Types.OptionalIterable[models.Login]] = None,
+
+              # User Sent,
+              parameters: models.Types.MethodVariant[models.Types.OptionalIterable[models.Parameter]] = None,
+              headers: models.Types.MethodVariant[models.Types.OptionalIterable[models.Header]] = None,
+              cookies: models.Types.MethodVariant[models.Types.OptionalIterable[models.Cookie]] = None,
+              dynamics: models.Types.MethodVariant[models.Types.OptionalIterable[models.Dynamic]] = None,
+
+              # Response,
+              json: bool = True,
+              returns: models.Types.MethodVariant[models.Types.OptionalIterable[models.Return]] = None,
+              errors: models.Types.MethodVariant[models.Types.OptionalIterable[models.Error]] = None,
+              flask_options: typing.Optional[dict] = None):
         """
-        # A decorator to register a new endpoint
+        Use this function to declare new endpoints
 
         Examples
         --------
@@ -145,35 +168,50 @@ class Nasse():
 
         Parameters
         -----------
-        path: str, default = ""
-            The path to register the handler to
-        endpoint: models.Endpoint
-            A base endpoint object. Other given values will overwrite the values from this Endpoint object.
         flask_options: dict
             If needed, extra options to give to flask.Flask
-        `**kwargs`
-            The same options that will be passed to nasse.models.Endpoint to create the new endpoint. \n
-            Refer to `nasse.models.Endpoint` docs for more information on what to give here.
         """
         flask_options = dict(flask_options or {})
 
-        def decorator(f):
-            results = dict(endpoint or {})
-            # we don't path to overwrite the default behavior
-            results.pop("path", None)
-            results["path"] = path
-            results.update(kwargs)
-            results["handler"] = f
-            new_endpoint = models.Endpoint(**results)
+        def decorator(handler):
+            # if `path` callable, we are in an argument-less decoration
+            new_endpoint = models.Endpoint(handler=handler,
+                                           name=name,
+                                           category=category,
+                                           sub_category=sub_category,
+                                           description=description,
+                                           base_dir=base_dir,
+                                           endpoint=endpoint,
+                                           path=path if not callable(path) else None,
+                                           methods=methods,
+                                           login=login,
+                                           parameters=parameters,
+                                           headers=headers,
+                                           cookies=cookies,
+                                           dynamics=dynamics,
+                                           json=json,
+                                           returns=returns,
+                                           errors=errors)
+
             try:
-                flask_options["methods"] = new_endpoint.methods if "*" not in new_endpoint.methods else utils.types.HTTPMethod.ACCEPTED
+                flask_options["methods"] = (new_endpoint.methods
+                                            if "*" not in new_endpoint.methods
+                                            else typing.get_args(models.Types.Method.Standard))
             except Exception:
                 pass
-            self.flask.add_url_rule(new_endpoint.path, flask_options.pop(
-                "endpoint", None), receive.Receive(self, new_endpoint), **flask_options)
+
+            self.flask.add_url_rule(new_endpoint.path,
+                                    flask_options.pop("endpoint", None),
+                                    receive.Receive(self, new_endpoint),
+                                    **flask_options)
+
             self.endpoints[new_endpoint.path] = new_endpoint
             return new_endpoint
-        return decorator
+
+        if callable(path):
+            return decorator(path)  # called without arguments
+
+        return decorator  # called with arguments
 
     def run(self,
             host: typing.Optional[str] = None,
@@ -234,9 +272,10 @@ class Nasse():
                     def endpoints():
                         """Returns back all of the defined endpoints"""
                         return 200, {"endpoints": [dataclasses.asdict(end) for end in self.endpoints.values()]}
-                    self.route("/_nasse/endpoints", name="Endpoints", category="Nasse Debug")(endpoints)
-                except Exception:
-                    self.config.logger.warn(f"Couldn't set up the debug endpoints ({err.__class__.__name__}: {err})")
+                    self.route("/@nasse/endpoints", name="Endpoints", category="@Nasse Debug")(endpoints)
+                except Exception as err:
+                    if self.config.logger:
+                        self.config.logger.warn(f"Couldn't set up the debug endpoints ({err.__class__.__name__}: {err})")
 
             self.instance = server(app=self, config=self.config)
 

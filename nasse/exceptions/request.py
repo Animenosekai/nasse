@@ -7,6 +7,14 @@ class ClientError(NasseException):
     MESSAGE = "Something is missing from the request"
     EXCEPTION_NAME = "CLIENT_ERROR"
 
+class InvalidType(ClientError):
+    """When the given parameter is of an invalid type"""
+    MESSAGE = "The given value is of an invalid type"
+    EXCEPTION_NAME = "INVALID_TYPE"
+
+    def __init__(self, *args: object, name: str = "") -> None:
+        message = "The given value `{name}` could not be casted to a valid type".format(name=name)
+        super().__init__(message=message, *args)
 
 class MissingValue(ClientError):
     """When a value is missing from the request"""
@@ -14,7 +22,7 @@ class MissingValue(ClientError):
     EXCEPTION_NAME = "MISSING_VALUE"
 
     def __init__(self, *args: object, name: str = "", missing_type: str = "value") -> None:
-        message = "'{name}' is a required request {type}".format(name=name,
+        message = "`{name}` is a required request {type}".format(name=name,
                                                                  type=str(missing_type))
         super().__init__(message=message, *args)
 
