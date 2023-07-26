@@ -36,7 +36,7 @@ from textual.reactive import reactive, var
 from textual.suggester import Suggester
 from textual.validation import Integer, Number
 from textual.widgets import (Button, Footer, Header, Input, Label,
-                             LoadingIndicator, Pretty, Select, Static, Switch,
+                             LoadingIndicator, Pretty, Select, Static, Switch, Markdown,
                              Tree, _header)
 from textual.worker import get_current_worker
 
@@ -563,7 +563,7 @@ class HTTP(App):
             # with the `mount` and `mount_all` functions
             yield Container(
                 Label(self.endpoint.name, id="request-information-title"),  # A box with the endpoint name
-                Label(description, id="request-information-description"),  # A blockquote with the endpoint description (*)
+                Markdown(description, id="request-information-description"),  # A blockquote with the endpoint description (*)
                 id="request-information"
             )
 

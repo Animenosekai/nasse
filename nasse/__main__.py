@@ -17,6 +17,7 @@ import nasse
 from nasse.utils.types import StringEnum
 from nasse.tui.apps import http_app
 
+
 class ServerEnum(StringEnum):
     """The server backend to use"""
     ACCEPTED = ("flask", "gunicorn")
@@ -67,15 +68,15 @@ def prepare_runnner_parser(parser: argparse.ArgumentParser):
     """Populates the parser with the `runner` app arguments"""
     # parser.add_argument("input", action="store", help="A python file containing the Nasse instance to run")
 
-    parser.add_argument("--host", action="store", type=str, required=False, default=None, help="The host to bind to")
-    parser.add_argument("--port", "-p", action="store", type=int, required=False, default=None, help="The port to bind to")
+    parser.add_argument("--host", action="store", type=str, required=False, default=None, help="(server) The host to bind to")
+    parser.add_argument("--port", "-p", action="store", type=int, required=False, default=None, help="(server) The port to bind to")
     parser.add_argument("--server", "-s", action="store", type=ServerEnum, required=False, default=ServerEnum.DEFAULT,
-                        help="The server to use (accepts: {accepts})".format(accepts=", ".join(ServerEnum.ACCEPTED)))
-    parser.add_argument("--watch", "-w", nargs="*", default=["**/*.py"], help="Files to watch changes on debug mode")
-    parser.add_argument("--ignore", "-i", nargs="*", default=[], help="Files to ignore when watching for file changes on debug mode")
+                        help="(server) The server to use (accepts: {accepts})".format(accepts=", ".join(ServerEnum.ACCEPTED)))
+    parser.add_argument("--watch", "-w", nargs="*", default=["**/*.py"], help="(server) Files to watch changes on debug mode")
+    parser.add_argument("--ignore", "-i", nargs="*", default=[], help="(server) Files to ignore when watching for file changes on debug mode")
 
-    parser.add_argument("--debug", "-d", action="store_true", help="To run with debug mode enabled")
-    parser.add_argument("--config", "-c", help="A configuration file for extra arguments passed to the server",
+    parser.add_argument("--debug", "-d", action="store_true", help="(server) To run with debug mode enabled")
+    parser.add_argument("--config", "-c", help="(server) A configuration file for extra arguments passed to the server",
                         action="store", type=pathlib.Path, required=False, default=None)
 
 
@@ -184,21 +185,12 @@ def entry():
     parser.add_argument("--version", "-v", action="version", version=nasse.__version__)
     parser.add_argument("input", action="store", default="", help="The file or URL to use with nasse", nargs="?")
 
-    subparsers = parser.add_subparsers(title="app", description="The nasse app to run", required=False)
-    runner_parser = subparsers.add_parser("runner", description="To run a nasse server")
-    http_parser = subparsers.add_parser("http", description=http_app.__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-
-    runner_parser.add_argument("file", action="store", help="A file containing the `Nasse` instance to run")
-    http_parser.add_argument("link", action="store", help="The base link for the requests", nargs="?")
-
-    prepare_runnner_parser(runner_parser)
-
-    args, _ = parser.parse_known_args()
+    prepare_runnner_parser(parser)
+    args = parser.parse_args()
 
     instance, endpoints = main(input=args.input)
 
     if instance:
-        prepare_runnner_parser(parser)
         return instance.run(**get_runner_args(parser))
 
     return http_app.HTTP(str(args.input or "http://localhost"), endpoints=endpoints).run()
