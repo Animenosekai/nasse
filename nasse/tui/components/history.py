@@ -56,10 +56,12 @@ class HistoryResponse(Button):
 
         if isinstance(self.response, Error):
             message = f"{self.response.method}・[yellow]{self.response.exception.__class__.__name__}[/yellow]"
-        elif not self.response.ok:
+        elif hasattr(self.response, "ok") and not self.response.ok:
             message = f"{self.response.request.method}・[red]{self.response.status_code}[/red] ({series.transform_time(self.response.elapsed.total_seconds() * 1000)})"
-        else:
+        elif hasattr(self.response, "request") and hasattr(self.response, "status_code") and hasattr(self.response, "elapsed"):
             message = f"{self.response.request.method}・{self.response.status_code} ({series.transform_time(self.response.elapsed.total_seconds() * 1000)})"
+        else:
+            message = "[yellow]ERROR[/yellow]"
 
         yield Label(message, classes="history-response-status")
 

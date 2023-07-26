@@ -7,6 +7,7 @@ from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widgets import DirectoryTree, Label, Tree
 from textual.widgets._directory_tree import DirEntry
+from nasse.localization import Localization, EnglishLocalization
 
 
 class FilteredDirectoryTree(DirectoryTree):
@@ -44,6 +45,9 @@ class FileBrowser(ModalScreen[typing.Optional[pathlib.Path]]):
         opacity: 0;
     }
     """
+    def __init__(self, localization: typing.Type[Localization] = EnglishLocalization, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.localization = localization
 
     def compose(self):
         yield Label(str(pathlib.Path().resolve()), id="file-browser-title")
@@ -106,7 +110,7 @@ class FileBrowser(ModalScreen[typing.Optional[pathlib.Path]]):
 
         label = self.query_one("#filter-label", Label)
         if directory_tree.filter:
-            label.update(f"[grey]Filter:[/grey] [bold]{directory_tree.filter}[/bold]")
+            label.update(f"[grey]{self.localization.tui_filter}:[/grey] [bold]{directory_tree.filter}[/bold]")
             label.remove_class("hidden")
         else:
             label.add_class("hidden")

@@ -4,6 +4,8 @@ from textual.containers import Grid
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label
 from textual import events
+import typing
+from nasse.localization import Localization, EnglishLocalization
 
 
 class QuitScreen(ModalScreen):
@@ -37,11 +39,15 @@ class QuitScreen(ModalScreen):
     }
     """
 
+    def __init__(self, localization: typing.Type[Localization] = EnglishLocalization, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.localization = localization
+
     def compose(self):
         yield Grid(
-            Label("Are you sure you want to quit?", id="question"),
-            Button("Quit", variant="error", id="quit"),
-            Button("Cancel", variant="primary", id="cancel"),
+            Label(self.localization.tui_quit_confirmation, id="question"),
+            Button(self.localization.tui_quit, variant="error", id="quit"),
+            Button(self.localization.tui_cancel, variant="primary", id="cancel"),
             id="dialog",
         )
 

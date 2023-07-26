@@ -179,6 +179,66 @@ Le champ "call_stack" est activé seulement quand il y a le paramètre `call_sta
 Ce fichier liste et explique les différents *endpoints* disponible sous la section {name}
 '''
 
-    tui_theme = "Thème"
+    # TUI
+
+    # Footer
+    tui_history = "Historique"
+    tui_result = "Résultat"
     tui_explorer = "Explorateur"
+    tui_submit = "Envoyer"
+    tui_options = "Options"
     tui_quit = "Quitter"
+
+    # History
+    # WARNING: This should stay under 3 characters to avoid having styling issues
+    tui_min = "Min"
+    tui_average = "Moy"
+    tui_max = "Max"
+
+    # Explorer
+    tui_reset = "Réinitialiser"
+
+    # Request
+    tui_request = "Requête"
+    tui_name = "nom"
+    tui_value = "valeur"
+    tui_path = "chemin"
+    # tui_parameters = "Parameters"
+    # tui_headers = "Headers"
+    # tui_cookies = "Cookies"
+    tui_file = "Fichier"
+    tui_add_file = "Ajouter un fichier"
+    tui_data = "Donnée"
+    tui_add_data_file = "Ajouter un fichier de données"
+
+    # Options
+    tui_base_url = "URL de base"
+    tui_base_url_placeholder = "L'URL de base pour les requêtes et l'explorateur"
+    tui_endpoints_update = "Mise à jour des endpoints"
+    tui_endpoints_update_placeholder = "Fréquence de mise à jour des endpoints pour l'explorateur (sec.)"
+    tui_history_limit = "Limite d'historique"
+    tui_history_limit_placeholder = "Le nombre maximale de requêtes dans l'historique"
+    tui_timeout = "Limite de temps"
+    tui_timeout_placeholder = "Limite de temps pour le traitement d'une requête (sec.)"
+    tui_redirects = "Redirection"
+    tui_allow_redirects = "Autoriser les redirections"
+    tui_proxies = "Proxies"
+    tui_security = "Sécurité"
+    tui_verify_request = "Vérification des requêtes"
+    tui_certificate_files = "Certificats"
+    tui_add_certificate = "Ajouter un certificat"
+
+    # Result
+    tui_start_prompt = "Commencez par envoyer une requête"
+    tui_content = "Contenu"
+    tui_no_content = "Impossible d'afficher le contenu"
+    tui_contacting = "Appel de {url}"
+    tui_files = "Fichiers"
+    tui_error = "Erreur"
+
+    # File Explorer
+    tui_filter = "Filtre"
+
+    # Quit
+    tui_quit_confirmation = "Voulez-vous vraiment quitter ?"
+    tui_cancel = "Revenir"

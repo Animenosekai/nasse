@@ -9,6 +9,7 @@ from textual.css.query import NoMatches
 from nasse.models import UserSent
 from nasse.tui.widget import Widget
 from nasse.tui.components.texts import SectionTitle
+from nasse.localization import Localization, EnglishLocalization
 
 
 class UserSentInput(Widget):
@@ -48,12 +49,14 @@ class UserSentInput(Widget):
                  inputs: typing.Optional[typing.Set[UserSent]] = None,
                  on_change: typing.Optional[typing.Callable[["UserSentInput", typing.Optional[str], typing.Optional[str]], typing.Any]] = None,
                  initial_value: typing.Optional[str] = None,
+                 localization: typing.Type[Localization] = EnglishLocalization,
                  **kwargs) -> None:
 
         super().__init__(**kwargs)
         self.user_sent = user_sent
         self.inputs = inputs or set()
         self.on_change = on_change
+        self.localization = localization
 
         self.initial_value = initial_value
         if self.user_sent:
@@ -62,8 +65,8 @@ class UserSentInput(Widget):
     def compose(self):
         if not self.inputs:
             with Horizontal(classes="form-input-container"):
-                yield Input(value=self.user_sent.name if self.user_sent else None, placeholder="name", classes="form-input-name", name="input-name")
-                yield Input(value=self.initial_value, placeholder="value", classes="form-input-value", name="input-value")
+                yield Input(value=self.user_sent.name if self.user_sent else None, placeholder=self.localization.tui_name, classes="form-input-name", name="input-name")
+                yield Input(value=self.initial_value, placeholder=self.localization.tui_value, classes="form-input-value", name="input-value")
             return
 
         with Horizontal(classes="form-input-container"):
@@ -143,11 +146,13 @@ class UserSentForm(Widget):
                  inputs: typing.Optional[typing.Set[UserSent]] = None,
                  multiple: bool = False,
                  initial_values: typing.Optional[typing.List[typing.Tuple[UserSent, str]]] = None,
+                 localization: typing.Type[Localization] = EnglishLocalization,
                  **kwargs) -> None:
         super().__init__(**kwargs)
         self.title = title
         self.inputs = inputs or set()
         self.multiple = multiple
+        self.localization = localization
 
         self.initial_values = initial_values or []
 

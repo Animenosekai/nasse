@@ -169,16 +169,18 @@ class FileInput(Widget):
                  file: pathlib.Path,
                  on_delete: typing.Optional[typing.Callable[[Widget, pathlib.Path], typing.Any]] = None,
                  prompt_name: bool = True,
+                 localization: typing.Type[Localization] = EnglishLocalization,
                  **kwargs):
         self.file = pathlib.Path(file)
         self.on_delete = on_delete
         self.prompt_name = prompt_name
+        self.localization = localization
         super().__init__(**kwargs)
 
     def compose(self):
         elements = []
         if self.prompt_name:
-            elements.append(Input(placeholder="Name", classes="file-name"))
+            elements.append(Input(placeholder=self.localization.tui_name, classes="file-name"))
         file_input = Input(str(self.file.resolve()), disabled=True, classes="file-input")
         if not self.prompt_name:
             file_input.add_class("file-input-full")
@@ -200,50 +202,55 @@ class FileInput(Widget):
 class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
     """The HTTP app options screen"""
 
-    def __init__(self, base_url: str, on_url_change: typing.Callable[[str], typing.Any], **kwargs) -> None:
+    def __init__(self,
+                 base_url: str,
+                 on_url_change: typing.Callable[[str], typing.Any],
+                 localization: typing.Type[Localization] = EnglishLocalization,
+                 **kwargs) -> None:
         self.base_url = str(base_url)
         self.on_url_change = on_url_change
+        self.localization = localization
         super().__init__(**kwargs)
 
     def compose_options(self):
         """Composes the inner options view"""
         with VerticalScroll(id="options-inner-container"):
-            yield SectionTitle("Base URL")
+            yield SectionTitle(self.localization.tui_base_url)
             yield Input(self.base_url,
-                        placeholder="the base url for the requests and the endpoints explorer",
+                        placeholder=self.localization.tui_base_url_placeholder,
                         id="options-base-url")
 
-            yield SectionTitle("Endpoints Update")
+            yield SectionTitle(self.localization.tui_endpoints_update)
             yield Input(str(self.options.endpoints_update),
-                        placeholder="time between each endpoints list update (in sec.)",
+                        placeholder=self.localization.tui_endpoints_update_placeholder,
                         validators=[Integer(minimum=0, failure_description="The time must be a positive integer")],
                         id="options-endpoints-update")
 
-            yield SectionTitle("History Limit")
+            yield SectionTitle(self.localization.tui_history_limit)
             yield Input(str(self.options.history_limit),
-                        placeholder="maximum number of requests in the history",
+                        placeholder=self.localization.tui_history_limit_placeholder,
                         validators=[Integer(minimum=0, failure_description="The limit must be a positive integer")],
                         id="options-history-limit")
 
-            yield SectionTitle("Timeout")
+            yield SectionTitle(self.localization.tui_timeout)
             yield Input(str(self.options.timeout),
-                        placeholder="timeout (sec.)",
+                        placeholder=self.localization.tui_timeout_placeholder,
                         validators=[Number(minimum=0.0, failure_description="The timeout must be a positive number")],
                         id="options-timeout")
 
-            yield SectionTitle("Redirects")
+            yield SectionTitle(self.localization.tui_redirects)
             yield Horizontal(
-                Label("Allow Redirects", id="options-redirects-title", classes="options-switch-title"),
+                Label(self.localization.tui_allow_redirects, id="options-redirects-title", classes="options-switch-title"),
                 Switch(value=self.options.allow_redirects, id="options-redirects-switch"),
                 id="options-redirects-container",
                 classes="options-switch-container"
             )
 
-            yield UserSentForm("Proxies", id="options-proxies", initial_values=[(UserSent(name=key), value) for key, value in self.options.proxies.items()])
+            yield UserSentForm(self.localization.tui_proxies, id="options-proxies", initial_values=[(UserSent(name=key), value) for key, value in self.options.proxies.items()])
 
-            yield SectionTitle("Security")
+            yield SectionTitle(self.localization.tui_security)
             yield Horizontal(
-                Label("Verify Request", id="options-verify-title", classes="options-switch-title"),
+                Label(self.localization.tui_verify_request, id="options-verify-title", classes="options-switch-title"),
                 Switch(value=self.options.verify, id="options-verify-switch"),
                 id="options-verify-container",
                 classes="options-switch-container"
@@ -252,8 +259,8 @@ class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
             with Container(id="certificate-files", classes="files-input-container"):
                 with Container(id="certificate-files-container", classes="files-container"):
                     for file in self.options.cert:
-                        yield FileInput(pathlib.Path(file), self.delete_cert_file, prompt_name=False)
-                yield Button("Add certificate", id="add-certificate-button", classes="add-file-button")
+                        yield FileInput(pathlib.Path(file), self.delete_cert_file, prompt_name=False, localization=self.localization)
+                yield Button(self.localization.tui_add_certificate, id="add-certificate-button", classes="add-file-button")
 
     def collect_values(self) -> typing.Dict[str, typing.Any]:
         """Collect the different options value"""
@@ -295,13 +302,18 @@ class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
 """
 
 
+def define_bindings(localization: typing.Type[Localization] = EnglishLocalization):
+    """Defines the different bindings for the app"""
+    return [("h", "toggle_history", localization.tui_history), ("r", "toggle_results", localization.tui_result), ("e", "toggle_explorer", localization.tui_explorer),
+            ("s", "submit", localization.tui_submit), ("o", "open_options", localization.tui_options), ("q", "request_quit", localization.tui_quit), Binding("escape", "request_quit", localization.tui_quit, show=False)]
+
+
 class HTTP(App):
     """Lets you make HTTP requests comfortably"""
 
     # Default values
     CSS_PATH = "../styles/http.css"
-    BINDINGS = [("h", "toggle_history", "History"), ("r", "toggle_results", "Result"), ("e", "toggle_explorer", "Explorer"),
-                ("s", "submit", "Submit"), ("o", "open_options", "Options"), ("q", "request_quit", "Quit"), Binding("escape", "request_quit", "Quit", show=False)]
+    BINDINGS = define_bindings()
 
     # Atrributes
     toggle_history = var(True)
@@ -357,6 +369,7 @@ class HTTP(App):
         self.endpoints = endpoints or []
         self.base_endpoints = self.endpoints.copy()
 
+        self.set_bindings(define_bindings(self.localization))
         self.options = options or HTTPOptionsScreen.loads("http", HTTPOptions)
 
     @work(exclusive=True)
@@ -441,7 +454,7 @@ class HTTP(App):
             with Container(id="history"):
                 # History
                 # Coverage: Left sidebar
-                yield StickyHeader("History")
+                yield StickyHeader(self.localization.tui_history)
                 with VerticalScroll(id="history-requests"):
                     # Requests History
                     # This displays a list of already made
@@ -451,12 +464,12 @@ class HTTP(App):
                         yield HistoryResponse(response)
                 # This displays a graph with the evolution of the time
                 # taken for each request
-                yield series.TimeSeries([], id="history-ping")
+                yield series.TimeSeries([], localization=self.localization, id="history-ping")
 
             with Container(id="main"):
                 # Main Page
                 # Coverage: Center of the screen
-                yield StickyHeader("Request", id="request-title")
+                yield StickyHeader(self.localization.tui_request, id="request-title")
 
                 # There are actually two views, one for the actual request customisation
                 # and one for the request response.
@@ -470,7 +483,7 @@ class HTTP(App):
                 # The request response
                 with View(id="result", on_click=self.on_result_view_clicked):
                     # Request Result
-                    yield StickyHeader("Result")
+                    yield StickyHeader(self.localization.tui_result)
                     # This content will be changed by the `compose_result_*` functions
                     # Refer to those functions for further details.
                     yield from self.compose_result_start()
@@ -485,10 +498,10 @@ class HTTP(App):
                 # It prefills the sendable values names, adds a description
                 # for items which supports them and allows for a greater
                 # understanding of the whole server pathspace.
-                yield StickyHeader("Explorer")
+                yield StickyHeader(self.localization.tui_explorer)
 
                 # This overwrites all of the changes made
-                yield Button("Reset", id="explorer-reset")
+                yield Button(self.localization.tui_reset, id="explorer-reset")
 
                 # The actual explorer
                 with VerticalScroll(id="endpoints-explorer"):
@@ -545,26 +558,26 @@ class HTTP(App):
                                 value=method if method != "*" else "GET",
                                 id="request-method"),
                          Input(self.endpoint.path if self.endpoint else "/",
-                               placeholder="path",
+                               placeholder=self.localization.tui_path,
                                suggester=PathSuggestion(self),
                                id="request-path"),
                          id="request-path-container")
 
-        yield Container(UserSentForm("Parameters", inputs=get_method_variant(method, self.endpoint.parameters)
+        yield Container(UserSentForm(self.localization.parameters, inputs=get_method_variant(method, self.endpoint.parameters)
                                      if self.endpoint else None, multiple=True, id="request-parameters"),
-                        UserSentForm("Headers", inputs=get_method_variant(method, self.endpoint.headers)
+                        UserSentForm(self.localization.headers, inputs=get_method_variant(method, self.endpoint.headers)
                                      if self.endpoint else None, id="request-headers"),
-                        UserSentForm("Cookies", inputs=get_method_variant(method, self.endpoint.cookies)
+                        UserSentForm(self.localization.cookies, inputs=get_method_variant(method, self.endpoint.cookies)
                                      if self.endpoint else None, id="request-cookies"),
                         id="request-user-sent")
 
-        yield SectionTitle("File")
+        yield SectionTitle(self.localization.tui_file)
         yield Container(Container(id="request-files-container", classes="files-container"),
-                        Button("Add file", classes="add-file-button"),
+                        Button(self.localization.tui_add_file, classes="add-file-button"),
                         classes="files-input-container")
 
-        yield SectionTitle("Data")
-        yield Container(Button("Add data file", id="request-data-button"), id="request-data-container")
+        yield SectionTitle(self.localization.tui_data)
+        yield Container(Button(self.localization.tui_add_data_file, id="request-data-button"), id="request-data-container")
 
     def compose_result_response(self, result: requests.Response):
         """
@@ -588,11 +601,11 @@ class HTTP(App):
         yield Label(f"[bold]{result.status_code}[/bold] {result.reason} [grey]in {series.transform_time(result.elapsed.total_seconds() * 1000)}[/grey]", id="result-subtitle")
 
         if result.headers:
-            yield SectionTitle("Headers")
+            yield SectionTitle(self.localization.headers)
             yield Label('\n'.join(f'{name}: {file}' for name, file in result.headers.items()))
 
         if result.cookies:
-            yield SectionTitle("Cookies")
+            yield SectionTitle(self.localization.cookies)
             yield Label('\n'.join(f'{name}: {file}' for name, file in result.cookies.items()))
 
         content = None
@@ -611,9 +624,9 @@ class HTTP(App):
             try:
                 content = result.content
             except Exception:
-                content = "[red](ERROR)[/red] Can't display the content"
+                content = f"[red](ERROR)[/red] {self.localization.tui_no_content}"
 
-        yield SectionTitle("Content")
+        yield SectionTitle(self.localization.tui_content)
         yield Pretty(content, id="result-content")
 
     def compose_result_start(self):
@@ -635,7 +648,7 @@ class HTTP(App):
         ╰────────┴──────────────────────────────┴────────╯
         """
         # Prompts the user to make a request, because it is highly likely that no request has been made
-        yield Label("Start by making a request", id="empty-result-label")
+        yield Label(self.localization.tui_start_prompt, id="empty-result-label")
 
     def compose_result_loading(self, result: Loading):
         """
@@ -662,7 +675,7 @@ class HTTP(App):
                 Label("🌐"),  # to the server
                 id="loading-container"
             ),
-            Label(f"Contacting {url.urlparse(result.url).netloc}"),  # the server hostname
+            Label(self.localization.tui_contacting.format(url=url.urlparse(result.url).netloc)),  # the server hostname
             id="loading-view"
         )
 
@@ -689,35 +702,35 @@ class HTTP(App):
 
         # Showing the sent user values
         if result.params:
-            yield SectionTitle("Parameters")
+            yield SectionTitle(self.localization.parameters)
             yield Label('\n'.join(f'{name}: {file}' for name, file in result.params.items()))
 
         if result.headers:
-            yield SectionTitle("Headers")
+            yield SectionTitle(self.localization.headers)
             yield Label('\n'.join(f'{name}: {file}' for name, file in result.headers.items()))
 
         if result.cookies:
-            yield SectionTitle("Cookies")
+            yield SectionTitle(self.localization.cookies)
             yield Label('\n'.join(f'{name}: {file}' for name, file in result.cookies.items()))
 
         if result.files:
-            yield SectionTitle("Files")
+            yield SectionTitle(self.localization.tui_files)
             yield Label('\n'.join(f'{name}: {file}' for name, file in result.files))
 
         # Showing the options at the time of the request, because this might
         # the root of the issue (timeouts or SSL issues for example)
-        yield SectionTitle("Options")
-        yield Label(f"Timeout: {result.timeout} sec.")
-        yield Label(f"Allow Redirects: {result.allow_redirects}")
+        yield SectionTitle(self.localization.tui_options)
+        yield Label(f"{self.localization.tui_timeout}: {result.timeout} sec.")
+        yield Label(f"{self.localization.tui_allow_redirects}: {result.allow_redirects}")
         if result.proxies:
-            yield Label(f"Proxies: {', '.join(f'{prot}: {proxy}' for prot, proxy in result.proxies.items())}")
-        yield Label(f"Verify Request: {result.verify}")
+            yield Label(f"{self.localization.tui_proxies}: {', '.join(f'{prot}: {proxy}' for prot, proxy in result.proxies.items())}")
+        yield Label(f"{self.localization.tui_verify_request}: {result.verify}")
         if result.cert:
-            yield Label(f"Certificate Files: {', '.join(result.cert)}")
+            yield Label(f"{self.localization.tui_certificate_files}: {', '.join(result.cert)}")
 
         # Showing a full traceback of the incident to easily debug
         # (this might take a little while to render)
-        yield SectionTitle("Error")
+        yield SectionTitle(self.localization.tui_error)
         yield Static(Traceback.from_exception(result.exception.__class__, result.exception, traceback=result.exception.__traceback__), classes="result-error-container")
 
     def reload_endpoint(self):
@@ -766,8 +779,11 @@ class HTTP(App):
 
     def reload_explorer(self):
         """Reloads the explorer view"""
+        print("Yeaaaaaaaa 1")
         explorer_view = self.query_one("#tree-view", VerticalScroll)
+        print("Yeaaaaaaaa 2")
         explorer_view.remove_children()
+        print("Yeaaaaaaaa 3")
         explorer_view.mount_all(self.compose_explorer())
         # Making sure the explorer got refreshed
         explorer_view.refresh(layout=True)
@@ -840,11 +856,11 @@ class HTTP(App):
         # When we are adding a file to the request
         if event.button.has_class("add-file-button"):
             # Show the file browser to add the file to the list
-            self.push_screen(FileBrowser(), self.add_file)
+            self.push_screen(FileBrowser(localization=self.localization), self.add_file)
         # When we are adding binary data to the request
         if event.button.id == "request-data-button":
             # Show the file browser to add get the file where the data will be fetched
-            self.push_screen(FileBrowser(), self.add_data_file)
+            self.push_screen(FileBrowser(localization=self.localization), self.add_data_file)
         # If we are resetting the endpoint
         if event.button.id == "explorer-reset":
             # Clearing the request view
@@ -881,11 +897,12 @@ class HTTP(App):
         """When the data file is removed"""
         container = self.query_one("#request-data-container", Container)
         container.remove_children()
-        container.mount(Button("Add data file", id="request-data-button"))
+        container.mount(Button(self.localization.tui_add_data_file, id="request-data-button"))
 
     def on_url_change(self, link: str):
         """When the base URL got changed in the settings"""
         self.link = url.urlparse(str(link))
+        self.update_endpoints()
 
     # pylint: disable=pointless-string-statement
     """
@@ -907,7 +924,8 @@ class HTTP(App):
         self.push_screen(HTTPOptionsScreen(base_url=url.urlunparse(self.link),
                                            on_url_change=self.on_url_change,
                                            options=self.options,
-                                           id="options-screen"),
+                                           id="options-screen",
+                                           localization=self.localization),
                          self.replace_options)
 
     def replace_options(self, options: HTTPOptions):
@@ -917,7 +935,7 @@ class HTTP(App):
 
     def action_request_quit(self) -> None:
         """Action to display the quit dialog."""
-        self.push_screen(QuitScreen())
+        self.push_screen(QuitScreen(localization=self.localization))
 
     def action_toggle_history(self):
         """Called when the user fires the `toggle_history` action"""
@@ -1041,7 +1059,7 @@ class HTTP(App):
         try:
             self.reload_explorer()
         except Exception:
-            # print("Couldn't reload the explorer")
+            print("Couldn't reload the explorer")
             pass
 
     def watch_toggle_history(self, toggle_history: bool) -> None:
@@ -1075,7 +1093,7 @@ class HTTP(App):
         """Called when `result` is modified"""
         container = self.query_one("#result", VerticalScroll)
         container.remove_children()
-        container.mount(StickyHeader("Result"))
+        container.mount(StickyHeader(self.localization.tui_result))
 
         if result is None:
             return container.mount_all(self.compose_result_start())
@@ -1126,4 +1144,5 @@ if __name__ == "__main__":
     #              description={"GET": "This is a multiple methods request", "POST": "This is really cool", "*": "Yup as expected"}, headers=[UserSent("X-NASSE-TEST", description="This is a test")], parameters={"POST": UserSent("hello", description="world")}, path="/post"),
     # ] * 20).run()
 
-    HTTP("http://127.0.0.1:5005").run()
+    from nasse.localization import FrenchLocalization
+    HTTP("", localization=FrenchLocalization).run()

@@ -181,6 +181,66 @@ class JapaneseLocalization(Localization):
 このファイルは「{name}」セクションの全てのエンドポイントを説明します。
 '''
 
-    tui_theme = "テーマ"
-    tui_explorer = "エクスプローラ"
+    # TUI
+
+    # Footer
+    tui_history = "履歴"
+    tui_result = "結果"
+    tui_explorer = "エクスプローラー"
+    tui_submit = "送信"
+    tui_options = "設定"
     tui_quit = "終了"
+
+    # History
+    # WARNING: This should stay under 3 characters to avoid having styling issues
+    tui_min = "低"
+    tui_average = "平均"
+    tui_max = "高"
+
+    # Explorer
+    tui_reset = "リセット"
+
+    # Request
+    tui_request = "リクエスト"
+    tui_name = "名前"
+    tui_value = "内容"
+    tui_path = "道"
+    # tui_parameters = "Parameters"
+    # tui_headers = "Headers"
+    # tui_cookies = "Cookies"
+    tui_file = "ファイル"
+    tui_add_file = "ファイルを追加"
+    tui_data = "データ"
+    tui_add_data_file = "データファイルを追加"
+
+    # Options
+    tui_base_url = "ベースURL"
+    tui_base_url_placeholder = "リクエストとエクスプローラーのベースURL"
+    tui_endpoints_update = "エンドポイントの更新度"
+    tui_endpoints_update_placeholder = "エンドポイントの更新までの時間 (秒)"
+    tui_history_limit = "履歴制限"
+    tui_history_limit_placeholder = "履歴に残る最高のリクエスト数"
+    tui_timeout = "タイムアウト"
+    tui_timeout_placeholder = "タイムアウト (秒)"
+    tui_redirects = "リダイレクト"
+    tui_allow_redirects = "リダイレクトの許可"
+    tui_proxies = "プロキシ"
+    tui_security = "セキュリティー"
+    tui_verify_request = "リクエストの確認"
+    tui_certificate_files = "認証ファイル"
+    tui_add_certificate = "認証ファイルの追加"
+
+    # Result
+    tui_start_prompt = "まずはリクエストを送信して下さい"
+    tui_content = "内容"
+    tui_no_content = "内容を表示できません"
+    tui_contacting = "{url}を連絡しています"
+    tui_files = "ファイル"
+    tui_error = "エラー"
+
+    # File Explorer
+    tui_filter = "フィルター"
+
+    # Quit
+    tui_quit_confirmation = "本当に終了しますか？"
+    tui_cancel = "戻る"

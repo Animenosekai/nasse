@@ -8,6 +8,7 @@ from textual.reactive import reactive
 from textual.widgets import Label, Sparkline
 
 from nasse.tui.widget import Widget
+from nasse.localization import EnglishLocalization, Localization
 
 
 def transform_time(value: typing.Union[int, float]):
@@ -83,9 +84,10 @@ class TimeSeries(Widget):
     """
     series: reactive[typing.List[int]] = reactive(list)
 
-    def __init__(self, series: typing.Optional[typing.List[int]] = None, **kwargs) -> None:
+    def __init__(self, series: typing.Optional[typing.List[int]] = None, localization: typing.Type[Localization] = EnglishLocalization, **kwargs) -> None:
         super().__init__(**kwargs)
         self.series = series or []
+        self.localization = localization
 
     @property
     def statistics(self):
@@ -94,7 +96,7 @@ class TimeSeries(Widget):
         max_ping = max(self.series) if self.series else 0
         avg_ping = statistics.mean(self.series) if self.series else 0
 
-        return f"Min {transform_time(min_ping)} / Avg {transform_time(avg_ping)} / Max {transform_time(max_ping)}"
+        return f"{self.localization.tui_min} {transform_time(min_ping)} / {self.localization.tui_average} {transform_time(avg_ping)} / {self.localization.tui_max} {transform_time(max_ping)}"
 
     def compose(self) -> ComposeResult:
         yield Label(self.statistics)

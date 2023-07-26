@@ -17,9 +17,6 @@ import nasse
 from nasse.utils.types import StringEnum
 from nasse.tui.apps import http_app
 
-argparse.HelpFormatter
-
-
 class ServerEnum(StringEnum):
     """The server backend to use"""
     ACCEPTED = ("flask", "gunicorn")

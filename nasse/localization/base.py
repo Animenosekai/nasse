@@ -183,6 +183,7 @@ This file lists and explains the different endpoints available in the {name} sec
     tui_quit = "Quit"
 
     # History
+    # WARNING: This should stay under 3 characters to avoid having styling issues
     tui_min = "Min"
     tui_average = "Avg"
     tui_max = "Max"
@@ -194,9 +195,10 @@ This file lists and explains the different endpoints available in the {name} sec
     tui_request = "Request"
     tui_name = "name"
     tui_value = "value"
-    tui_parameters = "Parameters"
-    tui_headers = "Headers"
-    tui_cookies = "Cookies"
+    tui_path = "path"
+    # tui_parameters = "Parameters"
+    # tui_headers = "Headers"
+    # tui_cookies = "Cookies"
     tui_file = "File"
     tui_add_file = "Add File"
     tui_data = "Data"
@@ -204,19 +206,31 @@ This file lists and explains the different endpoints available in the {name} sec
 
     # Options
     tui_base_url = "Base URL"
+    tui_base_url_placeholder = "the base url for the requests and the endpoints explorer"
     tui_endpoints_update = "Endpoints Update"
+    tui_endpoints_update_placeholder = "time between each endpoints list update (in sec.)"
     tui_history_limit = "History Limit"
+    tui_history_limit_placeholder = "maximum number of requests in the history"
     tui_timeout = "Timeout"
+    tui_timeout_placeholder = "timeout (sec.)"
     tui_redirects = "Redirects"
     tui_allow_redirects = "Allow Redirects"
     tui_proxies = "Proxies"
     tui_security = "Security"
     tui_verify_request = "Verify Request"
+    tui_certificate_files = "Certificate Files"
     tui_add_certificate = "Add Certificate"
 
     # Result
-    tui_no_result_prompt = "Start by making a request"
+    tui_start_prompt = "Start by making a request"
     tui_content = "Content"
+    tui_no_content = "Can't display the content"
+    tui_contacting = "Contacting {url}"
+    tui_files = "Files"
+    tui_error = "Error"
+
+    # File Explorer
+    tui_filter = "Filter"
 
     # Quit
     tui_quit_confirmation = "Are you sure you want to quit?"
