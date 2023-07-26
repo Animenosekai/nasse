@@ -9,12 +9,15 @@
     background: $panel-darken-1;
 }
 
-
 #explorer {
     display: block;
     max-width: 35;
     border-left: vkey rgba(128, 128, 128, 0.5);
     background: $panel;
+}
+
+.explorer-category {
+    height: auto;
 }
 
 #explorer.unload {
@@ -155,6 +158,11 @@
 #result-subtitle {
     height: auto;
     opacity: 0.75;
+}
+
+#result-size {
+    opacity: 0.75;
+    margin-bottom: 1;
 }
 
 #result-content {

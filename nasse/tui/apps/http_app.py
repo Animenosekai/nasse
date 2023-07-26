@@ -19,7 +19,7 @@ Makes HTTP requests
 """
 # TODO
 # - Profiles
-
+import sys
 import dataclasses
 import pathlib
 import time
@@ -531,9 +531,9 @@ class HTTP(App):
                 yield Button(self.localization.tui_reset, id="explorer-reset")
 
                 # The actual explorer
-                with VerticalScroll(id="endpoints-explorer"):
-                    with VerticalScroll(id="tree-view"):
-                        yield from self.compose_explorer()
+                # with VerticalScroll(id="endpoints-explorer"):
+                with VerticalScroll(id="tree-view"):
+                    yield from self.compose_explorer()
 
         # Add a footer, which automatically displays the different available bindings
         yield Footer()
@@ -654,6 +654,7 @@ class HTTP(App):
                 content = f"[red](ERROR)[/red] {self.localization.tui_no_content}"
 
         yield SectionTitle(self.localization.tui_content)
+        yield Label(f"({sys.getsizeof(content)} bytes)", id="result-size")
         yield Pretty(content, id="result-content")
 
     def compose_result_start(self):
@@ -789,7 +790,7 @@ class HTTP(App):
         for category, sub_categories in self.categories.items():
             # For each category, we are creating a tree, to
             # make a multi-rooted final tree.
-            tree: Tree[Endpoint] = Tree(category)
+            tree: Tree[Endpoint] = Tree(category, classes="explorer-category")
             for sub_category, endpoints in sub_categories.items():
                 # An endpoint could have a category without having any sub category
                 # This would cause an issue if the developer decides to use
