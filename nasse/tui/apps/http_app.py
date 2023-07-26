@@ -263,7 +263,7 @@ class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
                 classes="options-switch-container"
             )
 
-            yield UserSentForm(self.localization.tui_proxies, id="options-proxies", initial_values=[(UserSent(name=key), value) for key, value in self.options.proxies.items()])
+            yield UserSentForm(self.localization.tui_proxies, id="options-proxies", initial_values=[(UserSent(name=key), value) for key, value in self.options.proxies.items()], localization=self.localization)
 
             yield SectionTitle(self.localization.tui_security)
             yield Horizontal(
@@ -591,11 +591,11 @@ class HTTP(App):
                          id="request-path-container")
 
         yield Container(UserSentForm(self.localization.parameters, inputs=get_method_variant(method, self.endpoint.parameters)
-                                     if self.endpoint else None, multiple=True, id="request-parameters"),
+                                     if self.endpoint else None, multiple=True, id="request-parameters", localization=self.localization),
                         UserSentForm(self.localization.headers, inputs=get_method_variant(method, self.endpoint.headers)
-                                     if self.endpoint else None, id="request-headers"),
+                                     if self.endpoint else None, id="request-headers", localization=self.localization),
                         UserSentForm(self.localization.cookies, inputs=get_method_variant(method, self.endpoint.cookies)
-                                     if self.endpoint else None, id="request-cookies"),
+                                     if self.endpoint else None, id="request-cookies", localization=self.localization),
                         id="request-user-sent")
 
         yield SectionTitle(self.localization.tui_file)

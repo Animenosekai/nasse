@@ -165,17 +165,17 @@ class UserSentForm(Widget):
             if element.required:
                 for user_sent, value in initial_values.copy():
                     if user_sent == element:
-                        yield UserSentInput(element, inputs=self.inputs, initial_value=value)
+                        yield UserSentInput(element, inputs=self.inputs, initial_value=value, localization=self.localization)
                         initial_values.remove((user_sent, value))
                         break
                 else:
-                    yield UserSentInput(element, inputs=self.inputs)
+                    yield UserSentInput(element, inputs=self.inputs, localization=self.localization)
 
         for user_sent, value in initial_values:
-            yield UserSentInput(user_sent, inputs=self.inputs, initial_value=value)
+            yield UserSentInput(user_sent, inputs=self.inputs, initial_value=value, localization=self.localization)
 
         with Container(classes="form-inputs-container"):
-            yield UserSentInput(None, self.inputs, self.on_change)
+            yield UserSentInput(None, self.inputs, self.on_change, localization=self.localization)
 
     #     with Horizontal(classes="form-buttons"):
     #         yield Button("Add", name="add", classes="form-buttons-add")
@@ -190,7 +190,7 @@ class UserSentForm(Widget):
                 element.remove()
 
         if last_element.input_name or last_element.input_value:
-            self.query_one(".form-inputs-container", Container).mount(UserSentInput(None, self.inputs, self.on_change))
+            self.query_one(".form-inputs-container", Container).mount(UserSentInput(None, self.inputs, self.on_change, localization=self.localization))
 
     @property
     def values(self):
