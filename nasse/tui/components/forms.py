@@ -3,7 +3,8 @@ import typing
 
 from textual.containers import Horizontal, Container
 from textual.reactive import reactive
-from textual.widgets import Input, Label, Select
+from textual.widgets import Label, Select
+from nasse.tui.components.inputs import Input
 from textual.css.query import NoMatches
 
 from nasse.models import UserSent

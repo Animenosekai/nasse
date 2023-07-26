@@ -17,11 +17,13 @@ setup(
     download_url="https://github.com/Animenosekai/nasse/archive/v2.0.tar.gz",
     keywords=["Anime no Sekai", "nasse" "flask", "framework", "web", "web-server", "web-framework"],
     install_requires=[
-        "Werkzeug==2.2.2",
-        "bleach==3.3.0",
-        "Flask_Compress==1.10.1",
-        "watchdog==2.1.6",
-        "rich==13.0.0"
+        "Flask>=2.2.2,<3",
+        "nh3>=0.2.14",
+        "Flask_Compress>=1.10.1,<2",
+        "watchdog>=2.1.6,<3",
+        "rich>=13.0.0,<14",
+        "requests>=2,<3",
+        "miko>=1.0,<2"
     ],
     extra_requires={
         "gunicorn": ["gunicorn"]

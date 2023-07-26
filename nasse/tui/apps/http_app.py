@@ -35,9 +35,10 @@ from textual.events import Click
 from textual.reactive import reactive, var
 from textual.suggester import Suggester
 from textual.validation import Integer, Number
-from textual.widgets import (Button, Footer, Header, Input, Label,
+from textual.widgets import (Button, Footer, Header, Label,
                              LoadingIndicator, Pretty, Select, Static, Switch, Markdown,
                              Tree, _header)
+from nasse.tui.components.inputs import Input
 from textual.worker import get_current_worker
 
 from nasse import __info__
@@ -323,7 +324,7 @@ class HTTPOptionsScreen(OptionsScreen[HTTPOptions]):
 def define_bindings(localization: typing.Type[Localization] = EnglishLocalization):
     """Defines the different bindings for the app"""
     return [("h", "toggle_history", localization.tui_history), ("r", "toggle_results", localization.tui_result), ("e", "toggle_explorer", localization.tui_explorer),
-            ("s", "submit", localization.tui_submit), ("o", "open_options", localization.tui_options), ("q", "request_quit", localization.tui_quit), Binding("escape", "request_quit", localization.tui_quit, show=False)]
+            ("s", "submit", localization.tui_submit), ("o", "open_options", localization.tui_options), ("q", "request_quit", localization.tui_quit), Binding("ctrl+c", "request_quit", localization.tui_quit, show=False)]
 
 
 class HTTP(App):

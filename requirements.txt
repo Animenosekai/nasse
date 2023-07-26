@@ -5,3 +5,4 @@ watchdog>=2.1.6,<3
 rich>=13.0.0,<14
 requests>=2,<3
 miko>=1.0,<2
+dataclasses
