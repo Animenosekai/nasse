@@ -994,7 +994,7 @@ class HTTP(App):
 
         # Setting a custom user agent by default
         headers = {
-            "User-Agent": f"nasse-http/{__info__.__version_string__()}"
+            "User-Agent": f"nasse-http/{__info__.__version__}"
         }
         # Which can be overwritten here
         headers.update(self.query_one("#request-headers", UserSentForm).values)

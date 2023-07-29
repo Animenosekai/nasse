@@ -1,7 +1,7 @@
-"""A web server framework written on top of Flask"""
+"""A web server framework written on top of Flask which lets you focus on your ideas 🍡"""
 
 # autopep8: off
-from .__info__ import __version__, __version_tuple__, __license__, __author__, __copyright__ # isort:skip
+from .__info__ import __version__, __license__, __author__, __copyright__ # isort:skip
 from . import docs # isort:skip
 from flask import g # isort:skip
 from flask.wrappers import Request as FlaskRequest # isort:skip
