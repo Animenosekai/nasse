@@ -6,9 +6,11 @@ import time
 import sys
 
 if sys.version_info > (3, 7):
-    process_time_ns = time.process_time_ns  # novermin
+    ns_clock = time.perf_counter_ns  # novermin
 else:
-    def process_time_ns(): return int(time.process_time() * 1e+9)
+    def ns_clock():
+        """Performance clock counting in nanoseconds"""
+        return int(time.perf_counter() * 1e+9)
 
 
 class Timer():
@@ -30,7 +32,7 @@ class Timer():
         >>> timer.time_ns
         5628793271 # in nanoseconds
         """
-        self.current_timer = process_time_ns()
+        self.current_timer = ns_clock()
         self.time_ns = 0
         self.time = 0
 
@@ -38,7 +40,7 @@ class Timer():
         """
         Manually starts the timer
         """
-        self.current_timer = process_time_ns()
+        self.current_timer = ns_clock()
         self.time_ns = 0
         self.time = 0
 
@@ -51,16 +53,16 @@ class Timer():
             float
                 The time taken between Timer.start() and now (in seconds)
         """
-        self.time_ns = process_time_ns() - self.current_timer
+        self.time_ns = ns_clock() - self.current_timer
         self.time = self.time_ns / 1e+9
         return self.time
 
     def __enter__(self):
-        self.current_timer = process_time_ns()
+        self.current_timer = ns_clock()
         self.time_ns = 0
         self.time = 0
         return self
 
     def __exit__(self, type, value, traceback):
-        self.time_ns = process_time_ns() - self.current_timer
+        self.time_ns = ns_clock() - self.current_timer
         self.time = self.time_ns / 1e+9
