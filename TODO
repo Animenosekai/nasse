@@ -1,37 +1,14 @@
 TOP PRIORITY
+
 - Manage different path for docs in the markdown links
 - Manage multiple headers with same name in the same section for docs
 - Bring important stuff to a higher level import
 
 TODO
-- Test Environment/CLI
+
 - Writing Tests
-- Support for Windows
 
 WAITING FOR TEST
-- Decide what to do for different login rules for different methods
-- Think about a solution about endpoints returning objects, which are not parsable by models.Response
-- Safer Response model
-- Add the message field outside of the data container
-- Split documentation for different sections
 
-DONE
-- Using app.id in nasse.receive.retrieve_token //
-- Using app.id for the log file in nasse.utils.logging //
-- Using app.name for the logs in nasse.utils.logging //
-- Determine app.id from app.name //
-- Determine app.name from parent directory //
-- Determine endpoint path from handler location //
-- Fixing the @app.route decorator //
-- Auto Refresh on Mode.DEBUG (auto docs refresh?) //
-- Custom app.run //
-- after_request and before_request //
-- error handler //
-- Rewrite Auto Docs (a lot cleaner) //
-- Type Safe Parameters //
-- Error Catching from Receive //
-- Change the exceptions //
-- Rearrange imports to avoid polluting the namespace (if possible, using module name) //
-
-DROPPED
-- Using app.id as wrapper in nasse.utils.xml --> maybe not
+- Test Environment/CLI
+- Support for Windows
