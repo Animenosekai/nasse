@@ -216,16 +216,11 @@ class Receive:
                                             final.headers["X-NASSE-ERROR"] = str(error)
 
                                         if self.app.debug:
-                                            final.headers["X-NASSE-TIME-GLOBAL"] = str(
-                                                global_timer.stop())
-                                            final.headers["X-NASSE-TIME-VERIFICATION"] = str(
-                                                verification_timer.time)
-                                            final.headers["X-NASSE-TIME-AUTHENTICATION"] = str(
-                                                authentication_timer.time)
-                                            final.headers["X-NASSE-TIME-PROCESSING"] = str(
-                                                processing_timer.time)
-                                            final.headers["X-NASSE-TIME-FORMATTING"] = str(
-                                                formatting_timer.stop())
+                                            final.headers["X-NASSE-TIME-GLOBAL"] = str(global_timer.stop())
+                                            final.headers["X-NASSE-TIME-VERIFICATION"] = str(verification_timer.time)
+                                            final.headers["X-NASSE-TIME-AUTHENTICATION"] = str(authentication_timer.time)
+                                            final.headers["X-NASSE-TIME-PROCESSING"] = str(processing_timer.time)
+                                            final.headers["X-NASSE-TIME-FORMATTING"] = str(formatting_timer.stop())
                                     except Exception:
                                         pass
                                 else:

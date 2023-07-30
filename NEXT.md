@@ -48,6 +48,7 @@ Also, this comes with several changes in how the models attributes and parameter
 - Better compatibility
 - Improved code quality
 - Improved in-code docs
+- Using the `perf_counter` clock instead of the `process_time` one for better results
 - Type-hinting code more
 - The `Args` utility is more complete
 - Making a fully custom `NasseJSONEncoder` with more flexibility (example: encoding default types)
