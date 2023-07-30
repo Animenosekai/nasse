@@ -64,14 +64,14 @@ ALLOWED_PROTO = {'http://*', 'https://*', 'mailto:*'}
 """Procols allowed for URLs in HTML tags"""
 
 
-def remove_spaces(string: str):
+def remove_spaces(string: str) -> str:
     """Removes all whitespaces from the given string"""
     if not string:
         return ""
     return "".join(l for l in str(string) if l not in WHITESPACES)
 
 
-def alphabetic(string: str, decimals: bool = True):
+def alphabetic(string: str, decimals: bool = True) -> str:
     """Removes all of the non alphabetical letters from the string"""
     if not string:
         return ""
@@ -80,16 +80,16 @@ def alphabetic(string: str, decimals: bool = True):
     return "".join(l for l in str(string) if l.isalpha())
 
 
-def sanitize_http_method(method: str):
+def sanitize_http_method(method: str) -> str:
     """Sanitizes the given HTTP method to normalize it"""
     method = remove_spaces(method).upper()
     if method not in utils.types.HTTPMethod.ACCEPTED and method != "*":
-        utils.logging.logger.warn(message="The provided HTTP method {method} does not seem "\
+        utils.logging.logger.warn(message="The provided HTTP method {method} does not seem "
                                   "to be in the set of defined HTTP methods".format(method=method))
     return method
 
 
-def sort_http_methods(methods: typing.Iterable):
+def sort_http_methods(methods: typing.Iterable) -> typing.List[str]:
     """Sorts the given HTTP methods to normalize them"""
     methods = {sanitize_http_method(method) for method in methods}
     results = []
@@ -102,13 +102,16 @@ def sort_http_methods(methods: typing.Iterable):
     return results
 
 
-def sanitize_text(text: str, strict=True):
+def sanitize_text(text: str, strict: bool = True) -> str:
     """Sanitize text by removing any forbidden HTML part snippet"""
     if strict:
+        # pylint: disable=no-member
         return nh3.clean(str(text), tags={"b", "i", "em", "strong"}, attributes=set(), url_schemes={})
+    # pylint: disable=no-member
     return nh3.clean(str(text), tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, url_schemes=ALLOWED_PROTO)
 
-def split_on_uppercase(string: str):
+
+def split_on_uppercase(string: str) -> str:
     """
     Splits a string on any uppercase letter
 
@@ -188,8 +191,10 @@ def to_path(name: str) -> str:
     name = "-".join(split_on_uppercase(name)).lower()
     return "/" + name.replace(DELIMITER, "_").replace("//", "/").strip("/")
 
+# pylint: disable=invalid-name
 
-def toCamelCase(string: str):
+
+def toCamelCase(string: str) -> str:
     """
     Converts a string to camel case
 

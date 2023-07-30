@@ -5,9 +5,16 @@ status: BETA
 
 # Next
 
-> Provides informations about the next coming version
+> Provides information about the next coming version
 
 This version provides general improvements over the whole project, brining more stability and ease of use.
+
+> **Warning**
+> This is a breaking update !
+
+The endpoints modelling objects are now slightly different. Most of them support method variation, which lets the app developer change the endpoint definition for different methods.
+
+Also, this comes with several changes in how the models attributes and parameters are managed. Please look at the new models' definition before updating.
 
 ## New
 
@@ -19,6 +26,9 @@ This version provides general improvements over the whole project, brining more 
 - Switch to a local variables based system (more stable)
 - Using [`rich`](https://github.com/Textualize/rich) to output things to the console, which improves the UI a lot
 - Adding a CLI to easily run Nasse apps
+- Adding a TUI to test endpoints, similar to Postman
+- Starting to add debug endpoints, when the server is running in `DEBUG` mode
+- Add a way of giving a sub category to endpoints
 - Introducing a new server backend based system to run the server, which allows the user to actually specify if they want to use *Gunicorn* or any other WSGI compatible server backend. (this fixes a pretty big bug where people on Windows couldn't really run their server)
 
 ## Fixes
@@ -26,16 +36,22 @@ This version provides general improvements over the whole project, brining more 
 - Fixing a problem with CORS headers
 - Fixing a problem with request verifications
 - Fixing an issue with `UserSent` validation
+- Fixing an issue with the Windows operating system
 
 ## Updates
 
+- Using *dataclasses* for endpoint models
+- Using `pyproject.toml`
+- Using correct versioning
+- Using [poetry](https://python-poetry.org)
 - Only log exceptions when wanted
 - Better compatibility
-- Other little improvements
 - Improved code quality
 - Improved in-code docs
 - Type-hinting code more
-- Making a fully custom NasseJSONEncoder with more flexibility (example: encoding default types)
+- The `Args` utility is more complete
+- Making a fully custom `NasseJSONEncoder` with more flexibility (example: encoding default types)
+- Other little improvements
 
 Everything is detailed in the [`README.md`](./README.md) file
 

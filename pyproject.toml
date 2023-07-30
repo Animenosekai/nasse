@@ -74,6 +74,7 @@ nasse = 'nasse.__main__:entry'
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.4.1"
+autopep8 = "^2.0.2"
 
 [build-system]
 requires = ["poetry-core"]

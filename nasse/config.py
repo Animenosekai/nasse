@@ -9,9 +9,6 @@ import urllib.parse
 from nasse.utils import formatter
 from nasse import __info__
 
-from nasse.utils.annotations import Default
-
-
 def _alphabetic(string):
     return "".join(l for l in str(string) if l.isalpha() or l.isdecimal())
 

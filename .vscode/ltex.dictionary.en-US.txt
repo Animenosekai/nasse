@@ -1,0 +1,11 @@
+PyPI
+CodeQL
+UserSent
+Nasse
+camelCase
+Werkzeug
+Animenosekai
+CherryPieWithPoison
+delfick
+Gunicorn
+dataclasses

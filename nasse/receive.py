@@ -178,7 +178,7 @@ class Receive:
                                     message, error, code = exception_to_response(response)
                                 elif isinstance(response, typing.Iterable) and not isinstance(response, typing.Generator):
                                     found = False
-                                    if utils.annotations.is_unpackable(response):
+                                    if utils.unpack.is_unpackable(response):
                                         try:
                                             response = Response(**response)
                                             data = response.data
@@ -235,7 +235,7 @@ class Receive:
                                         "message": message,
                                         "data": {}
                                     }
-                                    if utils.annotations.is_unpackable(data):
+                                    if utils.unpack.is_unpackable(data):
                                         # data: {"username": "someone", "token": "something"}
                                         result["data"] = dict(data)
                                     elif isinstance(data, bytes):

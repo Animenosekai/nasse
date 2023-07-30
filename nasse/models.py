@@ -22,13 +22,13 @@ class Types:
                                   "OPTIONS", "TRACE", "PATCH"]
         Any = typing.Union[Standard, str]
 
-    Type = typing.Union[typing.Callable[[str], typing.Any], typing.Type]
+    Type = typing.Union[str, typing.Callable[[str], typing.Any], typing.Type]
     HandlerOutput = typing.Union["response.Response", Exception, typing.Iterable, typing.Generator]
 
     FinalMethodVariant = typing.Dict[Method.Any, T]
     FinalIterable = typing.Set[T]
 
-    MethodVariant = typing.Optional[typing.Union[FinalMethodVariant, T]]
+    MethodVariant = typing.Optional[typing.Union[FinalMethodVariant[T], T]]
     OptionalIterable = typing.Optional[typing.Union[typing.Iterable[T], T]]
 
 
@@ -170,9 +170,13 @@ class Login:
 class UserSent:
     """A value sent by the user"""
     name: str
+    """The name of the value sent"""
     description: typing.Optional[str] = None
+    """A description of the value sent"""
     required: bool = True
+    """If the value is required or not"""
     type: Types.Type = str
+    """The type of value sent by the user"""
 
 
 Dynamic = UserSent
@@ -211,8 +215,11 @@ Param = Parameter
 class Error:
     """An error to be raised when something goes wrong"""
     name: str
+    """The name of the error"""
     description: typing.Optional[str] = None
+    """A description of a situation where this error might be raised"""
     code: int = 500
+    """The status code of the response sent along this error"""
 
 
 def non_implemented():
@@ -273,7 +280,7 @@ class Endpoint:
     def __init__(self,
                  handler: typing.Callable[..., Types.HandlerOutput] = non_implemented,
                  name: str = "Untitled",
-                 category: str = "",
+                 category: str = "Main",
                  sub_category: str = "",
                  description: Types.MethodVariant[str] = None,
                  base_dir: typing.Union[pathlib.Path, str, None] = None,

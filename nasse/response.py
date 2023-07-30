@@ -9,8 +9,6 @@ import werkzeug.http
 import werkzeug.exceptions
 
 from nasse import config, exceptions, utils
-from nasse.utils.annotations import Default
-
 
 def exception_to_response(value: Exception, config: typing.Optional[config.NasseConfig] = None):
     """
@@ -53,7 +51,7 @@ def cookie_validation(value):
             return value.__copy__()
         if isinstance(value, str):
             return ResponseCookie(key=value)
-        if utils.annotations.is_unpackable(value):
+        if utils.unpack.is_unpackable(value):
             try:
                 return ResponseCookie(**value)
             except TypeError:
@@ -102,11 +100,11 @@ class Response:
 
     def __init__(self,
                  data: typing.Any = None,
-                 message: str = None,
-                 error: str = None,
-                 code: int = Default(200),
-                 headers: typing.Dict[str, str] = None,
-                 cookies: typing.List[ResponseCookie] = None,
+                 message: typing.Optional[str] = None,
+                 error: typing.Optional[str] = None,
+                 code: typing.Optional[int] = None,
+                 headers: typing.Optional[typing.Dict[str, str]] = None,
+                 cookies: typing.Optional[typing.List[ResponseCookie]] = None,
                  content_type: typing.Optional[str] = None) -> None:
         """
         A Response object given to Nasse to format the response
@@ -134,18 +132,18 @@ class Response:
         if isinstance(error, Exception):
             temp_data, error, temp_code = exception_to_response(error)
         else:
-            temp_data, temp_code = None, None
+            temp_data, temp_code = None, 200
 
-        data = data if not isinstance(data, Default) else temp_data or data.value
+        data = data or temp_data
 
-        code = code if not isinstance(code, Default) else temp_code or code.value
+        code = code or temp_code
 
         self.error = str(error) if error is not None else None
         self.code = int(code)
         self.message = str(message) if message is not None else None
 
         self.headers = {}
-        if utils.annotations.is_unpackable(headers):
+        if utils.unpack.is_unpackable(headers):
             # headers: {"HEADER-KEY": "Header Value"}
             for header_key, header_value in dict(headers).items():
                 self.headers[str(header_key)] = str(header_value)
@@ -163,7 +161,7 @@ class Response:
 
         self.cookies = []
         if cookies is not None:
-            if utils.annotations.is_unpackable(cookies):
+            if utils.unpack.is_unpackable(cookies):
                 for key, val in dict(cookies).items():
                     item = {"key": str(key)}
                     item.update(val)

@@ -162,7 +162,7 @@ class Node(object):
             return "bool"
         elif data is None:
             return "null"
-        elif utils.annotations.is_unpackable(data):
+        elif utils.unpack.is_unpackable(data):
             return "mapping"
         elif isinstance(data, bytes):
             return "bytes"

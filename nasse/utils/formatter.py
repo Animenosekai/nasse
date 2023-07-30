@@ -17,6 +17,7 @@ from nasse.__info__ import __version__
 
 
 class Colors(enum.Enum):
+    """A set of ANSI colors"""
     NORMAL = '\033[0m'
     GREY = '\033[90m'
     RED = '\033[91m'
@@ -62,6 +63,7 @@ def caller_name(skip: int = 2):
 
 
 class Unformatted:
+    """A dummy object used by the silent formatter"""
     def __init__(self, key):
         self.key = key
 
@@ -91,7 +93,7 @@ class SilentFormatter(Formatter):
             except KeyError:
                 return Unformatted(key)
 
-
+# pylint: disable=redefined-builtin
 def format(string: str, time_format: typing.Union[str, typing.Callable[[datetime.datetime], typing.Any]] = "%Y/%m/%d, %H:%M:%S", config: "NasseConfig" = None, *args, **kwargs):
     """
     Formats the string with the given config
@@ -99,9 +101,8 @@ def format(string: str, time_format: typing.Union[str, typing.Callable[[datetime
     Parameters
     ----------
     string: str
-    time_format: typing.Union[str, typing.Callable[[datetime.datetime], typing.Any]], default = "%Y/%m/%d
-    %H: %M:%S"
-    config: "NasseConfig", default = None
+    time_format: typing.Union[str, typing.Callable[[datetime.datetime], typing.Any]], default = "%Y/%m/%d %H: %M:%S"
+    config: NasseConfig, default = None
     level: str, default = None
     """
     formatting = {

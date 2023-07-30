@@ -27,6 +27,7 @@ from nasse.servers.flask import Flask
 
 
 class FileEventHandler(watchdog.events.FileSystemEventHandler):
+    """An internal file event handler for the debug mode"""
     def __init__(self, callback: typing.Callable, watch: typing.List[pathlib.Path], ignore: typing.List[pathlib.Path], config: NasseConfig = None) -> None:
         super().__init__()
         self.config = config or NasseConfig()
@@ -42,10 +43,14 @@ class FileEventHandler(watchdog.events.FileSystemEventHandler):
         self.callback()
 
 
-class Nasse():
+class Nasse:
     """The Nasse web server object"""
 
-    def __init__(self, name: str = None, config: NasseConfig = None, flask_options: dict = None, *args, **kwargs) -> None:
+    def __init__(self,
+                 name: typing.Optional[str] = None,
+                 config: typing.Optional[NasseConfig] = None,
+                 flask_options: typing.Optional[dict] = None,
+                 *args, **kwargs) -> None:
         """
         # Nasse
 
@@ -150,7 +155,7 @@ class Nasse():
               json: bool = True,
               returns: models.Types.MethodVariant[models.Types.OptionalIterable[models.Return]] = None,
               errors: models.Types.MethodVariant[models.Types.OptionalIterable[models.Error]] = None,
-              flask_options: typing.Optional[dict] = None):
+              flask_options: typing.Optional[dict] = None) -> typing.Callable[..., models.Endpoint]:
         """
         Use this function to declare new endpoints
 
@@ -181,8 +186,8 @@ class Nasse():
                                            sub_category=sub_category,
                                            description=description,
                                            base_dir=base_dir,
-                                           endpoint=endpoint,
-                                           path=path if not callable(path) else None,
+                                           endpoint=endpoint or (path if isinstance(path, models.Endpoint) else None),
+                                           path=path if not callable(path) and not isinstance(path, models.Endpoint) else None,
                                            methods=methods,
                                            login=login,
                                            parameters=parameters,
@@ -217,13 +222,35 @@ class Nasse():
             host: typing.Optional[str] = None,
             port: typing.Optional[int] = None,
             server: typing.Type[ServerBackend] = Flask,
-            watch: typing.List[str] = ["**/*.py"],
+            watch: typing.Optional[typing.List[str]] = None,
             ignore: typing.Optional[typing.List[str]] = None,
             status: bool = True,
-            *args, **kwargs):
+            *args, **kwargs) -> None:
         """
         Runs the application by binding to an address and answering to clients.
+
+        Note: If a `debug` argument is passed to the underlying server backend using `kwargs`, it will be used for `config.debug`
+
+        Parameters
+        ----------
+        host: str, optional
+            The host to run the server on
+        port: int, optional
+            The port to make the server listen at
+        server: Type[ServerBackend], default=Flask
+            The server backend to use
+        watch: list[str], default=["**/*.py"]
+            A list of glob expressions of files to watch for changes in debug mode
+        ignore: list[str], optional
+            A list of glob expressions of files to ignore changes for in debug mode
+        status: bool, default=True
+            Whether to show the progress status (time since the server first ran, URL listened, etc.).
+            This might come handy in complex environments where you are already using
+            a `rich.progress.Progress object, which might conflict.
         """
+        if watch is None:
+            watch = ["**/*.py"]
+
         class MockProgress:
             """Replaces the logger"""
 
@@ -243,7 +270,7 @@ class Nasse():
             if port is not None:
                 self.config.port = int(port)
             if "debug" in kwargs:
-                self.config.debug = kwargs["debug"]
+                self.config.debug = bool(kwargs["debug"])
 
             if self.config.debug:
                 self.config.logger.warn("DEBUG MODE IS ENABLED")

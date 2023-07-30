@@ -2,7 +2,7 @@
 
 <img align="right" src="./docs/nasse.png" height="220px">
 
-A web framework built on top of Flask
+A web server framework written on top of Flask which lets you focus on your ideas 🍡
 
 ***Actually spend time making your next app, we will do the annoying stuff for you!***
 
@@ -93,7 +93,7 @@ pip install --upgrade nasse
 ### Option 2: From Git
 
 ```bash
-pip install --upgrade git+https://github.com/Animenosekai/nasse
+pip install --upgrade git+https://github.com/Animenosekai/nasse.git
 ```
 
 > This will install the latest development version from the git repository
@@ -102,13 +102,12 @@ You can check if you successfully installed it by printing out its version:
 
 ```bash
 $ nasse --version
-# output:
-Nasse v2.0(beta)
+2.0.0rc1
 ```
 
 ## Purpose
 
-This web server framework aims to bring a powerful tool to make your web application development easier.
+This web server framework aims at bringing a new powerful tool to make your web application development easier.
 
 It brings type safety, along with automatic documentation to force you write clean and safe code while avoiding unnecessary checks and data validation.
 
@@ -175,8 +174,7 @@ Here is an explanation...
 
 import re
 from nasse import Nasse, Endpoint, Param, Login
-from nasse.utils.types import Email
-from nasse.utils.types import LimitedString
+from nasse.utils.types import Email, LimitedString
 
 app = Nasse()
 
@@ -229,7 +227,7 @@ Just import the Nasse object and create a new instance of it
 >>> app = Nasse()
 ```
 
-This is the bare minimum but you should of course configure it.
+This is the bare minimum, but you should of course configure it.
 
 You should at least give it a name and configure the CORS domains.
 
@@ -237,9 +235,9 @@ You should at least give it a name and configure the CORS domains.
 >>> app = Nasse("My App", cors="https://myapp.com")
 ```
 
-Lots of things will be initialised with their default configuration.
+Lots of things will be initialized with their default configuration.
 
-If you want to customize them, you might want to take a look at the `nasse.config.NasseConfig` object, which has all of the Nasse configuration.
+If you want to customize them, you might want to take a look at the `nasse.config.NasseConfig` object, which has all the Nasse configuration.
 
 > **Note**  
 > Some strings support the [Nasse string formatting](#string-formatting).
@@ -279,7 +277,7 @@ As said before, lots of Flask settings are available and exposed to you.
 
 #### Flask Configuration
 
-You can configure the Flask app using the `flask_options` parameter when instanciating a new Nasse instance.
+You can configure the Flask app using the `flask_options` parameter when instantiating a new Nasse instance.
 
 But you can also use the `Nasse.flask` attribute, which exposes the underlying Flask app to use your favorite plugins !
 
@@ -373,21 +371,21 @@ Where's the `"/hello"` part?
 
 You can follow a specific syntax for your functions name to create rich routes:
 
-- To create a hyphen "-", use an upper case letter, kinda like when you use camelCase.
+- To create a hyphen "-", use an upper case letter, kinda like when you use *camelCase*.
 
-> `def myRoute():` --> /my-route
+> `def myRoute()` ⇒ /my-route
 
 - To create a new slash "/", use an underscore "_".
 
-> `def my_route():` --> /my/route
+> `def my_route()` ⇒ /my/route
 
 - To create a new dynamic parameter, use a double underscore "__".
 
-> `def my__route__(route):` --> /my/\<route>/
+> `def my__route__(route)` ⇒ /my/\<route>/
 
 - You can mix everything up as you wish.
 
-> `def my_helloWorld_route__name__(name):` --> /my/hello-world/\<name>/
+> `def my_helloWorld_route__name__(name)` ⇒ /my/hello-world/route/\<name>/
 
 Also, the directory the function is in will be used to determine the route, this behavior can be changed with the `base_dir` parameter of the endpoint.
 
@@ -395,15 +393,15 @@ You can then use parameters to configure and document the endpoint.
 
 ### Documenting your endpoints
 
-You can configure the endpoint by passint it a `nasse.models.Endpoint` instance.
+You can configure the endpoint by passing it a `nasse.models.Endpoint` instance.
 
-Everything is meant to be reusable to write less and more readble code.
+Everything is meant to be reusable to write less and more readable code.
 
 For example, you could define a basic and global endpoint configuration for all your endpoints at the top level.
 
 Then configure a general endpoint configuration for the endpoint file.
 
-And then make specific tweakings for each endpoint.
+And then make specific tweaking for each endpoint.
 
 To inherit the configuration from another endpoint, you just need to pass the endpoint to the `endpoint` parameter of the new `Endpoint`.
 
@@ -424,7 +422,49 @@ To inherit the configuration from another endpoint, you just need to pass the en
 ...     return all_accounts()
 ```
 
-It is very important to rightfully document your endpoints because it will be used to process the requests and validate stuff.
+But did you know that defining your functions the right way (giving a good name, type-hinting them and adding *doc-strings*) would already give Nasse enough information to build a nicely documented endpoint.
+
+For example
+
+```python
+>>> from nasse import Parameter
+>>> @app.route(
+        path="/accounts",
+        parameters=Parameter("limit", type=int),
+        description="This returns all accounts"
+    )
+... def accounts_endpoint(limit=100):
+...     return get_accounts()
+```
+
+Could be rewritten as:
+
+```python
+>>> @app.route
+... def accounts(limit: int = 100):
+...     """This returns all accounts"""
+...     return get_accounts()
+```
+
+This is the most natural way of writing your endpoints, almost as if your function never leaved Python.
+
+And by using the [`miko`](https://github.com/Animenosekai/miko) documentation style, you can even add descriptions to your parameters:
+
+```python
+>>> @app.route
+... def accounts(limit: int = 100):
+...     """
+...     This returns all accounts
+...
+...     Parameters
+...     ----------
+...     limit: int
+...         An upper boundary for the number of accounts to return
+...     """
+...     return get_accounts()
+```
+
+It is very important to rightfully document your endpoints because it will be used to process the requests and validate the inputs.
 
 ### Documentation Values
 
@@ -434,13 +474,12 @@ The `models.Return` model is used to document what the endpoint returns.
 
 Here are its parameters:
 
-- `name`: the name of the returned value
-- `example`: an example of value it could return
-- `description`: a description of the returned value
-- `methods`: the HTTP methods where the value is returned
-- `type`: the type of the returned value
-- `children`: any children returned values
-- `nullable`: if the value can be null
+- `name`: The name of the field
+- `example`: An example of returned value
+- `description`: A description of the returned value
+- `type`: The type of returned value
+- `children`: The different children values
+- `nullable`: If this value is can be `null` (`None`)
 
 #### Login
 
@@ -448,24 +487,24 @@ The `models.Login` model is used to document how a user can authenticate its req
 
 Here are its parameters:
 
-- `required`: if the login is required
-- `types`: the type of account that are allowed to access this endpoint
-- `no_login`: if no login is required
-- `verification_only`: if it is only required to verify the login token but not to get the account (this will avoid retrieving the account on each request but still validate the token)
+- `required`: If the login is required or not. The user may still authenticate.
+- `types`: Accepted types of accounts
+- `skip`: Whether to completely skip or not the authentication step
+- `skip_fetch`: Whether to skip fetching the account or not. This effectively only checks if the provided token is correct or not.
 
 #### UserSent
 
-The `models.UserSent` model is used to document what the user sent to the endpoint.
+The `models.UserSent` model is used to document what the user can send to the endpoint.
 
 Here are its parameters:
 
-- `name`: the name of the sent value
-- `description`: a description of the sent value
-- `required`: if the value is required
-- `methods`: the HTTP methods where the value is sent
-- `type`: the type of the sent value
+- `name`: The name of the value sent
+- `description`: A description of the value sent
+- `required`: If the value is required or not
+- `type`: The type of value sent by the user
 
-`models.Dynamic`, `models.Param`, `models.Header` and `models.Cookie` are all subclasses of `models.UserSent`.
+> **Note**  
+> `models.Dynamic`, `models.Parameter`, `models.Header` and `models.Cookie` are all aliases of `models.UserSent`
 
 #### Error
 
@@ -473,16 +512,15 @@ The `models.Error` model is used to document what errors can be returned by the 
 
 Here are its parameters:
 
-- `name`: the name of the error
-- `description`: a description of the error
-- `code`: the code of the error
-- `methods`: the HTTP methods where the error is returned
+- `name`: The name of the error
+- `description`: A description of a situation where this error might be raised
+- `code`: The status code of the response sent along this error
 
 ### Context
 
-The context values will be type casted with the provided endpoint documentation.
+The context values will be of the type you provided in the endpoint definition.
 
-There is multiple ways you can access a request context.
+There are multiple ways you can access a request context.
 
 You can import the `request` global variable from `nasse`
 
@@ -532,7 +570,7 @@ Any other requested parameter will be either a **dynamic route parameter** or a 
 
 You can return any kind of value from your endpoint function.
 
-There is multiple ways to return values:
+There are multiple ways to return values:
 
 - Using the `response.Response` class
 
@@ -570,6 +608,12 @@ The dictionary will be automatically passed to `response.Response`
 }
 ```
 
+If the dictionary can't be passed to `response.Response`, it will be treated as part of the `data` to send back.
+
+```python
+... return {"greeting": "Hello World"}
+```
+
 - Using an iterable, like a tuple
 
 ```python
@@ -583,7 +627,7 @@ The dictionary will be automatically passed to `response.Response`
 
 ### Error handling
 
-Even if your application encounters an error/exception, it will be automatically catched by Nasse and correctly formatted to be safely returned to the client.
+Even if your application encounters an error/exception, it will be automatically caught by Nasse and correctly formatted to be safely returned to the client.
 
 > **Note**  
 > Tip: You should use the `nasse.exceptions.NasseException` class to create your own exceptions.
@@ -604,14 +648,14 @@ If the endpoint is configured as a JSON endpoint, it will be formatted using the
 }
 ```
 
-Nasse uses a custom JSON encoder to fully customise it and avoiding bugs.
+Nasse uses a custom JSON encoder to fully customize it and avoiding bugs.
 
 > **Note**  
 > Also, on debug mode, the response will have an additional `debug` field containing the debug information.
-
+>
 > **Note**  
 > If the `format` parameter is set to `xml` or `html` when making the request, the response will be automatically converted to an *XML* format.
-> Example: `/hello?format=xml` will produce an `XML` formatted output.
+> Example: `/hello?format=xml` will produce a `XML` formatted output.
 
 ### Utilities
 
@@ -682,6 +726,7 @@ Most of the time, this is used when logging stuff to the console :
 logger.print("Hello {user} from process {pid}", user="world")
 ```
 
+<!-- markdownlint-disable MD033 -->
 <details>
     <summary>Here is a list of default variables you can use with Nasse's string formatting</summary>
     <li>normal</li>
@@ -711,6 +756,7 @@ logger.print("Hello {user} from process {pid}", user="world")
     <li>pid</li>
     <li>cwd</li>
 </details>
+<!-- markdownlint-enable MD033 -->
 
 ### Running the server
 
@@ -722,7 +768,7 @@ app.run()
 
 Where `app` is your Nasse instance.
 
-You can specify the backend you want to use to run the server using one of the already defined `nasse.servers...` objects are a custom made one, following the `nasse.servers.ServerBackend` class.
+You can specify the backend you want to use to run the server using one of the already defined `nasse.servers...` objects are a custom-made one, following the `nasse.servers.ServerBackend` class.
 
 You can here specify the host and port to run the server on.
 
@@ -745,13 +791,13 @@ Use the `make_docs` method inside your application to generate the documentation
 
 It will generate the examples, usage and explanation for each endpoint, along with an index of the endpoints and a general explanation at the top.
 
-The Postamn documentation is a set of JSON files, one for each category, that you can import inside Postman to test your API.
+The Postman documentation is a set of JSON files, one for each category, that you can import inside Postman to test your API.
 
 It will create a `docs` directory in the current directory to put both documentations.
 
 #### Localization
 
-You can now use the docs localization feature which lets you use a different language for your docs !
+You can now use the docs' localization feature which lets you use a different language for your docs !
 
 ```python
 from nasse import Nasse
@@ -767,7 +813,7 @@ Here are the built-in languages :
 - French
 - Japanese
 
-But you can create your own translation by subclassing `nasse.localization.Localization`
+But you can create your own translation by sub-classing `nasse.localization.Localization`
 
 ## Deployment
 
@@ -789,12 +835,13 @@ Pull requests are welcome. For major changes, please open a discussion first to 
 - [watchdog](https://github.com/gorakhargosh/watchdog) - To watch for file changes
 - [Werkzeug](https://github.com/pallets/werkzeug/) - Flask's core
 - [bleach](https://github.com/mozilla/bleach) - To sanitize inputs
-- [rich](https://github.com/Textualize/rich) - To provide good looking console outputs
+- [rich](https://github.com/Textualize/rich) - To provide good-looking console outputs
+- [textual](https://github.com/Textualize/textual) - To build the HTTP TUI
 - [Flask-Compress](https://github.com/colour-science/flask-compress) - To compress the responses
 
 ## Authors
 
-- **Anime no Sekai** - *Initial work* - [Animenosekai](https://github.com/Animenosekai)
+- **Animenosekai** - *Initial work* - [Animenosekai](https://github.com/Animenosekai)
 
 ## Acknowledgments
 
