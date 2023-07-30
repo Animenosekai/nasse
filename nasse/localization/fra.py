@@ -112,6 +112,7 @@ Les erreurs spécifiques sont documentés dans chaque *Endpoint* mais celles-ci 
 | `INTERNAL_SERVER_ERROR`     | Quand une erreur critique survient sur le système                                                               | 500   |
 | `METHOD_NOT_ALLOWED`        | Quand vous faites une requête avec le mauvaise méthode HTTP                                                     | 405   |
 | `CLIENT_ERROR`              | Quand quelque chose manque où n'est pas bon avec la requête                                                     | 400   |
+| `INVALID_TYPE`              | Quand Nasse n'a pas pu convertir la valeur qui a été envoyée dans le bon type                                   | 400   |
 | `MISSING_VALUE`             | Quand quelque chose manque à la requête                                                                         | 400   |
 | `MISSING_PARAM`             | Quand un paramètre manque à la requête                                                                          | 400   |
 | `MISSING_DYNAMIC`           | Quand une valeur dynamique de l'URL manque                                                                      | 400   |

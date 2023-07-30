@@ -112,6 +112,7 @@ class JapaneseLocalization(Localization):
 | `INTERNAL_SERVER_ERROR`     | システム上でエラーが発生した時                                                                                       | 500   |
 | `METHOD_NOT_ALLOWED`        | HTTPリクエストメソッドを間違えた時                                                                                   | 405   |
 | `CLIENT_ERROR`              | リクエストで何か足りないかダメな時                                                                                    | 400   |
+| `INVALID_TYPE`              | Nasseが送られたデータを正しい型に変換できなかった時                                                                     | 400   |
 | `MISSING_VALUE`             | リクエストから何か足りない時                                                                                         | 400   |
 | `MISSING_PARAM`             | 必要のパラメーターが一つリクエストから不足している時                                                                     | 400   |
 | `MISSING_DYNAMIC`           | ダイナミックURLのパーツが一つURLから不足している時                                                                      | 400   |

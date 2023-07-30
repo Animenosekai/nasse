@@ -129,12 +129,13 @@ Specific errors are documented in each endpoint, but these are the general error
 | `INTERNAL_SERVER_ERROR`     | When a critical error occurs on the system                                                                      | 500   |
 | `METHOD_NOT_ALLOWED`        | When you made a request with the wrong method                                                                   | 405   |
 | `CLIENT_ERROR`              | When something is missing or is wrong with the request                                                          | 400   |
+| `INVALID_TYPE`              | When Nasse couldn't convert the given value to the right type                                                   | 400   |
 | `MISSING_VALUE`             | When a value is missing from the request                                                                        | 400   |
 | `MISSING_PARAM`             | When a parameter is missing from the request                                                                    | 400   |
 | `MISSING_DYNAMIC`           | When a dynamic routing value is missing from the requested URL                                                  | 400   |
 | `MISSING_HEADER`            | When a header is missing from the request                                                                       | 400   |
 | `MISSING_COOKIE`            | When a cookie is missing from the request                                                                       | 400   |
-| `AUTH_ERROR`                | When an error occurred while authenticating the request                                                          | 403   |
+| `AUTH_ERROR`                | When an error occurred while authenticating the request                                                         | 403   |
 
 ### Authenticated Requests
 
