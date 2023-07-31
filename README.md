@@ -430,18 +430,20 @@ For example
 >>> from nasse import Parameter
 >>> @app.route(
         path="/accounts",
-        parameters=Parameter("limit", type=int),
+        name="accounts_endpoint",
+        category="test",
+        parameters=[Parameter("username"), Parameter("limit", type=int, required=False)],
         description="This returns all accounts"
     )
-... def accounts_endpoint(limit=100):
-...     return get_accounts()
+... def accounts_endpoint(username: str, limit=100):
+...     return get_accounts(username)
 ```
 
 Could be rewritten as:
 
 ```python
 >>> @app.route
-... def accounts(limit: int = 100):
+... def accounts(username: str, limit: int = 100):
 ...     """This returns all accounts"""
 ...     return get_accounts()
 ```
@@ -452,7 +454,7 @@ And by using the [`miko`](https://github.com/Animenosekai/miko) documentation st
 
 ```python
 >>> @app.route
-... def accounts(limit: int = 100):
+... def accounts(username: str, limit: int = 100):
 ...     """
 ...     This returns all accounts
 ...
@@ -463,6 +465,11 @@ And by using the [`miko`](https://github.com/Animenosekai/miko) documentation st
 ...     """
 ...     return get_accounts()
 ```
+
+> **Note**  
+> The name of the endpoint will be the name of the function and its category will be the name of the file you defined the function in.
+>
+> We understand that it is not required to list all parameters in the doc-string.
 
 It is very important to rightfully document your endpoints because it will be used to process the requests and validate the inputs.
 
