@@ -63,7 +63,7 @@ flask-compress = "^1.10"
 watchdog = "^3.0.0"
 rich = "^13"
 requests = "^2"
-miko = "^1"
+miko = "^1.1"
 textual = "^0.30.0"
 
 [tool.poetry.scripts]

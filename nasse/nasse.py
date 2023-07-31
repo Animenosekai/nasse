@@ -134,8 +134,8 @@ class Nasse:
     def route(self,
               path: typing.Optional[typing.Union[typing.Callable, str]] = None,
 
-              name: str = "Untitled",
-              category: str = "Main",
+              name: str = "",
+              category: str = "",
               sub_category: str = "",
               description: models.Types.MethodVariant[str] = None,
               base_dir: typing.Union[pathlib.Path, str, None] = None,

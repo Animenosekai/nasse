@@ -470,13 +470,13 @@ files = [
 
 [[package]]
 name = "miko"
-version = "1.0"
+version = "1.1"
 description = "See how to use a Python object at a glance!"
 optional = false
-python-versions = ">=3.4, <4"
+python-versions = ">=3.6,<4.0"
 files = [
-    {file = "miko-1.0-py3-none-any.whl", hash = "sha256:7cfa66e8194d099c66fad85d4e98b7aec42d6128bb79f40f45b7e49e1b6baf42"},
-    {file = "miko-1.0.tar.gz", hash = "sha256:4126367ce725061c396b651f3734224280091e688338d19c5050423785dffbc5"},
+    {file = "miko-1.1-py3-none-any.whl", hash = "sha256:72559a19ab3b50748e05cd9336b7d6b2015125558ed5e3e7ef50c91872e5c96f"},
+    {file = "miko-1.1.tar.gz", hash = "sha256:d48a30e7619b4f58c7b921e891ed0970b50de652322d47c15a340a09b26a048b"},
 ]
 
 [[package]]
@@ -770,4 +770,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "9164844ec96aed94b9efd00813d427dc9012560ea3f1df8ed77efb0c824ebd74"
+content-hash = "2d135a959a6397f3eab5457cfba51a1177af3e2382fac3fa65b2db8bfaf06897"

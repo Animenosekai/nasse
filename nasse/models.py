@@ -279,7 +279,7 @@ class Endpoint:
 
     def __init__(self,
                  handler: typing.Callable[..., Types.HandlerOutput] = non_implemented,
-                 name: str = "Untitled",
+                 name: str = "",
                  category: str = "Main",
                  sub_category: str = "",
                  description: Types.MethodVariant[str] = None,
@@ -325,8 +325,25 @@ class Endpoint:
             "errors": errors
         }
 
+        # Getting the file where the function got defined
+        # module = inspect.getmodule(self.handler)
+        # if module:
+        #     filepath = pathlib.Path(module.__file__)
+        # else:
+        filepath = pathlib.Path(inspect.getfile(handler))
+
+        # Getting the handler signature
         signature = inspect.signature(handler)
+
+        # Parsing the doc-string
         docs = miko.Docs(handler.__doc__ or "", signature)
+
+        if not name:
+            initial["name"] = handler.__name__
+        if not category:
+            initial["category"] = (filepath.stem or
+                                   (handler.__module__ or "").rpartition(".")[2] or
+                                   "Untitled")
 
         # I might add custom parsers for each method
         if not description:
@@ -366,13 +383,6 @@ class Endpoint:
                 base = str(self.base_dir)
                 base_len = len(base)
 
-                # Getting the file where the function got defined
-                # module = inspect.getmodule(self.handler)
-                # if module:
-                #     filepath = pathlib.Path(module.__file__)
-                # else:
-                filepath = pathlib.Path(inspect.getfile(self.handler))
-
                 # A fail-safe version of pathlib.Path.relative_to
                 result = ""
                 # removing the suffix
@@ -408,9 +418,15 @@ class Endpoint:
         self.parameters = validates_method_variant(self.parameters, Parameter, iter=True)
 
         # retrieving all of the already defined parameters
-        names = []
+        names = ["app", "nasse", "config", "logger", "endpoint",
+                 "nasse_endpoint", "request", "method", "values",
+                 "params", "parameters", "args", "form", "headers",
+                 "account", "dynamics"]
+
         for parameters in self.parameters.values():
             names.extend([param.name for param in parameters])
+
+        names = set(names)
 
         # checking the parameters defined at the function definition level
         for parameter in docs.parameters.elements.values():
@@ -436,11 +452,6 @@ class Endpoint:
 
         if not self.path.startswith("/"):
             self.path = "/" + self.path
-        if not self.name:
-            self.name = path_to_name(self.path)
-        if not self.category:
-            module = inspect.getmodule(self.handler)
-            self.category = module.__name__.title() if module else self.category
 
     def __getitem__(self, key: str):
         return getattr(self, key)

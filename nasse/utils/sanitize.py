@@ -106,7 +106,7 @@ def sanitize_text(text: str, strict: bool = True) -> str:
     """Sanitize text by removing any forbidden HTML part snippet"""
     if strict:
         # pylint: disable=no-member
-        return nh3.clean(str(text), tags={"b", "i", "em", "strong"}, attributes=set(), url_schemes={})
+        return nh3.clean(str(text), tags={"b", "i", "em", "strong"}, attributes={}, url_schemes=set())
     # pylint: disable=no-member
     return nh3.clean(str(text), tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, url_schemes=ALLOWED_PROTO)
 
