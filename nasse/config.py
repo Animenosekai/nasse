@@ -97,7 +97,7 @@ class NasseConfig:
         self.server_header = formatter.format(self.server_header, config=self)
 
     name: str = "Nasse"
-    id: typing.Optional[str] = None
+    id: typing.Optional[str] = None # pylint: disable=invalid-name
     host: str = "127.0.0.1"
     port: int = 5005
     debug: bool = False

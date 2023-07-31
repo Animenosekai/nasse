@@ -241,7 +241,7 @@ If you want to customize them, you might want to take a look at the `nasse.confi
 
 > **Note**  
 > Some strings support the [Nasse string formatting](#string-formatting).
-> For example: `NasseConfig.server_header` supports it, and the default value is : `Nasse/{version} ({name})`. The `{version}` and `{name}` parts will be filled automatically.
+> For example: `NasseConfig.server_header` supports it, and the default value is : `nasse/{version} ({name})`. The `{version}` and `{name}` parts will be filled automatically.
 
 The `account_management` parameter should be of instance `models.AccountManagement` and is used to manage the users authentications.
 
@@ -538,7 +538,7 @@ You can import the `request` global variable from `nasse`
 
 But a better way would be to directly ask for it inside your endpoint function parameter.
 
-You can ask whatever you want from their.
+You can ask whatever you want from there.
 
 ```python
 >>> @app.route()
@@ -547,12 +547,12 @@ You can ask whatever you want from their.
 ```
 
 ```python
->>> @app.route()
+>>> @app.route
 >>> def hello(headers): # this will ask Nasse for the request `headers`
-...     return request.values
+...     return headers
 ```
 
-Here is a list of the parameters you can ask for:
+Here is a list of parameters you can ask for:
 
 - `app`: The current Nasse app instance
 - `endpoint`: The current Nasse endpoint
@@ -565,13 +565,16 @@ Here is a list of the parameters you can ask for:
 - `account`: The authenticated account for the request
 - `dynamics`: The dynamic route parameters of the request
 
-***And the aliases***
+***And their aliases***
 
 - `nasse`: An alias for `app`
 - `nasse_endpoint`: An alias for `endpoint`
 - `params`: An alias for `values`
 
 Any other requested parameter will be either a **dynamic route parameter** or a **URL/form parameter**.
+
+> **Note**  
+> Those request parameters can also be used to document your endpoints, please look at the [Documenting your endpoints](#documenting-your-endpoints) section for more information.
 
 ### Returned Values
 
