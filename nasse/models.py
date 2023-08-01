@@ -416,6 +416,7 @@ class Endpoint:
         self.login = validates_method_variant(self.login, Login, iter=True)
 
         self.parameters = validates_method_variant(self.parameters, Parameter, iter=True)
+        self.dynamics = validates_method_variant(self.dynamics, Dynamic, iter=True)
 
         # retrieving all of the already defined parameters
         names = ["app", "nasse", "config", "logger", "endpoint",
@@ -425,6 +426,9 @@ class Endpoint:
 
         for parameters in self.parameters.values():
             names.extend([param.name for param in parameters])
+        
+        for dynamics in self.dynamics.values():
+            names.extend([dynamic.name for dynamic in dynamics])
 
         names = set(names)
 
@@ -445,7 +449,7 @@ class Endpoint:
 
         self.headers = validates_method_variant(self.headers, Header, iter=True)
         self.cookies = validates_method_variant(self.cookies, Cookie, iter=True)
-        self.dynamics = validates_method_variant(self.dynamics, Dynamic, iter=True)
+        
 
         self.returns = validates_method_variant(self.returns, Return, iter=True)
         self.errors = validates_method_variant(self.errors, Error, iter=True)
