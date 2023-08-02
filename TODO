@@ -1,5 +1,7 @@
 TOP PRIORITY
 
+- Document the HTTP app
+- Use the path parser, to automatically detect dynamic parts of the URL and handle them hand in hand with the function parameters
 - Manage different path for docs in the markdown links
 - Manage multiple headers with same name in the same section for docs
 - Bring important stuff to a higher level import

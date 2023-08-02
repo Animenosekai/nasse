@@ -97,6 +97,7 @@ class Receive:
                                                 raise e
 
                             with timer.Timer() as processing_timer:
+                                # TODO: Maybe use function signatures here ?
                                 specs = inspect.getfullargspec(self.endpoint.handler).args
                                 arguments = {}
 

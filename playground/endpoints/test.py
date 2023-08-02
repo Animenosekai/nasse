@@ -19,3 +19,7 @@ def saiki(username: str, password: str, limit: int = 10):
         "password": password,
         "limit": limit
     }
+
+@app.route
+def _():
+    return "OK"
