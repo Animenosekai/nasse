@@ -471,6 +471,56 @@ And by using the [`miko`](https://github.com/Animenosekai/miko) documentation st
 >
 > We understand that it is not required to list all parameters in the doc-string.
 
+Note that Nasse will automatically detect the different dynamic parts of the path:
+
+```python
+>>> @app.route
+... def hello__someone__(someone: str):
+...     return f"Hello {someone}"
+...
+>>> @app.route
+... def repeat__msg__(msg: str, number: int = 10):
+...     """
+...     Repeats the given element `number` times
+...     
+...     Parameters
+...     ----------
+...     msg: str
+...         The element to repeat
+...     number
+...         The number of times to repeat it
+...     """
+...     return [msg] * number
+```
+
+You can also specify the return value from within the function definition:
+
+```python
+>>> from nasse import Nasse, Response, Return
+>>> app = Nasse()
+>>>
+>>> # Basic example
+>>> @app.route
+... def hello(username: str = "someone") -> Response[Return("hello", example="someone")]:
+... """A hello world"""
+... return Response({"hello": username})
+...
+>>> # A bit more complex
+>>> @app.route
+... def hello(method: str, username: str = "someone") -> Response[{"GET": Return("hello"), "POST": Return("hi")}]:
+... """A hello world"""
+... if method == "POST":
+...     return Response({"hi": username})
+... return Response({"hello": username})
+```
+
+You can then use the same syntax as when documenting `returning` in the `Endpoint` class.
+
+Refer to [Return](#return) for the `Return` class explanation.
+
+> **Note**  
+> Type checkers won't complain because of the use of `Response`, which technically your function returns.
+
 It is very important to rightfully document your endpoints because it will be used to process the requests and validate the inputs.
 
 ### Documentation Values

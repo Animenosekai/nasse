@@ -1,7 +1,9 @@
-from nasse import Nasse
+"""_.py: a nasse test"""
+from nasse import Nasse, Response, Return
 app = Nasse()
 
+
 @app.route
-def solve__exercice__(exercice: str, limit: int = 10):
-    """Solves the given exercice"""
-    return [exercice] * limit
+def hello(username: str = "someone") -> Response[Return("hello"), Return("hi")]:
+    """A hello world"""
+    return Response({"hello": username})

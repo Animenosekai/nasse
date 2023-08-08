@@ -29,6 +29,7 @@ Also, this comes with several changes in how the models attributes and parameter
 - Adding a TUI to test endpoints, similar to Postman
 - Starting to add debug endpoints, when the server is running in `DEBUG` mode
 - Add a way of giving a sub category to endpoints
+- Improving endpoint definitions, letting the developer the ability to document them with a Python-native approach (a big part of it can be directly extracted from the function definition)
 - Introducing a new server backend based system to run the server, which allows the user to actually specify if they want to use *Gunicorn* or any other WSGI compatible server backend. (this fixes a pretty big bug where people on Windows couldn't really run their server)
 
 ## Fixes

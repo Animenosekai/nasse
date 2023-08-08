@@ -10,6 +10,7 @@ import werkzeug.exceptions
 
 from nasse import config, exceptions, utils
 
+
 def exception_to_response(value: Exception, config: typing.Optional[config.NasseConfig] = None):
     """
     Internal function to turn an exception to a tuple of values that can be used to make a response
@@ -98,6 +99,41 @@ class ResponseCookie:
 class Response:
     """Represents a response"""
 
+    # Holds the different type arguments
+    # Warning: Should only be modified in a copy of the class
+    __returning__ = None
+
+    def __class_getitem__(cls, args):
+        """
+        Called when giving type arguments to the class.
+
+        Parameters
+        ----------
+        cls: Response
+            The actual class which is being instantiated
+        args
+            The arguments passed with the type
+
+        Example
+        -------
+        >>> from nasse import Response, Return
+        >>> @app.route
+        >>> def hello(username: str = "someone") -> Response[Return(example={"hello": "someone"})]:
+        ...     return {"hello": username}
+
+        Returns
+        -------
+        Response
+            The instantiated class
+        """
+        class NewResponse(cls):
+            """A subclass containing the type arguments"""
+            __returning__ = args if not isinstance(args, tuple) else list(args)
+
+        NewResponse.__name__ = cls.__name__
+
+        return NewResponse
+
     def __init__(self,
                  data: typing.Any = None,
                  message: typing.Optional[str] = None,
@@ -183,3 +219,8 @@ class Response:
             headers=self.headers,
             cookies=self.cookies
         )
+
+
+def hello() -> Response[{"hello": "world"}]:
+    """Hello"""
+    return Response()

@@ -7,7 +7,7 @@ import inspect
 import pathlib
 import typing
 import miko
-from nasse import utils
+from nasse import utils, response
 
 
 class Types:
@@ -75,9 +75,19 @@ def complete_cast(value: typing.Any, cast: typing.Type[Types.T], iter: bool = Fa
     return cast(value)
 
 
+@typing.overload
 def validates_method_variant(value: Types.MethodVariant[Types.T],
                              cast: typing.Type[Types.T],
-                             iter: bool = False) -> typing.Dict[Types.Method.Any, Types.T]:
+                             iter: bool = True) -> typing.Dict[Types.Method.Any, Types.FinalIterable[Types.T]]: ...
+
+
+@typing.overload
+def validates_method_variant(value: Types.MethodVariant[Types.T],
+                             cast: typing.Type[Types.T],
+                             iter: bool = False) -> typing.Dict[Types.Method.Any, Types.T]: ...
+
+
+def validates_method_variant(value, cast, iter=False):
     """Validates a value which might vary with the method"""
     if not value:
         if iter:
@@ -104,7 +114,7 @@ def validates_optional_iterable(value: Types.OptionalIterable[Types.T], cast: ty
 
 
 @dataclasses.dataclass(eq=True, frozen=True)
-class Return:
+class Return():
     """A return value"""
     name: str
     """The name of the field"""
@@ -118,6 +128,9 @@ class Return:
     """The different children values"""
     nullable: bool = False
     """If this value is can be null (None)"""
+
+    def __hash__(self) -> int:
+        return hash(self.name) + hash(self.description) + hash(self.type) + hash(self.nullable)
 
 
 def init_class(cls: typing.Type[Types.T], instance: Types.T, **kwargs):
@@ -479,6 +492,13 @@ class Endpoint:
 
         self.headers = validates_method_variant(self.headers, Header, iter=True)
         self.cookies = validates_method_variant(self.cookies, Cookie, iter=True)
+
+        try:
+            handler_return = signature.return_annotation
+            if not returns and issubclass(handler_return, response.Response):
+                self.returns = handler_return.__returning__
+        except TypeError:  # issubclass
+            pass
 
         self.returns = validates_method_variant(self.returns, Return, iter=True)
         self.errors = validates_method_variant(self.errors, Error, iter=True)
