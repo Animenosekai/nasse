@@ -190,10 +190,10 @@ def make_docs_for_method(
         # USER SENT VALUES
 
         for field, values in [
+            (localization.dynamic_url, endpoint.dynamics),
             (localization.parameters, endpoint.params),
             (localization.headers, endpoint.headers),
-            (localization.cookies, endpoint.cookies),
-            (localization.dynamic_url, endpoint.dynamics)
+            (localization.cookies, endpoint.cookies)
         ]:
             params = models.get_method_variant(method, values)
             if len(params) > 0:

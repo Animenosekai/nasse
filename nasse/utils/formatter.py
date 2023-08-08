@@ -13,6 +13,7 @@ import os
 import threading
 import typing
 from string import Formatter
+
 from nasse.__info__ import __version__
 
 
@@ -64,6 +65,7 @@ def caller_name(skip: int = 2):
 
 class Unformatted:
     """A dummy object used by the silent formatter"""
+
     def __init__(self, key):
         self.key = key
 
@@ -94,6 +96,8 @@ class SilentFormatter(Formatter):
                 return Unformatted(key)
 
 # pylint: disable=redefined-builtin
+
+
 def format(string: str, time_format: typing.Union[str, typing.Callable[[datetime.datetime], typing.Any]] = "%Y/%m/%d, %H:%M:%S", config: "NasseConfig" = None, *args, **kwargs):
     """
     Formats the string with the given config

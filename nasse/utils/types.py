@@ -9,7 +9,11 @@ import typing
 
 
 class LimitedString(str):
-    """A string with conditions"""
+    """
+    A string with conditions
+    
+    Variables to set: UPPER, LOWER, SPACES, THROW, REGEX, DEFAULT, LIMIT
+    """
     UPPER = False
     """If the string should be converted to all upper case"""
     LOWER = False
@@ -46,7 +50,11 @@ class LimitedString(str):
 
 
 class StringEnum(str):
-    """A string enum, only accepting certain values"""
+    """
+    A string enum, only accepting certain values
+    
+    Variables to set: ACCEPTED, DEFAULT, UPPER, LOWER
+    """
     ACCEPTED = tuple()
     DEFAULT = ""
     UPPER = True

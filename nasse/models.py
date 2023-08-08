@@ -415,6 +415,9 @@ class Endpoint:
         self.methods = validates_optional_iterable(self.methods, method_validation)
         self.login = validates_method_variant(self.login, Login, iter=True)
 
+        parsed_path = utils.router.Path(self.path)
+        self.path = parsed_path.join(flask=True)
+
         self.parameters = validates_method_variant(self.parameters, Parameter, iter=True)
         self.dynamics = validates_method_variant(self.dynamics, Dynamic, iter=True)
 
@@ -424,13 +427,40 @@ class Endpoint:
                  "params", "parameters", "args", "form", "headers",
                  "account", "dynamics"]
 
+        param_names = []
         for parameters in self.parameters.values():
-            names.extend([param.name for param in parameters])
-        
+            param_names.extend([param.name for param in parameters])
+
+        dyn_names = []
         for dynamics in self.dynamics.values():
-            names.extend([dynamic.name for dynamic in dynamics])
+            dyn_names.extend([dynamic.name for dynamic in dynamics])
+
+        names.extend(param_names)
+        names.extend(dyn_names)
 
         names = set(names)
+
+        # checking all of the dynamic parameters of the path
+        for dynamic in parsed_path.dynamics:
+            if not dynamic.name in dyn_names:
+                # adding the dynamic parameter of the path to the endpoint definition
+                if dynamic.name in docs.parameters.elements:
+                    parameter = docs.parameters.elements[dynamic.name]
+
+                    element = Dynamic(dynamic.name,
+                                      description=parameter.body,
+                                      required=not parameter.optional,
+                                      type=next(iter(parameter.types)) if parameter.types else dynamic.cast)
+                else:
+                    element = Dynamic(dynamic.name,
+                                      type=dynamic.cast)
+
+                try:
+                    self.dynamics["*"].add(element)
+                except KeyError:
+                    self.dynamics["*"] = {element}
+                dyn_names.append(element.name)
+                names.add(element.name)
 
         # checking the parameters defined at the function definition level
         for parameter in docs.parameters.elements.values():
@@ -438,10 +468,10 @@ class Endpoint:
             # parameter: Parameter
             if not parameter.name in names:
                 # adding the parameter if it is a function argument
-                element = Param(parameter.name,
-                                description=parameter.body,
-                                required=not parameter.optional,
-                                type=next(iter(parameter.types)) if parameter.types else None)
+                element = Parameter(parameter.name,
+                                    description=parameter.body,
+                                    required=not parameter.optional,
+                                    type=next(iter(parameter.types)) if parameter.types else None)
                 try:
                     self.parameters["*"].add(element)
                 except KeyError:
@@ -449,13 +479,9 @@ class Endpoint:
 
         self.headers = validates_method_variant(self.headers, Header, iter=True)
         self.cookies = validates_method_variant(self.cookies, Cookie, iter=True)
-        
 
         self.returns = validates_method_variant(self.returns, Return, iter=True)
         self.errors = validates_method_variant(self.errors, Error, iter=True)
-
-        if not self.path.startswith("/"):
-            self.path = "/" + self.path
 
     def __getitem__(self, key: str):
         return getattr(self, key)

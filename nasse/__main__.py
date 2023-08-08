@@ -14,6 +14,8 @@ import typing
 import os
 
 import nasse
+import nasse.servers
+import nasse.localization
 from nasse.utils.types import StringEnum
 from nasse.tui.apps import http_app
 
@@ -23,6 +25,16 @@ class ServerEnum(StringEnum):
     ACCEPTED = ("flask", "gunicorn")
     DEFAULT = "flask"
     LOWER = True
+
+
+def string_to_server(string: str) -> typing.Type[nasse.servers.ServerBackend]:
+    """Retrieves the right server backend to use"""
+    string = str(string).strip().lower()
+    if string == "gunicorn":
+        from nasse.servers.gunicorn import Gunicorn
+        return Gunicorn
+    from nasse.servers.flask import Flask
+    return Flask
 
 
 def postman_to_endpoints(data: dict):
@@ -80,6 +92,16 @@ def prepare_runnner_parser(parser: argparse.ArgumentParser):
                         action="store", type=pathlib.Path, required=False, default=None)
 
 
+def prepare_docs_parser(parser: argparse.ArgumentParser):
+    """Populates the parser with the `docs` app arguments"""
+    parser.add_argument("--make-docs", "-md", "--docs", "--generate-docs", action="store_true", help="(docs) Generates the docs and exits")
+    parser.add_argument("--language", "--localization", action="store", required=False, help="(docs) The docs language")
+    parser.add_argument("--output", "-o", "--docs-dir", "--docs_dir", action="store", required=False, help="(docs) The directory to output the docs")
+    parser.add_argument("--docs-curl", action="store_true", help="(docs) If we need to render the curl examples")
+    parser.add_argument("--docs-javascript", action="store_true", help="(docs) If we need to render the javascript examples")
+    parser.add_argument("--docs-python", action="store_true", help="(docs) If we need to render the python examples")
+
+
 def get_runner_args(parser: argparse.ArgumentParser) -> typing.Dict[str, typing.Any]:
     """Retrieves the arguments to pass to Nasse"""
     args = parser.parse_args()
@@ -92,18 +114,24 @@ def get_runner_args(parser: argparse.ArgumentParser) -> typing.Dict[str, typing.
 
     config["debug"] = args.debug
 
-    if args.server == "gunicorn":
-        from nasse.servers.gunicorn import Gunicorn
-        server = Gunicorn
-    else:
-        from nasse.servers.flask import Flask
-        server = Flask
-
     for attr in ("host", "port", "watch", "ignore"):
         config[attr] = getattr(args, attr)
 
-    config["server"] = server
+    config["server"] = string_to_server(args.server)
     return config
+
+
+def get_docs_args(parser: argparse.ArgumentParser) -> typing.Dict[str, typing.Any]:
+    """Retrieves the arguments to pass to Nasse"""
+    args = parser.parse_args()
+
+    return {
+        "base_dir": args.output or None,
+        "curl": args.docs_curl,
+        "javascript": args.docs_javascript,
+        "python": args.docs_python,
+        "localization": http_app.language_to_localization(args.language)
+    }
 
 
 @contextlib.contextmanager
@@ -186,12 +214,19 @@ def entry():
     parser.add_argument("input", action="store", default="", help="The file or URL to use with nasse", nargs="?")
 
     prepare_runnner_parser(parser)
+    prepare_docs_parser(parser)
+
     args = parser.parse_args()
 
     instance, endpoints = main(input=args.input)
 
     if instance:
+        if args.make_docs:
+            return instance.make_docs(**get_docs_args(parser))
         return instance.run(**get_runner_args(parser))
+
+    if args.make_docs:
+        raise ValueError("Couldn't find any Nasse instance to generate the docs fors")
 
     return http_app.HTTP(str(args.input or "http://localhost"), endpoints=endpoints).run()
 

@@ -4,6 +4,7 @@ Nasse's sanitizing and convert utility
 
 import typing
 
+import re
 import nh3
 from nasse import utils
 
@@ -111,19 +112,19 @@ def sanitize_text(text: str, strict: bool = True) -> str:
     return nh3.clean(str(text), tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, url_schemes=ALLOWED_PROTO)
 
 
-def split_on_uppercase(string: str) -> str:
+def split_on_uppercase(string: str) -> typing.List[str]:
     """
     Splits a string on any uppercase letter
 
     Parameters
     -----------
-        string: str
-            The string to split
+    string: str
+        The string to split
 
     Returns
     -------
-        list
-            The string splitted
+    list
+        The string splitted
     """
     start = 0
     results = []
@@ -136,7 +137,6 @@ def split_on_uppercase(string: str) -> str:
     results.append(string[start:])
     return results
 
-
 DELIMITER = "🈑"
 
 
@@ -146,9 +146,10 @@ def to_path(name: str) -> str:
 
     Parameters
     ----------
-        name: str
-            The name of the method/class/object
+    name: str
+        The name of the method/class/object
     """
+
     name = str(name)
 
     # hello__username__ --> hello/<username>
