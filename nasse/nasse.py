@@ -28,6 +28,7 @@ from nasse.servers.flask import Flask
 
 class FileEventHandler(watchdog.events.FileSystemEventHandler):
     """An internal file event handler for the debug mode"""
+
     def __init__(self, callback: typing.Callable, watch: typing.List[pathlib.Path], ignore: typing.List[pathlib.Path], config: NasseConfig = None) -> None:
         super().__init__()
         self.config = config or NasseConfig()
@@ -211,10 +212,11 @@ class Nasse:
                                     **flask_options)
 
             self.endpoints[new_endpoint.path] = new_endpoint
-            return new_endpoint
+            return handler
 
         if callable(path):
-            return decorator(path)  # called without arguments
+            result = decorator(path)  # called without arguments
+            return result
 
         return decorator  # called with arguments
 
@@ -472,22 +474,25 @@ class Nasse:
 
         return response
 
-    def make_docs(self, base_dir: typing.Union[pathlib.Path, str] = None, curl: bool = True, javascript: bool = True, python: bool = True, localization: Localization = Localization):
+    def make_docs(self, base_dir: typing.Optional[typing.Union[pathlib.Path, str]] = None,
+                  curl: bool = True, javascript: bool = True, python: bool = True,
+                  localization: typing.Union[typing.Type[Localization], Localization] = Localization):
         """
         Creates the documentation for your API/Server
 
         Parameters
         ----------
         base_dir: str | Path
-            The path where the docs will be outputted \n
-            This shouldn't be the path to the Endpoints.md file, but rather a directory where
-            the `postman` docs and the Endpoints.md file will be outputted
+            The path where the docs will be outputted.
+            This shouldn't be a directory where the `postman` docs and all of the sections will be outputted.
         curl: bool
             Whether or not to generate the curl examples
         javascript: bool
             Whether or not to generate the javascript examples
         python: bool
             Whether or not to generate the python examples
+        localization: Localization
+            The language for the docs
         """
         with rich.progress.Progress(rich.progress.SpinnerColumn(),
                                     *rich.progress.Progress.get_default_columns(),
@@ -499,7 +504,7 @@ class Nasse:
             if not docs_path.is_dir():
                 docs_path.mkdir()
 
-            postman_path = docs_path / "postman"
+            postman_path = docs_path / "Postman"
             if not postman_path.is_dir():
                 postman_path.mkdir()
 
@@ -557,7 +562,7 @@ class Nasse:
             for section in sections_registry:
                 result = localization.section_header.format(name=section)
                 # result += '''\n## {section}\n'''.format(section=section)
-                result += "\n".join([docs.markdown.make_docs(endpoint, curl=curl, javascript=javascript, python=python, localization=localization)
+                result += "\n".join([docs.markdown.make_docs(endpoint, curl=curl, javascript=javascript, python=python, localization=localization, base_dir=base_dir)
                                     for endpoint in sections_registry[section]])
                 with open(sections_path / "{section}.md".format(section=section), "w", encoding="utf-8") as out:
                     out.write(result)

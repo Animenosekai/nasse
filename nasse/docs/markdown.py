@@ -10,6 +10,7 @@ Animenosekai
 # pylint: disable=consider-using-f-string
 
 import typing
+import inspect
 import urllib.parse
 import pathlib
 
@@ -24,7 +25,8 @@ def make_docs(endpoint: models.Endpoint,
               curl: bool = True,
               javascript: bool = True,
               python: bool = True,
-              localization: Localization = Localization()) -> str:
+              localization: Localization = Localization(),
+              base_dir: typing.Optional[pathlib.Path] = None) -> str:
     """
     Generates the documentation for the given endpoint
 
@@ -59,7 +61,8 @@ def make_docs(endpoint: models.Endpoint,
               "curl": curl,
               "javascript": javascript,
               "python": python,
-              "localization": localization}
+              "localization": localization,
+              "base_dir": base_dir}
 
     if len(endpoint.methods) <= 1:
         result += """
@@ -81,7 +84,8 @@ def make_docs_for_method(
         curl: bool = True,
         javascript: bool = True,
         python: bool = True,
-        localization: Localization = Localization()) -> str:
+        localization: Localization = Localization(),
+        base_dir: typing.Optional[pathlib.Path] = None) -> str:
     """
     Creates the docs for the given method
 
@@ -123,9 +127,15 @@ def make_docs_for_method(
                                     localization.no_description))
 
     try:
-        path = pathlib.Path(endpoint.handler.__code__.co_filename).resolve().relative_to(pathlib.Path().resolve())
+        unwrapped = inspect.unwrap(endpoint.handler)
+        source_file = inspect.getsourcefile(unwrapped)
     except Exception:
-        path = pathlib.Path(endpoint.handler.__code__.co_filename)
+        source_file = endpoint.handler.__code__.co_filename
+
+    try:
+        path = pathlib.Path(source_file).resolve().relative_to(pathlib.Path(base_dir or pathlib.Path()).resolve())
+    except Exception:
+        path = pathlib.Path(source_file)
 
     line = endpoint.handler.__code__.co_firstlineno
 
@@ -141,8 +151,8 @@ def make_docs_for_method(
 """.format(method=method,
            path=endpoint.path,
            source_code_path=path,
-           # FIXME: this needs to be fixed because it sometimes fails
-           github_path="../../{path}#L{line}".format(path=path, line=line))
+           # FIXME: this needs to be fixed because it fails sometimes
+           github_path="../../{path}#L{line}".format(path=path.as_posix(), line=line))
 
     else:
         result = """

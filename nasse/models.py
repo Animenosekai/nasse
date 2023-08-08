@@ -343,7 +343,14 @@ class Endpoint:
         # if module:
         #     filepath = pathlib.Path(module.__file__)
         # else:
-        filepath = pathlib.Path(inspect.getfile(handler))
+        try:
+            filepath = inspect.getsourcefile(inspect.unwrap(handler))
+            if not filepath:
+                raise ValueError("internal: filepath cannot be None")
+        except Exception:
+            filepath = handler.__code__.co_filename
+
+        filepath = pathlib.Path(filepath or "")
 
         # Getting the handler signature
         signature = inspect.signature(handler)
