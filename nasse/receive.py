@@ -254,7 +254,7 @@ class Receive:
                                         # data: ["an", "array", "of", "element"] | ("an", "array", ...) | etc.
                                         result["data"]["array"] = list(data)
                                     elif data is None:
-                                        result["data"]["content"] = None
+                                        result["data"] = None
                                     else:
                                         # data: typing.Any (but json does not support arbitrary content)
                                         logger.warn("Element of type <{type}> is not supported by JSON and will be converted to `str`".format(
