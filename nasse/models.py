@@ -393,13 +393,13 @@ class Endpoint:
                 self.base_dir = pathlib.Path(self.base_dir).resolve().absolute()
 
                 # Temp variables to manipulate the base path
-                base = str(self.base_dir)
+                base = self.base_dir.as_posix()
                 base_len = len(base)
 
                 # A fail-safe version of pathlib.Path.relative_to
                 result = ""
                 # removing the suffix
-                for index, letter in enumerate(str(filepath.resolve().absolute()).rpartition(".")[0]):
+                for index, letter in enumerate(filepath.resolve().absolute().as_posix().rpartition(".")[0]):
                     # If we are still within the base path
                     # And the letter is in the base path
                     if index < base_len and letter == base[index]:
