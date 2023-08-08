@@ -4,7 +4,6 @@ Nasse's sanitizing and convert utility
 
 import typing
 
-import re
 import nh3
 from nasse import utils
 
