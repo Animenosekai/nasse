@@ -501,16 +501,14 @@ class Nasse:
             self.config.logger.hide("Creating the API Reference Documentation")
 
             docs_path = pathlib.Path(base_dir or pathlib.Path() / "docs")
-            if not docs_path.is_dir():
-                docs_path.mkdir()
+            docs_path.mkdir(parents=True, exist_ok=True)
 
             postman_path = docs_path / "Postman"
-            if not postman_path.is_dir():
-                postman_path.mkdir()
+            postman_path.mkdir(parents=True, exist_ok=True)
 
             sections_path = docs_path / localization.sections
-            if not sections_path.is_dir():
-                sections_path.mkdir()
+            sections_path.mkdir(parents=True, exist_ok=True)
+
             progress.advance(main_task)
 
             # Initializing the resulting string by prepending the header

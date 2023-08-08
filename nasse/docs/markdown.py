@@ -11,6 +11,7 @@ Animenosekai
 
 import typing
 import inspect
+import os.path
 import urllib.parse
 import pathlib
 
@@ -133,7 +134,14 @@ def make_docs_for_method(
         source_file = endpoint.handler.__code__.co_filename
 
     try:
-        path = pathlib.Path(source_file).resolve().relative_to(pathlib.Path(base_dir or pathlib.Path()).resolve())
+        base = pathlib.Path(base_dir or pathlib.Path() / "docs").absolute()
+        source_file = pathlib.Path(source_file).absolute()
+        common = pathlib.Path(os.path.commonpath([str(source_file), str(base)])).resolve()
+        # Getting the relative path
+        path = pathlib.Path(source_file).resolve().relative_to(common)
+        # Distance between the docs and the most deep common path
+        distance = str(base).count("/") - str(common).count("/") + 1
+        path = pathlib.Path("../" * distance + str(path))
     except Exception:
         path = pathlib.Path(source_file)
 
@@ -152,7 +160,7 @@ def make_docs_for_method(
            path=endpoint.path,
            source_code_path=path,
            # FIXME: this needs to be fixed because it fails sometimes
-           github_path="../../{path}#L{line}".format(path=path.as_posix(), line=line))
+           github_path="{path}#L{line}".format(path=path.as_posix(), line=line))
 
     else:
         result = """
