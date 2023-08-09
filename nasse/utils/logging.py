@@ -128,8 +128,11 @@ class Logger:
         """
         Internal function called to write to the log file
         """
+        if not self.config.log_file:
+            return
+
         self.config.log_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.config.log_file, "a") as f:
+        with open(self.config.log_file, "a", encoding="utf-8") as f:
             f.write(formatter.format("[{level}] ({name}) - {time} - {msg}\n",
                                      time_format=lambda time: int(time.timestamp()),
                                      level=level.name,
@@ -296,3 +299,52 @@ def _generate_trace(config):
 
 
 logger = Logger()
+
+
+def log(*msg,
+        level: LoggingLevel = LoggingLevel.INFO,
+        end: str = "\n",
+        sep: str = " ", **kwargs) -> None:
+    """
+    Logging the given message to the console.
+    """
+    logger.log(*msg, level=level, end=end, sep=sep, **kwargs)
+
+
+info = log
+
+
+def debug(*msg, **kwargs) -> None:
+    """
+    Logs the given message with the `DEBUG` level
+    """
+    logger.debug(*msg, **kwargs)
+
+
+def warning(*msg, **kwargs) -> None:
+    """
+    Logs the given message with the `WARNING` level
+    """
+    logger.warning(*msg, **kwargs)
+
+
+warn = warning
+
+
+def error(*msg, **kwargs) -> None:
+    """
+    Logs the given message with the `ERROR` level
+    """
+    logger.error(*msg, **kwargs)
+
+
+def hidden(*msg, **kwargs) -> None:
+    """
+    Logs the given message with the `HIDDEN` level
+
+    It only writes to the log file and the records
+    """
+    logger.hidden(*msg, **kwargs)
+
+
+hide = hidden

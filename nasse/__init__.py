@@ -12,7 +12,8 @@ from .config import NasseConfig # isort:skip
 from .request import Request # isort:skip
 from .response import Response # isort:skip
 from .models import * # isort:skip
-from .utils.logging import Logger, LoggingLevel, logger # isort:skip
+from . import logging # isort:skip
+from .utils.logging import Logger, LoggingLevel, logger, log, debug # isort:skip
 
 
 class RequestProxy(FlaskRequest, Request):
