@@ -6,12 +6,12 @@ The CLI entry
 
 import argparse
 import contextlib
-import importlib
 import json
 import pathlib
 import sys
 import typing
 import os
+import importlib.util
 
 import nasse
 import nasse.servers

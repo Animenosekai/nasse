@@ -186,7 +186,7 @@ class Password(LimitedString):
     REGEX = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$")
     THROW = True
 
-ACCOUNTS_MANAGEMENT = Endpoint(section="Accounts Management", login=Login(required=True))
+ACCOUNTS_MANAGEMENT = Endpoint(category="Accounts Management", login=Login(required=True))
 
 @app.route(Endpoint(
     endpoint=ACCOUNTS_MANAGEMENT, # this will take ACCOUNTS_MANAGEMENT as the base
@@ -213,6 +213,35 @@ app.run()
 
 > **Note**  
 > Tip: You can also use `nasse my_project/api/v1/accounts.py` to run without calling `app.run()`!
+
+But it could even look like this:
+
+```python
+# my_project/api/v1/accounts.py
+
+import re
+from nasse import Nasse, Endpoint, Login
+from nasse.utils.types import Email, LimitedString
+
+app = Nasse()
+
+class Username(LimitedString):
+    LIMIT = 200 # only allowing 200 characters
+
+class Password(LimitedString):
+    LIMIT = 100
+    REGEX = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$")
+    THROW = True
+
+@app.route(category="Accounts Management", methods=["GET", "POST"], login=Login(no_login=True))
+def profile(method: str, username: Username, password: Password, email: Email = None):
+    if method == "POST":
+        return 200, "Account created successfully"
+    return 200, "Welcome back"
+
+app.make_docs()
+app.run()
+```
 
 ## Usage
 
@@ -411,7 +440,7 @@ To inherit the configuration from another endpoint, you just need to pass the en
 >>> from account_management import all_accounts
 >>> ACCOUNT_ENDPOINTS = Endpoint(
     endpoint=BASE_ENDPOINT,
-    section="Account Management",
+    category="Account Management",
 )
 >>> @app.route("/accounts", endpoint=Endpoint(
     endpoint=ACCOUNT_ENDPOINTS,
