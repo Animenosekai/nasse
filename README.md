@@ -865,6 +865,9 @@ Running the server is as easy as calling
 app.run()
 ```
 
+> **Note**  
+> You can also use the terminal to directly run the server. Head over to [Runner](#runner) for further information.
+
 Where `app` is your Nasse instance.
 
 You can specify the backend you want to use to run the server using one of the already defined `nasse.servers...` objects are a custom-made one, following the `nasse.servers.ServerBackend` class.
@@ -887,6 +890,9 @@ Use the `make_docs` method inside your application to generate the documentation
 ```python
 >>> app.make_docs()
 ```
+
+> **Note**  
+> You can also use the terminal to generate the docs. Head over to [Docs](#docs) for further information.
 
 It will generate the examples, usage and explanation for each endpoint, along with an index of the endpoints and a general explanation at the top.
 
