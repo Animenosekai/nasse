@@ -40,10 +40,8 @@ def create_curl_example_for_method(endpoint: models.Endpoint, method: str) -> st
         """
         return str(element).replace("\"", "\\\"")
 
-    params = {param.name: param.description or param.name for param in endpoint.params if param.required and (
-        param.all_methods or method in param.methods)}
-    headers = {header.name: header.description or header.name for header in endpoint.headers if header.required and (
-        header.all_methods or method in header.methods)}
+    params = {param.name: param.description for param in models.get_method_variant(method, endpoint.parameters)}
+    headers = {header.name: header.description for header in models.get_method_variant(method, endpoint.headers)}
 
     params_render = ""
     headers_render = ""

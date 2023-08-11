@@ -10,12 +10,14 @@ Animenosekai
 # pylint: disable=consider-using-f-string
 
 import typing
+import inspect
+import os.path
 import urllib.parse
-from pathlib import Path
+import pathlib
 
 from nasse import docs, models
 from nasse.docs.header import header_link
-from nasse.docs.localization.base import Localization
+from nasse.localization.base import Localization
 from nasse.utils.sanitize import sort_http_methods
 
 
@@ -24,7 +26,8 @@ def make_docs(endpoint: models.Endpoint,
               curl: bool = True,
               javascript: bool = True,
               python: bool = True,
-              localization: Localization = Localization()) -> str:
+              localization: Localization = Localization(),
+              base_dir: typing.Optional[pathlib.Path] = None) -> str:
     """
     Generates the documentation for the given endpoint
 
@@ -59,13 +62,13 @@ def make_docs(endpoint: models.Endpoint,
               "curl": curl,
               "javascript": javascript,
               "python": python,
-              "localization": localization}
+              "localization": localization,
+              "base_dir": base_dir}
 
     if len(endpoint.methods) <= 1:
         result += """
 {}
-""".format(endpoint.description.get(endpoint.methods[0] if "*" not in endpoint.description else "*",
-                                    localization.no_description))
+""".format(endpoint.description.get(list(endpoint.methods)[0], endpoint.description.get("*", localization.no_description)))
         result += make_docs_for_method(**kwargs)
     else:
         for method in sort_http_methods(endpoint.methods):
@@ -82,7 +85,8 @@ def make_docs_for_method(
         curl: bool = True,
         javascript: bool = True,
         python: bool = True,
-        localization: Localization = Localization()) -> str:
+        localization: Localization = Localization(),
+        base_dir: typing.Optional[pathlib.Path] = None) -> str:
     """
     Creates the docs for the given method
 
@@ -124,9 +128,22 @@ def make_docs_for_method(
                                     localization.no_description))
 
     try:
-        path = Path(endpoint.handler.__code__.co_filename).resolve().relative_to(Path().resolve())
+        unwrapped = inspect.unwrap(endpoint.handler)
+        source_file = inspect.getsourcefile(unwrapped)
     except Exception:
-        path = Path(endpoint.handler.__code__.co_filename)
+        source_file = endpoint.handler.__code__.co_filename
+
+    try:
+        base = pathlib.Path(base_dir or pathlib.Path() / "docs").absolute()
+        source_file = pathlib.Path(source_file).absolute()
+        common = pathlib.Path(os.path.commonpath([str(source_file), str(base)])).resolve()
+        # Getting the relative path
+        path = pathlib.Path(source_file).resolve().relative_to(common)
+        # Distance between the docs and the most deep common path
+        distance = str(base).count("/") - str(common).count("/") + 1
+        path = pathlib.Path("../" * distance + str(path))
+    except Exception:
+        path = pathlib.Path(source_file)
 
     line = endpoint.handler.__code__.co_firstlineno
 
@@ -142,8 +159,8 @@ def make_docs_for_method(
 """.format(method=method,
            path=endpoint.path,
            source_code_path=path,
-           # FIXME: this needs to be fixed because it sometimes fails
-           github_path="../../{path}#L{line}".format(path=path, line=line))
+           # FIXME: this needs to be fixed because it fails sometimes
+           github_path="{path}#L{line}".format(path=path.as_posix(), line=line))
 
     else:
         result = """
@@ -164,38 +181,39 @@ def make_docs_for_method(
 
 """.format(heading=heading_level, localization__authentication=localization.authentication)
 
-    login_rules = endpoint.login.get(method, endpoint.login.get("*", None))
-    if login_rules is None:
+    rules = endpoint.login.get(method, endpoint.login["*"])
+    if not rules:
         result += localization.no_auth_rule
     else:
-        if login_rules.no_login:
-            result += localization.no_login
-        else:
-            if login_rules.required:
-                if len(login_rules.types) > 0:
-                    result += localization.login_with_types_required.format(types=', '.join(str(type_name) for type_name in login_rules.types))
-                else:
-                    result += localization.login_required
+        for login_rule in rules:
+            if login_rule.skip:
+                result += localization.no_login
             else:
-                if len(login_rules.types) > 0:
-                    result += localization.login_with_types_optional.format(types=', '.join(str(type_name) for type_name in login_rules.types))
+                if login_rule.required:
+                    if len(login_rule.types) > 0:
+                        result += localization.login_with_types_required.format(types=', '.join(str(type_name) for type_name in login_rule.types))
+                    else:
+                        result += localization.login_required
                 else:
-                    result += localization.login_optional
+                    if len(login_rule.types) > 0:
+                        result += localization.login_with_types_optional.format(types=', '.join(str(type_name) for type_name in login_rule.types))
+                    else:
+                        result += localization.login_optional
 
-        if login_rules.verification_only:
-            result += localization.login_suffix_only_verified
+            if login_rule.skip_fetch:
+                result += localization.login_suffix_only_verified
 
     if not postman:  # POSTMAN DOESN'T NEED THESE INFORMATION
 
         # USER SENT VALUES
 
         for field, values in [
+            (localization.dynamic_url, endpoint.dynamics),
             (localization.parameters, endpoint.params),
             (localization.headers, endpoint.headers),
-            (localization.cookies, endpoint.cookies),
-            (localization.dynamic_url, endpoint.dynamics)
+            (localization.cookies, endpoint.cookies)
         ]:
-            params = [param for param in values if (param.all_methods or method in param.methods)]
+            params = models.get_method_variant(method, values)
             if len(params) > 0:
                 result += """
 
@@ -203,9 +221,17 @@ def make_docs_for_method(
 
 | {localization__name}         | {localization__description}                      | {localization__required}         | {localization__type}             |
 | ------------ | -------------------------------- | ---------------- | ---------------- |
-""".format(field=field, heading=heading_level, localization__name=localization.name, localization__description=localization.description, localization__required=localization.required, localization__type=localization.type)
+""".format(field=field,
+                    heading=heading_level,
+                    localization__name=localization.name,
+                    localization__description=localization.description,
+                    localization__required=localization.required,
+                    localization__type=localization.type)
                 result += "\n".join(
-                    ["| `{param}` | {description}  | {required}            | {type}            |".format(param=param.name, description=param.description, required=localization.yes if param.required else localization.no, type=param.type.__name__ if hasattr(param.type, "__name__") else str(param.type) if param.type is not None else "str") for param in params])
+                    ["| `{param}` | {description}  | {required}            | {type}            |".format(param=param.name,
+                                                                                                         description=param.description or localization.no_description,
+                                                                                                         required=localization.yes if param.required else localization.no,
+                                                                                                         type=param.type.__name__ if hasattr(param.type, "__name__") else str(param.type) if param.type is not None else "str") for param in params])
 
 
 # LANGUAGE SPECIFIC EXAMPLES
@@ -244,8 +270,7 @@ def make_docs_for_method(
 
 
 # RESPONSE
-
-    returning = [element for element in endpoint.returning if (element.all_methods or method in element.methods)]
+    returning = models.get_method_variant(method, endpoint.returns)
     if len(returning) > 0:
         result += """
 
@@ -285,7 +310,7 @@ def make_docs_for_method(
            localization__nullable=localization.nullable)
 
         result += "\n".join(["| `{key}` | {description}  | {type}      | {nullable}      |".format(key=element.name,
-                                                                                                   description=element.description,
+                                                                                                   description=element.description or localization.no_description,
                                                                                                    type=docs.example._get_type(element),
                                                                                                    nullable=localization.yes if element.nullable else localization.no)
                              for element in returning])
@@ -295,8 +320,7 @@ def make_docs_for_method(
 
 # ERRORS
 
-    errors = [error for error in endpoint.errors if (
-        error.all_methods or method in error.methods)]
+    errors = models.get_method_variant(method, endpoint.errors)
     if len(errors) > 0:
         result += """
 {heading} {localization__possible_errors}
@@ -310,7 +334,7 @@ def make_docs_for_method(
            localization__code=localization.code)
 
         result += "\n".join(["| `{key}` | {description}  | {code}  |".format(key=error.name,
-                                                                             description=error.description,
+                                                                             description=error.description or localization.no_description,
                                                                              code=error.code)
                              for error in errors])
 

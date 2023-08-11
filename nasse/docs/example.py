@@ -97,9 +97,8 @@ def generate_example(endpoint: models.Endpoint, method: str) -> str:
         return data.example or "no example"
 
     _response_format = {}
-    for element in [data for data in endpoint.returning if "." not in data.name]:
-        if element.all_methods or method in element.methods:
-            _response_format[element.name] = get_value(element)
+    for element in [data for data in models.get_method_variant(method, endpoint.returns) if "." not in data.name]:
+        _response_format[element.name] = get_value(element)
 
     # we can't consider using f-strings because they came with py3.6
     # pylint: disable=consider-using-f-string

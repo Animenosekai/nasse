@@ -7,9 +7,9 @@ Animenosekai
     Original Author, MIT License
 """
 
-from nasse.docs.localization.base import Localization
+from nasse.localization.base import Localization
 
 
 class EnglishLocalization(Localization):
     # it's the same one as the base
-    pass
+    __native__ = "English"

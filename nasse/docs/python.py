@@ -24,13 +24,13 @@ def create_python_example_for_method(endpoint: models.Endpoint, method: str) -> 
     str
         The example
     """
+    
     params = {param.name: (param.description or param.name)
-              for param in endpoint.params
-              if param.required and (param.all_methods or method in param.methods)}
-
+               for param in models.get_method_variant(method, endpoint.parameters)
+               if param.required}
     headers = {header.name: (header.description or header.name)
-               for header in endpoint.headers
-               if header.required and (header.all_methods or method in header.methods)}
+               for header in models.get_method_variant(method, endpoint.headers)
+               if header.required}
 
     params_render = ""
     headers_render = ""
@@ -74,6 +74,6 @@ def create_python_example(endpoint: models.Endpoint) -> typing.Dict[str, str]:
     """
     results = {}
     for method in endpoint.methods:
-        results[method] = create_python_example_for_method(
-            endpoint=endpoint, method=method)
+        results[method] = create_python_example_for_method(endpoint=endpoint,
+                                                           method=method)
     return results

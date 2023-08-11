@@ -39,7 +39,9 @@ def retrieve_token(context: request.Request = None) -> str:
     return str(token)
 
 
-class Receive():
+class Receive:
+    """The object which receives a request from Flask"""
+
     def __init__(self, app, endpoint: models.Endpoint) -> None:
         """
         This object is called by Flask and receives all of the requests.
@@ -47,6 +49,7 @@ class Receive():
         It performs some verification, according to what the user provided for the endpoint
         and sets some important variables, like nasse.request
         """
+        # boo i need to use a global variable
         global RECEIVERS_COUNT
         self.app = app
         self.endpoint = endpoint
@@ -69,29 +72,32 @@ class Receive():
                             account = None
                             with timer.Timer() as authentication_timer:
                                 method = flask.g.request.method
-                                login_rules = self.endpoint.login.get(method, self.endpoint.login.get("*", None))
-                                if not login_rules.no_login:
-                                    try:
-                                        token = retrieve_token(context)
-                                        if self.app.config.account_management:
-                                            if not login_rules.verification_only:
-                                                account = self.app.config.account_management.retrieve_account(token)
-                                                if len(login_rules.types) > 0:
-                                                    if self.app.config.account_management.retrieve_type(account) not in login_rules.types:
-                                                        account = None  # if login is not required, the account might be passed with a wrong type
-                                                        raise exceptions.authentication.Forbidden("You can't access this endpoint with your account")
+                                login_rules = self.endpoint.login.get(method, self.endpoint.login["*"])
+                                for rule in login_rules:
+                                    if not rule.skip:
+                                        try:
+                                            token = retrieve_token(context)
+                                            if self.app.config.account_management:
+                                                if not rule.skip_fetch:
+                                                    account = self.app.config.account_management.retrieve_account(token)
+                                                    if len(rule.types) > 0:
+                                                        if self.app.config.account_management.retrieve_type(account) not in login_rules.types:
+                                                            account = None  # if login is not required, the account might be passed with a wrong type
+                                                            raise exceptions.authentication.Forbidden(
+                                                                "You can't access this endpoint with your account")
+                                                else:
+                                                    verification = self.app.config.account_management.verify_token(token)
+                                                    if verification == False:
+                                                        raise exceptions.authentication.Forbidden("We couldn't verify your token")
                                             else:
-                                                verification = self.app.config.account_management.verify_token(token)
-                                                if verification == False:
-                                                    raise exceptions.authentication.Forbidden("We couldn't verify your token")
-                                        else:
-                                            logger.warn("Couldn't verify login details because the 'account_management' is not set properly on {name}"
-                                                        .format(name=self.app.config.name))
-                                    except Exception as e:
-                                        if login_rules.required:
-                                            raise e
+                                                logger.warn("Couldn't verify login details because the 'account_management' is not set properly on {name}"
+                                                            .format(name=self.app.config.name))
+                                        except Exception as e:
+                                            if rule.required:
+                                                raise e
 
                             with timer.Timer() as processing_timer:
+                                # TODO: Maybe use function signatures here ?
                                 specs = inspect.getfullargspec(self.endpoint.handler).args
                                 arguments = {}
 
@@ -119,6 +125,7 @@ class Receive():
                                     ("method", flask.g.request.method),
                                     ("values", flask.g.request.values),
                                     ("params", flask.g.request.values),
+                                    ("parameters", flask.g.request.values),
                                     ("args", flask.g.request.args),
                                     ("form", flask.g.request.form),
                                     ("headers", flask.g.request.headers),
@@ -146,7 +153,7 @@ class Receive():
                                 if isinstance(response, flask.Response):
                                     return response
 
-                                data = ""
+                                data = None
                                 error = None
                                 message = None
                                 code = 200
@@ -172,7 +179,7 @@ class Receive():
                                     message, error, code = exception_to_response(response)
                                 elif isinstance(response, typing.Iterable) and not isinstance(response, typing.Generator):
                                     found = False
-                                    if utils.annotations.is_unpackable(response):
+                                    if utils.unpack.is_unpackable(response):
                                         try:
                                             response = Response(**response)
                                             data = response.data
@@ -183,7 +190,7 @@ class Receive():
                                             message = response.message
                                             found = True
                                         except TypeError:
-                                            pass
+                                            data = response
                                     if not found:
                                         # return "Hello", 200 | return NasseException("..."), 400, {"extra": {"issue": "something is missing"}}
                                         for value in response:
@@ -210,16 +217,11 @@ class Receive():
                                             final.headers["X-NASSE-ERROR"] = str(error)
 
                                         if self.app.debug:
-                                            final.headers["X-NASSE-TIME-GLOBAL"] = str(
-                                                global_timer.stop())
-                                            final.headers["X-NASSE-TIME-VERIFICATION"] = str(
-                                                verification_timer.time)
-                                            final.headers["X-NASSE-TIME-AUTHENTICATION"] = str(
-                                                authentication_timer.time)
-                                            final.headers["X-NASSE-TIME-PROCESSING"] = str(
-                                                processing_timer.time)
-                                            final.headers["X-NASSE-TIME-FORMATTING"] = str(
-                                                formatting_timer.stop())
+                                            final.headers["X-NASSE-TIME-GLOBAL"] = str(global_timer.stop())
+                                            final.headers["X-NASSE-TIME-VERIFICATION"] = str(verification_timer.time)
+                                            final.headers["X-NASSE-TIME-AUTHENTICATION"] = str(authentication_timer.time)
+                                            final.headers["X-NASSE-TIME-PROCESSING"] = str(processing_timer.time)
+                                            final.headers["X-NASSE-TIME-FORMATTING"] = str(formatting_timer.stop())
                                     except Exception:
                                         pass
                                 else:
@@ -229,7 +231,7 @@ class Receive():
                                         "message": message,
                                         "data": {}
                                     }
-                                    if utils.annotations.is_unpackable(data):
+                                    if utils.unpack.is_unpackable(data):
                                         # data: {"username": "someone", "token": "something"}
                                         result["data"] = dict(data)
                                     elif isinstance(data, bytes):
@@ -252,7 +254,7 @@ class Receive():
                                         # data: ["an", "array", "of", "element"] | ("an", "array", ...) | etc.
                                         result["data"]["array"] = list(data)
                                     elif data is None:
-                                        result["data"]["content"] = None
+                                        result["data"] = None
                                     else:
                                         # data: typing.Any (but json does not support arbitrary content)
                                         logger.warn("Element of type <{type}> is not supported by JSON and will be converted to `str`".format(
@@ -425,5 +427,5 @@ class Receive():
 
                 return final
         except Exception as err:
-            utils.logging.logger.print_exception()
+            utils.logging.logger.print_exception(show_locals=True)
             raise err

@@ -85,7 +85,10 @@ class Logger:
                 padding = WIDTH - len(MESSAGE) // 2
                 f.write(("=" * padding) + MESSAGE + ("=" * padding) + "\n")
 
-    def log(self, *msg, level: LoggingLevel = LoggingLevel.INFO, end: str = "\n", sep: str = " ", **kwargs):
+    def log(self, *msg,
+            level: LoggingLevel = LoggingLevel.INFO,
+            end: str = "\n",
+            sep: str = " ", **kwargs) -> None:
         """
         Logging the given message to the console.
         """
@@ -118,12 +121,18 @@ class Logger:
 
     __call__ = log
 
-    def write_to_file(self, msg: str, level: LoggingLevel = LoggingLevel.INFO, **kwargs):
+    def write_to_file(self,
+                      msg: str,
+                      level: LoggingLevel = LoggingLevel.INFO,
+                      **kwargs) -> None:
         """
         Internal function called to write to the log file
         """
+        if not self.config.log_file:
+            return
+
         self.config.log_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.config.log_file, "a") as f:
+        with open(self.config.log_file, "a", encoding="utf-8") as f:
             f.write(formatter.format("[{level}] ({name}) - {time} - {msg}\n",
                                      time_format=lambda time: int(time.timestamp()),
                                      level=level.name,
@@ -140,13 +149,13 @@ class Logger:
     # aliasing `info`
     print = info
 
-    def debug(self, *msg, **kwargs):
+    def debug(self, *msg, **kwargs) -> None:
         """
         Logs the given message with the `DEBUG` level
         """
         self.log(*msg, level=LoggingLevel.DEBUG, **kwargs)
 
-    def warning(self, *msg, **kwargs):
+    def warning(self, *msg, **kwargs) -> None:
         """
         Logs the given message with the `WARNING` level
         """
@@ -154,13 +163,13 @@ class Logger:
 
     warn = warning
 
-    def error(self, *msg, **kwargs):
+    def error(self, *msg, **kwargs) -> None:
         """
         Logs the given message with the `ERROR` level
         """
         self.log(*msg, level=LoggingLevel.ERROR, **kwargs)
 
-    def hidden(self, *msg, **kwargs):
+    def hidden(self, *msg, **kwargs) -> None:
         """
         Logs the given message with the `HIDDEN` level
 
@@ -184,7 +193,9 @@ class Logger:
         """
         self.recording = False
 
-    def print_exception(self, show_locals: bool = False, **kwargs):
+    def print_exception(self,
+                        show_locals: bool = False,
+                        **kwargs) -> None:
         """
         Prints the latest exception, nicely
 
@@ -202,7 +213,7 @@ RECORDING = False
 CALL_STACK = []
 
 
-class StackFrame():
+class StackFrame:
     """
     A call stack frame
     """
@@ -288,3 +299,52 @@ def _generate_trace(config):
 
 
 logger = Logger()
+
+
+def log(*msg,
+        level: LoggingLevel = LoggingLevel.INFO,
+        end: str = "\n",
+        sep: str = " ", **kwargs) -> None:
+    """
+    Logging the given message to the console.
+    """
+    logger.log(*msg, level=level, end=end, sep=sep, **kwargs)
+
+
+info = log
+
+
+def debug(*msg, **kwargs) -> None:
+    """
+    Logs the given message with the `DEBUG` level
+    """
+    logger.debug(*msg, **kwargs)
+
+
+def warning(*msg, **kwargs) -> None:
+    """
+    Logs the given message with the `WARNING` level
+    """
+    logger.warning(*msg, **kwargs)
+
+
+warn = warning
+
+
+def error(*msg, **kwargs) -> None:
+    """
+    Logs the given message with the `ERROR` level
+    """
+    logger.error(*msg, **kwargs)
+
+
+def hidden(*msg, **kwargs) -> None:
+    """
+    Logs the given message with the `HIDDEN` level
+
+    It only writes to the log file and the records
+    """
+    logger.hidden(*msg, **kwargs)
+
+
+hide = hidden

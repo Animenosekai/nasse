@@ -7,13 +7,15 @@ Animenosekai
     Original Author, MIT License
 """
 
-from nasse.docs.localization.base import Localization
+from nasse.localization.base import Localization
 
 
 class FrenchLocalization(Localization):
     """
     The french translation for the docs generation
     """
+    __native__ = "Français"
+
     sections = "Sections"
     getting_started = "Pour commencer"
 
@@ -110,6 +112,7 @@ Les erreurs spécifiques sont documentés dans chaque *Endpoint* mais celles-ci 
 | `INTERNAL_SERVER_ERROR`     | Quand une erreur critique survient sur le système                                                               | 500   |
 | `METHOD_NOT_ALLOWED`        | Quand vous faites une requête avec le mauvaise méthode HTTP                                                     | 405   |
 | `CLIENT_ERROR`              | Quand quelque chose manque où n'est pas bon avec la requête                                                     | 400   |
+| `INVALID_TYPE`              | Quand Nasse n'a pas pu convertir la valeur qui a été envoyée dans le bon type                                   | 400   |
 | `MISSING_VALUE`             | Quand quelque chose manque à la requête                                                                         | 400   |
 | `MISSING_PARAM`             | Quand un paramètre manque à la requête                                                                          | 400   |
 | `MISSING_DYNAMIC`           | Quand une valeur dynamique de l'URL manque                                                                      | 400   |
@@ -178,3 +181,69 @@ Le champ "call_stack" est activé seulement quand il y a le paramètre `call_sta
 
 Ce fichier liste et explique les différents *endpoints* disponible sous la section {name}
 '''
+
+    # TUI
+
+    # Footer
+    tui_history = "Historique"
+    tui_result = "Résultat"
+    tui_explorer = "Explorateur"
+    tui_submit = "Envoyer"
+    tui_options = "Options"
+    tui_quit = "Quitter"
+
+    # History
+    # WARNING: This should stay under 3 characters to avoid having styling issues
+    tui_min = "Min"
+    tui_average = "Moy"
+    tui_max = "Max"
+
+    # Explorer
+    tui_reset = "Réinitialiser"
+
+    # Request
+    tui_request = "Requête"
+    tui_name = "nom"
+    tui_value = "valeur"
+    tui_path = "chemin"
+    # tui_parameters = "Parameters"
+    # tui_headers = "Headers"
+    # tui_cookies = "Cookies"
+    tui_file = "Fichier"
+    tui_add_file = "Ajouter un fichier"
+    tui_data = "Donnée"
+    tui_add_data_file = "Ajouter un fichier de données"
+
+    # Options
+    tui_language = "Langue"
+    tui_language_notice = "Vous devez relancer l'application pour que les changements prennent effet"
+    tui_base_url = "URL de base"
+    tui_base_url_placeholder = "L'URL de base pour les requêtes et l'explorateur"
+    tui_endpoints_update = "Mise à jour des endpoints"
+    tui_endpoints_update_placeholder = "Fréquence de mise à jour des endpoints pour l'explorateur (sec.)"
+    tui_history_limit = "Limite d'historique"
+    tui_history_limit_placeholder = "Le nombre maximale de requêtes dans l'historique"
+    tui_timeout = "Limite de temps"
+    tui_timeout_placeholder = "Limite de temps pour le traitement d'une requête (sec.)"
+    tui_redirects = "Redirection"
+    tui_allow_redirects = "Autoriser les redirections"
+    tui_proxies = "Proxies"
+    tui_security = "Sécurité"
+    tui_verify_request = "Vérification des requêtes"
+    tui_certificate_files = "Certificats"
+    tui_add_certificate = "Ajouter un certificat"
+
+    # Result
+    tui_start_prompt = "Commencez par envoyer une requête"
+    tui_content = "Contenu"
+    tui_no_content = "Impossible d'afficher le contenu"
+    tui_contacting = "Appel de {url}"
+    tui_files = "Fichiers"
+    tui_error = "Erreur"
+
+    # File Explorer
+    tui_filter = "Filtre"
+
+    # Quit
+    tui_quit_confirmation = "Voulez-vous vraiment quitter ?"
+    tui_cancel = "Revenir"

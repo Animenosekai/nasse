@@ -10,6 +10,7 @@ import sys
 import threading
 import typing
 import urllib.parse
+import dataclasses
 
 import flask
 import rich.progress
@@ -19,13 +20,15 @@ import watchdog.observers
 
 from nasse import config, docs, models, receive, request, utils
 from nasse.config import NasseConfig
-from nasse.docs.localization.base import Localization
+from nasse.localization.base import Localization
 from nasse.response import exception_to_response
 from nasse.servers import ServerBackend
 from nasse.servers.flask import Flask
 
 
 class FileEventHandler(watchdog.events.FileSystemEventHandler):
+    """An internal file event handler for the debug mode"""
+
     def __init__(self, callback: typing.Callable, watch: typing.List[pathlib.Path], ignore: typing.List[pathlib.Path], config: NasseConfig = None) -> None:
         super().__init__()
         self.config = config or NasseConfig()
@@ -41,10 +44,16 @@ class FileEventHandler(watchdog.events.FileSystemEventHandler):
         self.callback()
 
 
-class Nasse():
-    def __init__(self, name: str = None, config: NasseConfig = None, flask_options: dict = None, *args, **kwargs) -> None:
+class Nasse:
+    """The Nasse web server object"""
+
+    def __init__(self,
+                 name: typing.Optional[str] = None,
+                 config: typing.Optional[NasseConfig] = None,
+                 flask_options: typing.Optional[dict] = None,
+                 *args, **kwargs) -> None:
         """
-        # A Nasse web server instance
+        # Nasse
 
         Examples
         ---------
@@ -75,7 +84,7 @@ class Nasse():
             config_kwargs = config.__dict__
             config_kwargs.update(kwargs)
             config_kwargs["name"] = name or config_kwargs.get("app", "Nasse")
-            config_kwargs.pop("VERSION", None)
+            # config_kwargs.pop("VERSION", None)
             self.config = NasseConfig(*args, **config_kwargs)
         else:
             self.config = NasseConfig(name=name or "Nasse", *args, **kwargs)
@@ -124,11 +133,32 @@ class Nasse():
         return self.logger.log(*msg, **kwargs)
 
     def route(self,
-              path: str = utils.annotations.Default(""),
-              endpoint: typing.Optional[models.Endpoint] = None,
-              flask_options: typing.Optional[dict] = None, **kwargs):
+              path: typing.Optional[typing.Union[typing.Callable, str]] = None,
+
+              name: str = "",
+              category: str = "",
+              sub_category: str = "",
+              description: models.Types.MethodVariant[str] = None,
+              base_dir: typing.Union[pathlib.Path, str, None] = None,
+              endpoint: typing.Optional[typing.Union[models.Endpoint, typing.Mapping]] = None,
+
+              # Request,
+              methods: models.Types.OptionalIterable[models.Types.Method.Any] = "*",
+              login: models.Types.MethodVariant[models.Types.OptionalIterable[models.Login]] = None,
+
+              # User Sent,
+              parameters: models.Types.MethodVariant[models.Types.OptionalIterable[models.Parameter]] = None,
+              headers: models.Types.MethodVariant[models.Types.OptionalIterable[models.Header]] = None,
+              cookies: models.Types.MethodVariant[models.Types.OptionalIterable[models.Cookie]] = None,
+              dynamics: models.Types.MethodVariant[models.Types.OptionalIterable[models.Dynamic]] = None,
+
+              # Response,
+              json: bool = True,
+              returns: models.Types.MethodVariant[models.Types.OptionalIterable[models.Return]] = None,
+              errors: models.Types.MethodVariant[models.Types.OptionalIterable[models.Error]] = None,
+              flask_options: typing.Optional[dict] = None) -> typing.Callable[..., models.Endpoint]:
         """
-        # A decorator to register a new endpoint
+        Use this function to declare new endpoints
 
         Examples
         --------
@@ -144,42 +174,90 @@ class Nasse():
 
         Parameters
         -----------
-        path: str, default = ""
-            The path to register the handler to
-        endpoint: models.Endpoint
-            A base endpoint object. Other given values will overwrite the values from this Endpoint object.
         flask_options: dict
             If needed, extra options to give to flask.Flask
-        `**kwargs`
-            The same options that will be passed to nasse.models.Endpoint to create the new endpoint. \n
-            Refer to `nasse.models.Endpoint` docs for more information on what to give here.
         """
         flask_options = dict(flask_options or {})
 
-        def decorator(f):
-            results = dict(endpoint or {})
-            # we don't path to overwrite the default behavior
-            results.pop("path", None)
-            results["path"] = path
-            results.update(kwargs)
-            results["handler"] = f
-            new_endpoint = models.Endpoint(**results)
+        def decorator(handler):
+            # if `path` callable, we are in an argument-less decoration
+            new_endpoint = models.Endpoint(handler=handler,
+                                           name=name,
+                                           category=category,
+                                           sub_category=sub_category,
+                                           description=description,
+                                           base_dir=base_dir,
+                                           endpoint=endpoint or (path if isinstance(path, models.Endpoint) else None),
+                                           path=path if not callable(path) and not isinstance(path, models.Endpoint) else None,
+                                           methods=methods,
+                                           login=login,
+                                           parameters=parameters,
+                                           headers=headers,
+                                           cookies=cookies,
+                                           dynamics=dynamics,
+                                           json=json,
+                                           returns=returns,
+                                           errors=errors)
+
             try:
-                flask_options["methods"] = new_endpoint.methods if "*" not in new_endpoint.methods else utils.types.HTTPMethod.ACCEPTED
+                flask_options["methods"] = (new_endpoint.methods
+                                            if "*" not in new_endpoint.methods
+                                            else typing.get_args(models.Types.Method.Standard))
             except Exception:
                 pass
-            self.flask.add_url_rule(new_endpoint.path, flask_options.pop(
-                "endpoint", None), receive.Receive(self, new_endpoint), **flask_options)
-            self.endpoints[new_endpoint.path] = new_endpoint
-            return new_endpoint
-        return decorator
 
-    def run(self, host: str = None, port: typing.Union[int, str] = None, server: typing.Type[ServerBackend] = Flask, watch: typing.List[str] = ["**/*.py"], ignore: typing.List[str] = [], status: bool = True, *args, **kwargs):
+            self.flask.add_url_rule(new_endpoint.path,
+                                    flask_options.pop("endpoint", None),
+                                    receive.Receive(self, new_endpoint),
+                                    **flask_options)
+
+            self.endpoints[new_endpoint.path] = new_endpoint
+            return handler
+
+        if callable(path):
+            result = decorator(path)  # called without arguments
+            return result
+
+        return decorator  # called with arguments
+
+    def run(self,
+            host: typing.Optional[str] = None,
+            port: typing.Optional[int] = None,
+            server: typing.Type[ServerBackend] = Flask,
+            watch: typing.Optional[typing.List[str]] = None,
+            ignore: typing.Optional[typing.List[str]] = None,
+            status: bool = True,
+            *args, **kwargs) -> None:
         """
         Runs the application by binding to an address and answering to clients.
+
+        Note: If a `debug` argument is passed to the underlying server backend using `kwargs`, it will be used for `config.debug`
+
+        Parameters
+        ----------
+        host: str, optional
+            The host to run the server on
+        port: int, optional
+            The port to make the server listen at
+        server: Type[ServerBackend], default=Flask
+            The server backend to use
+        watch: list[str], default=["**/*.py"]
+            A list of glob expressions of files to watch for changes in debug mode
+        ignore: list[str], optional
+            A list of glob expressions of files to ignore changes for in debug mode
+        status: bool, default=True
+            Whether to show the progress status (time since the server first ran, URL listened, etc.).
+            This might come handy in complex environments where you are already using
+            a `rich.progress.Progress object, which might conflict.
         """
+        if watch is None:
+            watch = ["**/*.py"]
+
         class MockProgress:
-            def __overwrite__(self, *args, **kwargs): return self
+            """Replaces the logger"""
+
+            def __overwrite__(self, *args, **kwargs):
+                return self
 
             add_task = __overwrite__
             update = __overwrite__
@@ -194,14 +272,15 @@ class Nasse():
             if port is not None:
                 self.config.port = int(port)
             if "debug" in kwargs:
-                self.config.debug = kwargs["debug"]
+                self.config.debug = bool(kwargs["debug"])
 
-            try:
-                if self.config.debug:
-                    self.config.logger.warn("DEBUG MODE IS ENABLED")
+            if self.config.debug:
+                self.config.logger.warn("DEBUG MODE IS ENABLED")
+                # Configuring auto-restart
+                try:
                     watching = []
                     ignoring = []
-                    for storage, data in [(watching, watch), (ignoring, ignore)]:
+                    for storage, data in [(watching, watch), (ignoring, ignore or [])]:
                         for file in data:
                             file = str(file)
                             path = pathlib.Path(file)
@@ -215,21 +294,50 @@ class Nasse():
                     self._observer.schedule(FileEventHandler(callback=self.restart, watch=watching,
                                             ignore=ignoring, config=self.config), ".", recursive=True)
                     self._observer.start()
-            except Exception as err:
-                self.config.logger.warn("Couldn't set up the file changes watcher ({err_type}: {err_msg})".format(
-                    err_type=err.__class__.__name__, err_msg=err))
+                except Exception as err:
+                    self.config.logger.warn(f"Couldn't set up the file changes watcher ({err.__class__.__name__}: {err})")
+                # Configuring debug endpoints
+                try:
+                    def endpoints():
+                        """Returns back all of the defined endpoints"""
+                        results = {"endpoints": []}
+                        for endpoint in self.endpoints.values():
+                            # endpoint: models.Endpoint
+                            result = {
+                                "handler": endpoint.handler.__name__,
+                                "name": endpoint.name,
+                                "category": endpoint.category,
+                                "sub_category": endpoint.sub_category,
+                                "description": endpoint.description,
+                                "base_dir": endpoint.base_dir,
+                                "path": endpoint.path,
+                                "methods": endpoint.methods,
+                                "json": endpoint.json
+                            }
+                            for element in ("login", "parameters", "headers", "cookies", "dynamics", "returns", "errors"):
+                                result[element] = {key: [dataclasses.asdict(val) for val in value]
+                                                   for key, value in getattr(endpoint, element).items()}
+
+                            results["endpoints"].append(result)
+                        return 200, results
+
+                    self.route("/@nasse/endpoints",
+                               name="Endpoints",
+                               category="@Nasse Debug")(endpoints)
+                except Exception as err:
+                    if self.config.logger:
+                        self.config.logger.warn(f"Couldn't set up the debug endpoints ({err.__class__.__name__}: {err})")
 
             self.instance = server(app=self, config=self.config)
+
+        # Main Loop
         with (rich.progress.Progress(*(rich.progress.TextColumn("[progress.description]{task.description}"),
                                        rich.progress.TextColumn("—"),
                                        rich.progress.TimeElapsedColumn()),
                                      transient=True) if status else MockProgress()) as progress:
-            progress.add_task(description='🍡 {name} is running on {host}:{port}'.format(
-                name=self.config.name, host=self.config.host, port=self.config.port))
+            progress.add_task(description=f'🍡 {self.config.name} is running on http://{self.config.host}:{self.config.port}')
             self.config.logger.log("🎏 Press {cyan}Ctrl+C{normal} to quit")
-            self.config.logger.log("🌍 Binding to {{magenta}}{host}:{port}{{normal}}"
-                                   .format(host=self.config.host,
-                                           port=self.config.port))
+            self.config.logger.log(f"🌍 Binding to {{magenta}}{self.config.host}:{self.config.port}{{normal}}")
             # spinner = rich.progress.SpinnerColumn(spinner_name="simpleDotsScrolling", style="gray")
             # spinner.spinner.frames = ["・　　", "・・　", "・・・", "　・・", "　　・", "　　　"]
             self.instance.run(*args, **kwargs)
@@ -304,8 +412,8 @@ class Nasse():
             # Allowing the right methods
             try:
                 if flask.request.method.upper() == "OPTIONS":
-                    current_endpoint = self.endpoints.get(
-                        flask.request.url_rule.rule, None)
+                    current_endpoint = self.endpoints.get(flask.request.url_rule.rule,
+                                                          None)
                     if current_endpoint is not None:
                         try:
                             response.headers["Access-Control-Allow-Methods"] = ",".join(current_endpoint.methods)
@@ -366,22 +474,25 @@ class Nasse():
 
         return response
 
-    def make_docs(self, base_dir: typing.Union[pathlib.Path, str] = None, curl: bool = True, javascript: bool = True, python: bool = True, localization: Localization = Localization):
+    def make_docs(self, base_dir: typing.Optional[typing.Union[pathlib.Path, str]] = None,
+                  curl: bool = True, javascript: bool = True, python: bool = True,
+                  localization: typing.Union[typing.Type[Localization], Localization] = Localization):
         """
         Creates the documentation for your API/Server
 
         Parameters
         ----------
         base_dir: str | Path
-            The path where the docs will be outputted \n
-            This shouldn't be the path to the Endpoints.md file, but rather a directory where
-            the `postman` docs and the Endpoints.md file will be outputted
+            The path where the docs will be outputted.
+            This shouldn't be a directory where the `postman` docs and all of the sections will be outputted.
         curl: bool
             Whether or not to generate the curl examples
         javascript: bool
             Whether or not to generate the javascript examples
         python: bool
             Whether or not to generate the python examples
+        localization: Localization
+            The language for the docs
         """
         with rich.progress.Progress(rich.progress.SpinnerColumn(),
                                     *rich.progress.Progress.get_default_columns(),
@@ -390,16 +501,14 @@ class Nasse():
             self.config.logger.hide("Creating the API Reference Documentation")
 
             docs_path = pathlib.Path(base_dir or pathlib.Path() / "docs")
-            if not docs_path.is_dir():
-                docs_path.mkdir()
+            docs_path.mkdir(parents=True, exist_ok=True)
 
-            postman_path = docs_path / "postman"
-            if not postman_path.is_dir():
-                postman_path.mkdir()
+            postman_path = docs_path / "Postman"
+            postman_path.mkdir(parents=True, exist_ok=True)
 
             sections_path = docs_path / localization.sections
-            if not sections_path.is_dir():
-                sections_path.mkdir()
+            sections_path.mkdir(parents=True, exist_ok=True)
+
             progress.advance(main_task)
 
             # Initializing the resulting string by prepending the header
@@ -408,13 +517,13 @@ class Nasse():
             result += "## {localization__index}\n\n".format(localization__index=localization.index)
 
             # Sorting the sections alphabetically
-            sections = sorted({endpoint.section for endpoint in self.endpoints.values()})
+            sections = sorted({endpoint.category for endpoint in self.endpoints.values()})
 
             # Getting the endpoints for each section
             sections_registry = {}
             for section in sections:
                 for endpoint in self.endpoints.values():
-                    if endpoint.section == section:
+                    if endpoint.category == section:
                         try:
                             sections_registry[section].append(endpoint)
                         except Exception:
@@ -451,7 +560,7 @@ class Nasse():
             for section in sections_registry:
                 result = localization.section_header.format(name=section)
                 # result += '''\n## {section}\n'''.format(section=section)
-                result += "\n".join([docs.markdown.make_docs(endpoint, curl=curl, javascript=javascript, python=python, localization=localization)
+                result += "\n".join([docs.markdown.make_docs(endpoint, curl=curl, javascript=javascript, python=python, localization=localization, base_dir=base_dir)
                                     for endpoint in sections_registry[section]])
                 with open(sections_path / "{section}.md".format(section=section), "w", encoding="utf-8") as out:
                     out.write(result)
@@ -459,4 +568,5 @@ class Nasse():
                 result = docs.postman.create_postman_data(self, section, sections_registry[section], localization=localization)
                 with open(postman_path / "{section}.postman_collection.utils.json".format(section=section), "w", encoding="utf-8") as out:
                     out.write(utils.json.minified_encoder.encode(result))
+
             progress.advance(main_task)

@@ -34,6 +34,6 @@ def to_bool(value: typing.Any, default: bool = False):
         default: bool
             The default value
     """
-    if utils.sanitize.remove_spaces(value).lower() in ({"true", "1", "yes"} if not default else {"false", "0", "false"}):
+    if utils.sanitize.remove_spaces(value).lower() in ({"true", "1", "yes"} if not default else {"false", "0", "no"}):
         return not default
     return default

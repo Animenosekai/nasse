@@ -1,18 +1,23 @@
-"""A web server framework written on top of Flask"""
+"""A web server framework written on top of Flask which lets you focus on your ideas 🍡"""
 
-from . import docs
-from flask import g
-from flask.wrappers import Request as FlaskRequest
-from flask.wrappers import Response as FlaskResponse
+# autopep8: off
+from .__info__ import __version__, __license__, __author__, __copyright__ # isort:skip
+from . import docs # isort:skip
+from flask import g # isort:skip
+from flask.wrappers import Request as FlaskRequest # isort:skip
+from flask.wrappers import Response as FlaskResponse # isort:skip
 
-from .nasse import Nasse
-from .config import NasseConfig
-from .request import Request
-from .response import Response
-from .models import *
+from .nasse import Nasse # isort:skip
+from .config import NasseConfig # isort:skip
+from .request import Request # isort:skip
+from .response import Response # isort:skip
+from .models import * # isort:skip
+from . import logging # isort:skip
+from .utils.logging import Logger, LoggingLevel, logger, log, debug # isort:skip
 
 
 class RequestProxy(FlaskRequest, Request):
+    """Proxies the global `Request` object"""
     def __init__(self) -> None:
         return
 
@@ -26,20 +31,4 @@ request = RequestProxy()
 # old_name = new_name
 # if something has been renamed in the new versions
 
-__author__ = 'Anime no Sekai'
-__copyright__ = 'Copyright 2022, Nasse'
-__credits__ = ['animenosekai']
-__license__ = 'MIT License'
-__version_tuple__ = (2, 0, "(beta)")
-
-
-def __version_string__():
-    if isinstance(__version_tuple__[-1], str):
-        return '.'.join(map(str, __version_tuple__[:-1])) + __version_tuple__[-1]
-    return '.'.join(str(i) for i in __version_tuple__)
-
-
-__version__ = 'Nasse v{version}'.format(version=__version_string__())
-__maintainer__ = 'Anime no Sekai'
-__email__ = 'niichannomail@gmail.com'
-__status__ = 'Stable'
+# autopep8: on

@@ -1,0 +1,217 @@
+/* Stylesheet for the http.nasse app */
+
+/* 
+* {
+    border: wide rgb(255, 0, 238);
+} */
+
+#screen {
+    background: $panel-darken-1;
+}
+
+#explorer {
+    display: block;
+    max-width: 35;
+    border-left: vkey rgba(128, 128, 128, 0.5);
+    background: $panel;
+}
+
+.explorer-category {
+    height: auto;
+}
+
+#explorer.unload {
+    display: none;
+}
+
+#explorer-reset {
+    margin: 1;
+    border: round white;
+    width: 100w;
+}
+
+
+#history {
+    display: block;
+    max-width: 35;
+    border-right: vkey rgba(128, 128, 128, 0.5);
+    background: $panel;
+}
+
+#history.unload {
+    display: none;
+}
+
+#history-ping {
+    dock: bottom;
+    width: auto;
+}
+
+#history-ping>Sparkline>.sparkline--max-color {
+    color: rgb(252, 160, 173);
+
+}
+
+#history-ping>Sparkline>.sparkline--min-color {
+    color: rgb(24, 228, 72);
+}
+
+
+#main {
+    height: 100vh;
+}
+
+#options-language-notice {
+    margin-left: 1;
+    opacity: 0.75;
+}
+
+#request {
+    height: 50h;
+    padding: 0 1 0 1;
+}
+
+#request.mini {
+    height: 25h;
+}
+
+#request.maxi {
+    height: 75h;
+}
+
+#request.full {
+    height: 100h;
+}
+
+#request-information {
+    height: auto;
+    margin: 1;
+}
+
+#request-information-title {
+    /* padding: 2; */
+    padding: 0 2;
+    border: round gray;
+    text-style: bold;
+}
+
+#request-information-description {
+    margin: 1 0;
+    padding: 0 1;
+    background: $boost;
+    border-left: outer $success;
+}
+
+#request-path-container {
+    height: auto;
+}
+
+#request-method {
+    width: 15%;
+}
+
+#request-path {
+    width: 85%;
+}
+
+#request-user-sent {
+    height: auto;
+}
+
+#result {
+    display: block;
+    height: 50h;
+    padding: 0 1 0 1;
+    border-top: hkey rgba(128, 128, 128, 0.5);
+    /* dock: bottom; */
+}
+
+#result.mini {
+    height: 25h;
+}
+
+#result.maxi {
+    height: 75h;
+}
+
+#result.full {
+    height: 100h;
+}
+
+#result.unload {
+    display: none;
+}
+
+#empty-result-label {
+    width: 100%;
+    padding: 0 3;
+    height: 80%;
+    background: $panel;
+    content-align: center middle;
+    border: tall $primary;
+}
+
+#result-title {
+    height: auto;
+}
+
+#result-subtitle {
+    height: auto;
+    opacity: 0.75;
+}
+
+#result-size {
+    opacity: 0.75;
+    margin-bottom: 1;
+}
+
+#result-content {
+    border: round gray;
+    background: $panel;
+    margin-bottom: 3;
+}
+
+.result-error-container {
+    margin-bottom: 3;
+}
+
+#loading-view {
+    padding: 0 3;
+    height: 80%;
+    background: $panel;
+    border: tall $primary;
+}
+
+#loading-container {
+    align: center middle;
+}
+
+
+#loading-container>LoadingIndicator {
+    content-align: center middle;
+    height: auto;
+    width: auto;
+    margin: 0 2;
+}
+
+.files-input-container {
+    height: auto;
+}
+
+.files-container {
+    height: auto;
+}
+
+.add-file-button {
+    margin: 1;
+}
+
+#request-data-container {
+    margin-bottom: 3;
+    height: auto;
+}
+
+#request-data-button {
+    height: auto;
+    margin: 1;
+}

@@ -1,12 +1,38 @@
 """
 The base strings
 """
+import pathlib
+import inspect
+
+
+# We are using a special `classproperty` because
+# the chaining of `@property` and `@classmethod`
+# got deprecated in 3.11
+class classproperty(property):
+    """A class property"""
+
+    def __get__(self, owner_self, owner_cls):
+        if self.fget:
+            return self.fget(owner_cls)
 
 
 class Localization:
     """
     Represents a Nasse documentation generation localization
     """
+    __native__ = "Base"
+    """The native name for the localization language"""
+
+    @classproperty
+    def __id__(cls):  # pylint: disable=no-self-argument
+        return pathlib.Path(inspect.getfile(cls)).stem
+
+    @classproperty
+    def __english__(cls):  # pylint: disable=no-self-argument
+        # Might change this later to support MultipleCaseNames
+        # pylint: disable=no-member
+        return cls.__name__.lower().removesuffix("localization").title()
+
     sections = "Sections"
     getting_started = "Getting Started"
 
@@ -103,12 +129,13 @@ Specific errors are documented in each endpoint, but these are the general error
 | `INTERNAL_SERVER_ERROR`     | When a critical error occurs on the system                                                                      | 500   |
 | `METHOD_NOT_ALLOWED`        | When you made a request with the wrong method                                                                   | 405   |
 | `CLIENT_ERROR`              | When something is missing or is wrong with the request                                                          | 400   |
+| `INVALID_TYPE`              | When Nasse couldn't convert the given value to the right type                                                   | 400   |
 | `MISSING_VALUE`             | When a value is missing from the request                                                                        | 400   |
 | `MISSING_PARAM`             | When a parameter is missing from the request                                                                    | 400   |
 | `MISSING_DYNAMIC`           | When a dynamic routing value is missing from the requested URL                                                  | 400   |
 | `MISSING_HEADER`            | When a header is missing from the request                                                                       | 400   |
 | `MISSING_COOKIE`            | When a cookie is missing from the request                                                                       | 400   |
-| `AUTH_ERROR`                | When an error occurred while authenticating the request                                                          | 403   |
+| `AUTH_ERROR`                | When an error occurred while authenticating the request                                                         | 403   |
 
 ### Authenticated Requests
 
@@ -171,3 +198,69 @@ The "call_stack" attribute is enabled only when an error occurs or the `call_sta
 
 This file lists and explains the different endpoints available in the {name} section.
 '''
+
+    # TUI
+
+    # Footer
+    tui_history = "History"
+    tui_result = "Result"
+    tui_explorer = "Explorer"
+    tui_submit = "Submit"
+    tui_options = "Options"
+    tui_quit = "Quit"
+
+    # History
+    # WARNING: This should stay under 3 characters to avoid having styling issues
+    tui_min = "Min"
+    tui_average = "Avg"
+    tui_max = "Max"
+
+    # Explorer
+    tui_reset = "Reset"
+
+    # Request
+    tui_request = "Request"
+    tui_name = "name"
+    tui_value = "value"
+    tui_path = "path"
+    # tui_parameters = "Parameters"
+    # tui_headers = "Headers"
+    # tui_cookies = "Cookies"
+    tui_file = "File"
+    tui_add_file = "Add File"
+    tui_data = "Data"
+    tui_add_data_file = "Add Data File"
+
+    # Options
+    tui_language = "Language"
+    tui_language_notice = "You need to restart the app to apply the changes"
+    tui_base_url = "Base URL"
+    tui_base_url_placeholder = "the base url for the requests and the endpoints explorer"
+    tui_endpoints_update = "Endpoints Update"
+    tui_endpoints_update_placeholder = "time between each endpoints list update (in sec.)"
+    tui_history_limit = "History Limit"
+    tui_history_limit_placeholder = "maximum number of requests in the history"
+    tui_timeout = "Timeout"
+    tui_timeout_placeholder = "timeout (sec.)"
+    tui_redirects = "Redirects"
+    tui_allow_redirects = "Allow Redirects"
+    tui_proxies = "Proxies"
+    tui_security = "Security"
+    tui_verify_request = "Verify Request"
+    tui_certificate_files = "Certificate Files"
+    tui_add_certificate = "Add Certificate"
+
+    # Result
+    tui_start_prompt = "Start by making a request"
+    tui_content = "Content"
+    tui_no_content = "Can't display the content"
+    tui_contacting = "Contacting {url}"
+    tui_files = "Files"
+    tui_error = "Error"
+
+    # File Explorer
+    tui_filter = "Filter"
+
+    # Quit
+    tui_quit_confirmation = "Are you sure you want to quit?"
+    tui_cancel = "Cancel"
