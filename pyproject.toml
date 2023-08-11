@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nasse"
-version = "2.0.0rc1"
+version = "2.0.0"
 description = "A web server framework written on top of Flask which lets you focus on your ideas 🍡"
 license = "MIT"
 authors = ["Animenosekai <animenosekai.mail@gmail.com>"]
@@ -23,7 +23,7 @@ keywords = [
 ]
 classifiers = [
     # Status
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
 
     # Environment
     "Environment :: Web Environment",

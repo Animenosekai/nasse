@@ -112,7 +112,7 @@ You can check if you successfully installed it by printing out its version:
 
 ```bash
 $ nasse --version
-2.0.0rc1
+2.0.0
 ```
 
 ## Purpose
