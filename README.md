@@ -1,6 +1,6 @@
-# `Nasse`
+# `nasse`
 
-<img align="right" src="./docs/nasse.png" height="220px">
+<img align="right" src="./assets/nasse.png" height="220px">
 
 A web server framework written on top of Flask which lets you focus on your ideas 🍡
 
@@ -57,6 +57,16 @@ A web server framework written on top of Flask which lets you focus on your idea
   - [Running the server](#running-the-server)
   - [Generate documentation](#generate-documentation)
     - [Localization](#localization)
+  - [CLI](#cli)
+    - [Runner](#runner)
+    - [Docs](#docs)
+    - [HTTP App](#http-app)
+      - [Request](#request)
+      - [Result](#result)
+      - [History](#history)
+      - [Explorer](#explorer)
+      - [Options](#options)
+      - [File browser](#file-browser)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
 - [Built With](#built-with)
@@ -903,6 +913,184 @@ Here are the built-in languages :
 - Japanese
 
 But you can create your own translation by sub-classing `nasse.localization.Localization`
+
+### CLI
+
+#### Runner
+
+You can directly run your Nasse apps using the CLI.
+
+To do so, head over to your terminal and enter:
+
+```bash
+nasse <your_app.py>
+```
+
+This should run the app with the default parameters.
+
+If you want to customize the running behaviors, you can use the arguments with a `(server)` note prepended to their explanation when you run the `--help` command:
+
+```bash
+$ nasse --help
+usage: nasse [-h] [--version] [--host HOST] [--port PORT] [--server SERVER] [--watch [WATCH ...]] [--ignore [IGNORE ...]] [--debug] [--config CONFIG]
+             [input]
+
+A web server framework written on top of Flask which lets you focus on your ideas 🍡
+
+positional arguments:
+  input                 The file or URL to use with nasse
+
+options:
+  -h, --help            show this help message and exit
+  --version, -v         show program's version number and exit
+  --host HOST           (server) The host to bind to
+  --port PORT, -p PORT  (server) The port to bind to
+  --server SERVER, -s SERVER
+                        (server) The server to use (accepts: flask, gunicorn)
+  --watch [WATCH ...], -w [WATCH ...]
+                        (server) Files to watch changes on debug mode
+  --ignore [IGNORE ...], -i [IGNORE ...]
+                        (server) Files to ignore when watching for file changes on debug mode
+  --debug, -d           (server) To run with debug mode enabled
+  --config CONFIG, -c CONFIG
+                        (server) A configuration file for extra arguments passed to the server
+```
+
+The `--config` argument takes in a JSON file containing the different configurations you would like to pass in to the `run` function of your `Nasse` instance.
+
+#### Docs
+
+You can use the CLI to directly generate the docs:
+
+```bash
+nasse --make-docs <your_app>.py
+```
+
+You can also customize the docs' generation using arguments:
+
+```bash
+$ nasse --help
+usage: nasse [-h] [--version] [--make-docs] [--language LANGUAGE]
+             [--output OUTPUT] [--docs-curl] [--docs-javascript] [--docs-python]
+             [input]
+
+A web server framework written on top of Flask which lets you focus on your ideas 🍡
+
+positional arguments:
+  input                 The file or URL to use with nasse
+
+options:
+  -h, --help            show this help message and exit
+  --version, -v         show program's version number and exit
+  --make-docs, -md, --docs, --generate-docs
+                        (docs) Generates the docs and exits
+  --language LANGUAGE, --localization LANGUAGE
+                        (docs) The docs language
+  --output OUTPUT, -o OUTPUT, --docs-dir OUTPUT, --docs_dir OUTPUT
+                        (docs) The directory to output the docs
+  --docs-curl           (docs) If we need to render the curl examples
+  --docs-javascript     (docs) If we need to render the javascript examples
+  --docs-python         (docs) If we need to render the python examples
+```
+
+Here are the languages you can use to generate the docs:
+
+- [`eng`](https://github.com/Animenosekai/nasse/blob/main/nasse/localization/base.py) (default)
+- [`fra`](https://github.com/Animenosekai/nasse/blob/main/nasse/localization/fra.py)
+- [`jpn`](https://github.com/Animenosekai/nasse/blob/main/nasse/localization/jpn.py)
+
+> **Note**  
+> Those codes are the name of the file the `Localization` object was created in
+
+#### HTTP App
+
+You can also use the built-in HTTP app to test your endpoints.
+
+This app might be familiar to those using the Postman software.
+
+To open it, just enter
+
+```bash
+nasse
+```
+
+This should open the app, and you should land on this page:
+
+![HTTP App — Main Page](assets/screenshots/http_main.png)
+
+##### Request
+
+The `Request` tab is the main tab to prepare your requests.
+
+The first two inputs lets you choose the HTTP method to use and the URL to submit the requests to.
+
+The inputted URL can be an absolute URL or a relative path. In the latter case, the URL provided when launching the app or the one inputted in the [`Options`](#options) tab will be used to complete it.
+
+![HTTP App — Request Tab](assets/screenshots/http_request.png)
+
+##### Result
+
+When you submit a request, by pressing `S` or clicking the `Submit` button on the footer, the `Result` tab should open automatically.
+
+Click on it to expand it.
+
+![HTTP App — Result Tab](assets/screenshots/http_result.png)
+
+You can here see the details of your request, or the details of the error if the request errored out.
+
+![HTTP App — Result Tab, Error](assets/screenshots/http_result_error.png)
+
+##### History
+
+The history tab keeps a history of your requests.
+
+You can click on any request to see its details in the [`Result`](#result) tab.
+
+The bottom part of the history tab shows a graph with the time it took to make each request.
+
+![HTTP App — History Tab, Ping](assets/screenshots/http_history_ping.png)
+
+##### Explorer
+
+The explorer can be used when you are testing a `Nasse` server in `DEBUG MODE` (`--debug` enabled)
+
+If I go into [*playground/readme*](playground/readme/) and I run the server:
+
+```bash
+🧃❯ python run.py --debug
+2023/08/11, 18:55:59 | [WARNING] (yay) DEBUG MODE IS ENABLED
+2023/08/11, 18:55:59 | [INFO] (yay) 🎏 Press Ctrl+C to quit
+2023/08/11, 18:55:59 | [INFO] (yay) 🌍 Binding to 127.0.0.1:5005
+🍡 yay is running on http://127.0.0.1:5005 — 0:00:04
+```
+
+I can then run the HTTP app:
+
+```bash
+nasse http://127.0.0.1:5005
+```
+
+And will see the different endpoints in the explorer:
+
+![HTTP App — Explorer Tab](assets/screenshots/http_explorer.png)
+
+##### Options
+
+The options screen will let you easily configure the app:
+
+![HTTP App — Options Screen](assets/screenshots/http_options.png)
+
+All the modifications will be stored in the current directory and be restored on the next launch.
+
+##### File browser
+
+The file browser is used throughout the app whenever it needs a file input.
+
+You can filter the different files and folders by starting to type your keyword.
+
+![HTTP App — File Browser Screen](assets/screenshots/http_file_browser.png)
+
+You can then navigate using the arrows on your keyboard and select your file by pressing `ENTER`.
 
 ## Deployment
 
