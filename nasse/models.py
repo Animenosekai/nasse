@@ -303,7 +303,7 @@ class Endpoint:
     def __init__(self,
                  handler: typing.Callable[..., Types.HandlerOutput] = non_implemented,
                  name: str = "",
-                 category: str = "Main",
+                 category: typing.Optional[str] = "Main",
                  sub_category: str = "",
                  description: Types.MethodVariant[str] = None,
                  base_dir: typing.Union[pathlib.Path, str, None] = None,
@@ -370,10 +370,6 @@ class Endpoint:
 
         if not name:
             initial["name"] = handler.__name__
-        if not category:
-            initial["category"] = (filepath.stem or
-                                   (handler.__module__ or "").rpartition(".")[2] or
-                                   "Untitled")
 
         # I might add custom parsers for each method
         if not description:
@@ -397,6 +393,11 @@ class Endpoint:
 
         for key, value in initial.items():
             init_args.setdefault(key, value)
+
+        if not init_args["category"]:
+            init_args["category"] = (filepath.stem or
+                (handler.__module__ or "").rpartition(".")[2] or
+                "Main")
 
         # init_args = {k: v for k, v in init_args.items() if v}
 
