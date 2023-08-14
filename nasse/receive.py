@@ -98,10 +98,10 @@ class Receive:
 
                             with timer.Timer() as processing_timer:
                                 # TODO: Maybe use function signatures here ?
-                                specs = inspect.getfullargspec(self.endpoint.handler).args
+                                specs = inspect.getfullargspec(self.endpoint.handler)
                                 arguments = {}
 
-                                for arg in specs:  # for the function arguments
+                                for arg in specs.args:  # for the function arguments
                                     for storage in (flask.g.request.values, flask.g.request.headers, flask.g.request.cookies):
                                         if arg in storage:
                                             val = storage.getlist(arg)
@@ -132,11 +132,11 @@ class Receive:
                                     ("account", account),
                                     ("dynamics", flask.g.request.dynamics)
                                 ]:
-                                    if attr in specs and attr not in arguments:
+                                    if (attr in specs.args or specs.varkw) and attr not in arguments:
                                         arguments[attr] = current_values
 
                                 for key, val in flask.g.request.dynamics.items():  # no need for multi=True as dynamics should only have one value
-                                    if key in specs:
+                                    if key in specs.args or specs.varkw:
                                         arguments[key] = val
 
                                 # we don't need this because "dynamics" already holds those values
