@@ -5,3 +5,6 @@ TOP PRIORITY
 TODO
 
 - Writing Tests
+- Automatic `Return` values
+- `Raises` in `miko` docs to `nasse` errors
+- Automatic object definition part in docs, avoiding built-ins and defining objects with their `__doc__`

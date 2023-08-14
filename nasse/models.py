@@ -178,6 +178,15 @@ class Login:
         else:
             self.types = set(self.types)
 
+    def __hash__(self) -> int:
+        result = 0
+        for attr in ("required", "skip", "skip_fetch"):
+            element = getattr(self, attr)
+            result += hash(element)
+        for element in self.types:
+            result += hash(element)
+        
+        return result
 
 @dataclasses.dataclass(eq=True, frozen=True)
 class UserSent:
