@@ -185,8 +185,9 @@ class Login:
             result += hash(element)
         for element in self.types:
             result += hash(element)
-        
+
         return result
+
 
 @dataclasses.dataclass(eq=True, frozen=True)
 class UserSent:
@@ -389,6 +390,9 @@ class Endpoint:
                 extra_args = {}
 
         for key, value in extra_args.items():
+            if key == "path":
+                # `path` would seem implemented by `endpoint` but it isn't
+                continue
             init_args.setdefault(key, value)
 
         for key, value in initial.items():
