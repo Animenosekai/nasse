@@ -143,7 +143,7 @@ def init_class(cls: typing.Type[Types.T], instance: Types.T, **kwargs):
             #     setattr(instance, attr, None)
 
 
-@dataclasses.dataclass(eq=True, frozen=True)
+@dataclasses.dataclass(eq=True)
 class Login:
     """Defines the rules for the login methods"""
     required: bool = False
