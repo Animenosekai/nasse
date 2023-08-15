@@ -61,6 +61,7 @@ import io
 import json
 import json.encoder
 import typing
+import dataclasses
 
 from nasse import utils
 
@@ -323,6 +324,8 @@ class NasseJSONEncoder(json.JSONEncoder):
             self.skipkeys, _one_shot)(o, 0)
 
     def default(self, o: typing.Any) -> typing.Any:
+        if dataclasses.is_dataclass(o):
+            o = dataclasses.asdict(o)
         if isinstance(o, str):
             return json.encoder.py_encode_basestring(o)
         elif isinstance(o, list):  # some classes inheriting from list might have implemented methods to recognize them as unpackable

@@ -11,7 +11,7 @@ import typing
 class LimitedString(str):
     """
     A string with conditions
-    
+
     Variables to set: UPPER, LOWER, SPACES, THROW, REGEX, DEFAULT, LIMIT
     """
     UPPER = False
@@ -52,7 +52,7 @@ class LimitedString(str):
 class StringEnum(str):
     """
     A string enum, only accepting certain values
-    
+
     Variables to set: ACCEPTED, DEFAULT, UPPER, LOWER
     """
     ACCEPTED = tuple()
