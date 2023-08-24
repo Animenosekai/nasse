@@ -1151,7 +1151,7 @@ class PathSuggestion(Suggester):
         super().__init__(use_cache=False, case_sensitive=False)
         self.app = app
 
-    async def get_suggestion(self, value: str) -> str | None:
+    async def get_suggestion(self, value: str) -> typing.Optional[str]:
         """Gets a completion from the given possibilities.
 
         Args:
