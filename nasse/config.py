@@ -30,20 +30,30 @@ class NasseConfig:
         """Verifies the given logging level"""
         from nasse.utils.logging import LoggingLevel
 
+        if isinstance(self.logging_level, LoggingLevel):
+            level_name = self.logging_level.name
+        else:
+            level_name = str(self.logging_level)
+
+        level_name = level_name.upper().replace(" ", "")
+
         if not self.logging_level:
             self.logging_level = LoggingLevel.DEBUG if self.debug else LoggingLevel.INFO
-        elif self.logging_level == "ERROR":
+        elif level_name == "ERROR":
             self.logging_level = LoggingLevel.ERROR
-        elif self.logging_level == "WARNING":
+        elif level_name == "WARNING":
             self.logging_level = LoggingLevel.WARNING
-        elif self.logging_level == "INFO":
+        elif level_name == "INFO":
             self.logging_level = LoggingLevel.INFO
-        elif self.logging_level == "DEBUG":
+        elif level_name == "DEBUG":
             self.logging_level = LoggingLevel.DEBUG
-        elif self.logging_level == "HIDDEN":
+        elif level_name == "HIDDEN":
             self.logging_level = LoggingLevel.HIDDEN
         else:
-            self.logger.warn(f"Couldn't understand the logging level {self.logging_level}. Defaulting to `INFO`")
+            try:
+                self.logger.warn(f"Couldn't understand the logging level {self.logging_level}. Defaulting to `INFO`")
+            except Exception:
+                pass
             self.logging_level = LoggingLevel.INFO
 
     def __setattr__(self, __name: str, __value: typing.Any) -> None:
