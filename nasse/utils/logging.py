@@ -249,7 +249,11 @@ class StackFrame:
             "name": self.name,
             "filename": self.filename,
             "lineNumber": self.lineno,
-            "calledBy": "<{name}>, in {filename} at line {line_number}".format(name=self.back_frame.f_code.co_name, filename=self.back_frame.f_code.co_filename, line_number=self.back_frame.f_code.co_firstlineno)
+            "calledBy": {
+                "name": self.back_frame.f_code.co_name,
+                "filename": self.back_frame.f_code.co_filename,
+                "lineNumber": self.back_frame.f_code.co_firstlineno
+            }
         }
 
 
@@ -292,7 +296,7 @@ def _generate_trace(config):
         """
         Internal function to add a call to the call stack
         """
-        if RECORDING and event == "call" and frame.f_code.co_filename.startswith(config.base_dir):
+        if RECORDING and event == "call" and frame.f_code.co_filename.startswith(str(config.base_dir)):
             CALL_STACK.append(StackFrame(frame))
         return None
     return add_to_call_stack
