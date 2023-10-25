@@ -1,4 +1,4 @@
-Werkzeug==2.2.2
+Werkzeug==3.0.1
 bleach==3.3.0
 Flask_Compress==1.10.1
 watchdog==2.1.6
