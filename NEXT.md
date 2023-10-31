@@ -1,5 +1,5 @@
 ---
-version: 2.0.1
+version: 2.0.2
 status: BETA
 ---
 
@@ -20,8 +20,8 @@ status: BETA
 
 Everything is detailed in the [`README.md`](./README.md) file
 
-A comparison from the previous release can be found here [`v2...v2.0.1`](https://github.com/Animenosekai/nasse/compare/v2...v2.0.1)
+A comparison from the previous release can be found here [`v2...v2.0.2`](https://github.com/Animenosekai/nasse/compare/v2...v2.0.2)
 
-A comparison from the current branch can be found here [`v2.0.1...main`](https://github.com/Animenosekai/nasse/compare/v2.0.1...main)
+A comparison from the current branch can be found here [`v2.0.2...main`](https://github.com/Animenosekai/nasse/compare/v2.0.2...main)
 
 > 🍡 Animenosekai
