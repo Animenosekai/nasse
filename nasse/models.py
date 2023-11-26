@@ -366,10 +366,11 @@ class Endpoint:
         signature = inspect.signature(handler)
 
         # Parsing the doc-string
-        docs = miko.Documentation(handler.__doc__ or "", signature)
+        func = miko.Function(handler)
+        docs = func.docs
 
         if not name:
-            initial["name"] = handler.__name__
+            initial["name"] = func.name
 
         # I might add custom parsers for each method
         if not description:
@@ -472,7 +473,7 @@ class Endpoint:
         names.extend(param_names)
         names.extend(dyn_names)
 
-        names = set(names)
+        names_set = set(names)
 
         # checking all of the dynamic parameters of the path
         for dynamic in parsed_path.dynamics:
@@ -494,13 +495,13 @@ class Endpoint:
                 except KeyError:
                     self.dynamics["*"] = {element}
                 dyn_names.append(element.name)
-                names.add(element.name)
+                names_set.add(element.name)
 
         # checking the parameters defined at the function definition level
         for parameter in docs.parameters:
             # from miko.parser.list import Parameter
             # parameter: Parameter
-            if not parameter.name in names:
+            if not parameter.name in names_set:
                 # adding the parameter if it is a function argument
                 element = Parameter(parameter.name,
                                     description=parameter.body,
